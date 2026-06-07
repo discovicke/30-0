@@ -69,7 +69,7 @@ public class MatchResult
     public int HomeGoals { get; set; }
     public int AwayGoals { get; set; }
     public List<GoalEvent> Goals { get; set; } = [];
-    public int? UserCleanSheet => IsUserHome ? (HomeGoals == 0 ? 1 : 0) : (AwayGoals == 0 ? 1 : 0);
+    public int? UserCleanSheet => IsUserHome ? (AwayGoals == 0 ? 1 : 0) : (HomeGoals == 0 ? 1 : 0);
     public string HomeScorers => string.Join(", ", Goals.Where(g => !g.IsOwnGoal).Select(g => g.Scorer));
     public string AwayScorers => string.Join(", ", Goals.Where(g => g.IsOwnGoal).Select(g => g.Scorer));
 }
@@ -224,18 +224,16 @@ public static class SimulationEngine
         // Defence: midfield (20%) + defence (50%) + GK (30%)
         var userOffence = user.Attack * 0.4 + user.Midfield * 0.6;
         var userDefence = user.Midfield * 0.2 + user.Defence * 0.5 + user.GkRating * 0.3;
+        var userStrength = (userOffence + userDefence) / 2.0;
 
-        // Home team gets ~8% boost
-        var userPower = isUserHome ? userOffence * 1.08 : userOffence;
-        var aiPower = isUserHome ? ai.Strength : ai.Strength * 1.08;
-
-        var powerRatio = Math.Max(userPower / Math.Max(aiPower, 1), 0.1);
+        var strengthRatio = Math.Max(userStrength / Math.Max(ai.Strength, 1), 0.1);
         var baseRate = 1.2;
+        var exponent = 3.5;
+        var homeBonus = 0.08;
 
-        var userExpected = baseRate * Math.Pow(powerRatio, 3.0);
-        var aiExpected = baseRate * Math.Pow(1.0 / powerRatio, 0.8);
+        var userExpected = baseRate * Math.Pow(strengthRatio, exponent) + (isUserHome ? homeBonus : 0);
+        var aiExpected = baseRate * Math.Pow(1.0 / strengthRatio, exponent) + (isUserHome ? 0 : homeBonus);
 
-        // Cap expected goals to keep it realistic
         userExpected = Math.Clamp(userExpected, 0.2, 6.0);
         aiExpected = Math.Clamp(aiExpected, 0.2, 6.0);
 
@@ -283,14 +281,13 @@ public static class SimulationEngine
 
     public static MatchResult SimulateAIMatch(AITeam home, AITeam away)
     {
-        var homePower = home.Strength * 1.08;
-        var awayPower = away.Strength;
-
-        var powerRatio = Math.Max(homePower / Math.Max(awayPower, 1), 0.1);
+        var strengthRatio = Math.Max(home.Strength / Math.Max(away.Strength, 1), 0.1);
         var baseRate = 1.2;
+        var exponent = 3.5;
+        var homeBonus = 0.08;
 
-        var homeExpected = baseRate * Math.Pow(powerRatio, 3.0);
-        var awayExpected = baseRate * Math.Pow(1.0 / powerRatio, 0.8);
+        var homeExpected = baseRate * Math.Pow(strengthRatio, exponent) + homeBonus;
+        var awayExpected = baseRate * Math.Pow(1.0 / strengthRatio, exponent);
 
         homeExpected = Math.Clamp(homeExpected, 0.2, 6.0);
         awayExpected = Math.Clamp(awayExpected, 0.2, 6.0);
@@ -310,6 +307,10 @@ public static class SimulationEngine
 
     public static SeasonResult SimulateSeason(TeamXI user, string formation)
     {
+        // Reset season stats from any previous run
+        user.GoalsFor = 0; user.GoalsAgainst = 0;
+        user.Wins = 0; user.Draws = 0; user.Losses = 0; user.Points = 0;
+
         var userTeam = user;
         userTeam.Formation = formation;
         ComputeTeamRatings(userTeam);
@@ -452,6 +453,7 @@ public static class SimulationEngine
         var goldenBoot = goalScorers.OrderByDescending(kv => kv.Value).FirstOrDefault();
         var playmaker = assists.OrderByDescending(kv => kv.Value).FirstOrDefault();
         var goldenGlove = cleanSheets.OrderByDescending(kv => kv.Value).FirstOrDefault();
+        
 
         // Player of the season: goals + assists combined
         var potScores = new Dictionary<string, int>();
@@ -461,7 +463,23 @@ public static class SimulationEngine
 
         return new SeasonResult
         {
-            UserTeam = userTeam,
+            UserTeam = new TeamXI
+            {
+                Name = userTeam.Name,
+                Slots = new Dictionary<string, PlayerCard>(userTeam.Slots),
+                Formation = userTeam.Formation,
+                Attack = userTeam.Attack,
+                Midfield = userTeam.Midfield,
+                Defence = userTeam.Defence,
+                GkRating = userTeam.GkRating,
+                Overall = userTeam.Overall,
+                GoalsFor = userTeam.GoalsFor,
+                GoalsAgainst = userTeam.GoalsAgainst,
+                Wins = userTeam.Wins,
+                Draws = userTeam.Draws,
+                Losses = userTeam.Losses,
+                Points = userTeam.Points,
+            },
             AiTeams = aiTeams.ToList(),
             Matches = matches,
             GoalScorers = goalScorers,

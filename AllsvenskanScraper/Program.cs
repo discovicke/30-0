@@ -72,20 +72,28 @@ class Program
                 break;
             case "simulate":
             case "sim":
-                var formation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
-                RunSimulate(formation);
+                var simFormation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
+                RunSimulate(simFormation);
+                break;
+            case "batch":
+                var batchFormation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
+                var nSims = cleanArgs.Length > 2 ? int.Parse(cleanArgs[2]) : 100;
+                var targetOvr = cleanArgs.Length > 3 ? int.Parse(cleanArgs[3]) : 0;
+                RunBatchSimulate(batchFormation, nSims, targetOvr);
                 break;
             default:
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  dotnet run -- scrape [startYear] [endYear] [--headed] [--debug] [--local]");
                 Console.WriteLine("  dotnet run -- compute");
                 Console.WriteLine("  dotnet run -- simulate [formation]");
+                Console.WriteLine("  dotnet run -- batch [formation] [n]");
                 Console.WriteLine("  dotnet run -- all [--headed] [--debug] [--local]");
                 Console.WriteLine();
                 Console.WriteLine("Examples:");
                 Console.WriteLine("  dotnet run -- scrape 2025           # live (kräver --headed för CF)");
                 Console.WriteLine("  dotnet run -- scrape 2025 2025 --local  # läs från data/pages/2025/");
                 Console.WriteLine("  dotnet run -- simulate 4-3-3            # testa säsongssimulation");
+                Console.WriteLine("  dotnet run -- batch 4-3-3 100          # 100 simuleringar");
                 Console.WriteLine("  dotnet run -- all --local               # alla år lokalt");
                 break;
         }
@@ -462,6 +470,82 @@ class Program
         Console.WriteLine($"\nSimulating 30-game Allsvenskan season...");
         var result = SimulationEngine.SimulateSeason(xi, formation);
         SimulationEngine.PrintSeasonResults(result);
+    }
+
+    static void RunBatchSimulate(string formation, int nSims, int targetOvr = 0)
+    {
+        var dataDir = GetDataDir();
+        var gameDbPath = Path.Combine(dataDir, "game", "players.json");
+        if (!File.Exists(gameDbPath))
+        {
+            Console.Error.WriteLine("No game database found.");
+            return;
+        }
+
+        var json = File.ReadAllText(gameDbPath);
+        var allCards = JsonSerializer.Deserialize<List<PlayerCard>>(json, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }) ?? [];
+
+        if (allCards.Count == 0) { Console.Error.WriteLine("No players."); return; }
+        if (!SimulationEngine.Formations.ContainsKey(formation)) { Console.Error.WriteLine($"Unknown formation '{formation}'."); return; }
+
+        // Build dream team once
+        var xi = new TeamXI { Formation = formation };
+        var slots = SimulationEngine.Formations[formation];
+        var cardsCopy = new List<PlayerCard>(allCards);
+        foreach (var slot in slots)
+        {
+            var best = cardsCopy
+                .Where(p => p.Positions.Any(sp => slot.SpecificPositions.Contains(sp)))
+                .OrderByDescending(p => p.Ovr)
+                .FirstOrDefault();
+            if (best != null) { xi.Slots[slot.Label] = best; cardsCopy.Remove(best); }
+        }
+        if (xi.Slots.Count < 11) { Console.Error.WriteLine($"Could only fill {xi.Slots.Count}/11 positions."); return; }
+
+        SimulationEngine.ComputeTeamRatings(xi);
+        var baseOvr = xi.Overall;
+
+        // Scale players to target OVR if requested
+        if (targetOvr > 0 && Math.Abs(targetOvr - baseOvr) > 0.1)
+        {
+            var boost = targetOvr - baseOvr;
+            // Apply boost directly to each player's OVR (not to copy since we won't rebuild)
+            foreach (var slot in xi.Slots.Values)
+            {
+                slot.Ovr += boost;
+            }
+            SimulationEngine.ComputeTeamRatings(xi);
+        }
+
+        var effectiveOvr = xi.Overall;
+
+        // Run simulations
+        var results = new List<SeasonResult>();
+        for (var i = 0; i < nSims; i++)
+        {
+            results.Add(SimulationEngine.SimulateSeason(xi, formation));
+        }
+
+        // Focus stats
+        var undefeated = results.Count(r => r.UserTeam.Losses == 0);
+        var bestResult = results.OrderByDescending(r => r.UserTeam.Points).ThenByDescending(r => r.UserTeam.GoalsFor - r.UserTeam.GoalsAgainst).First();
+        var worstLosses = results.OrderBy(r => r.UserTeam.Losses).First();
+
+        Console.WriteLine($"OVR {effectiveOvr:F1} | {nSims} sims | Obesegrade: {undefeated}/{nSims} ({100.0 * undefeated / nSims:F3}%)");
+        Console.WriteLine($"  Bästa  : {bestResult.UserTeam.Wins}-{bestResult.UserTeam.Draws}-{bestResult.UserTeam.Losses} | {bestResult.UserTeam.Points}p | +{bestResult.UserTeam.GoalsFor - bestResult.UserTeam.GoalsAgainst}GD");
+        Console.WriteLine($"  Minst förluster: {worstLosses.UserTeam.Wins}-{worstLosses.UserTeam.Draws}-{worstLosses.UserTeam.Losses} | {worstLosses.UserTeam.Points}p");
+        Console.WriteLine();
+    }
+
+    static double Median(List<int> values)
+    {
+        var sorted = values.OrderBy(v => v).ToList();
+        var n = sorted.Count;
+        if (n % 2 == 1) return sorted[n / 2];
+        return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0;
     }
 
     static void GenerateGameDb(string playersDir, string outputPath)
