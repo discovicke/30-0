@@ -1,0 +1,37 @@
+@use '../../styles/variables' as *;
+
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  opacity: 0.3;
+
+  &.active {
+    opacity: 1;
+  }
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $ink-disabled;
+
+  .step.active & {
+    background: $badge-yellow;
+  }
+}
+
+.label {
+  font-size: 8px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}

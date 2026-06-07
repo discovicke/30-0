@@ -1,0 +1,115 @@
+@use '../../styles/variables' as *;
+
+.pitch {
+  background: $pitch-bg;
+  border-radius: 6px;
+  padding: 10px 8px 7px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 8%;
+    right: 8%;
+    height: 0.5px;
+    background: $pitch-line;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 0.5px solid $pitch-line;
+  }
+
+  &.compact {
+    padding: 6px 5px 5px;
+
+    .dot {
+      width: 18px;
+      height: 18px;
+    }
+
+    .dot span {
+      font-size: 4.5px;
+    }
+
+    .pname {
+      font-size: 4.5px;
+      max-width: 24px;
+    }
+
+    .povr {
+      font-size: 4.5px;
+    }
+  }
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+.pslot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid $pitch-border-empty;
+  background: $pitch-empty;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    font-family: $font-mono;
+    font-size: 5.5px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+  }
+
+  &.dotFilled {
+    background: $pitch-player;
+    border-color: $pitch-border-filled;
+  }
+}
+
+.pname {
+  font-size: 5.5px;
+  color: $pitch-name;
+  max-width: 32px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.povr {
+  font-family: $font-mono;
+  font-size: 5.5px;
+  color: $pitch-ovr;
+  line-height: 1.1;
+}

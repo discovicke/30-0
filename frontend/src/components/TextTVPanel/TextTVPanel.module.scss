@@ -1,0 +1,37 @@
+@use '../../styles/variables' as *;
+
+.panel {
+  background: $ttv-bg;
+  border-radius: $radius-sm;
+  overflow: hidden;
+}
+
+.header {
+  padding: 6px 10px 4px;
+  border-bottom: 1px solid $ttv-border;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-family: $font-mono;
+  font-size: 7px;
+  color: $ttv-title;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.meta {
+  font-family: $font-mono;
+  font-size: 7px;
+  color: $ttv-meta;
+}
+
+.body {
+  padding: 5px 8px 6px;
+
+  &.scrollable {
+    overflow-y: auto;
+  }
+}

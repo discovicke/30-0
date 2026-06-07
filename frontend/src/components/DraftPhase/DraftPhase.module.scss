@@ -1,0 +1,209 @@
+@use '../../styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px;
+  flex: 1;
+  position: relative;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.progress {
+  font-family: $font-mono;
+  font-size: 10px;
+  color: $ink-ghost;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.spinRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.spinBtn {
+  padding: 6px 14px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.rerollBtn {
+  padding: 6px 12px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 10px;
+  font-weight: 500;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.hint {
+  font-size: 9px;
+  color: $ink-ghost;
+}
+
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.squadOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.squadCard {
+  background: $sand-white;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-lg;
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.squadHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 0.5px solid $sand-border;
+}
+
+.squadName {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.squadSeason {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ink-ghost;
+}
+
+.playerList {
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: $sand-bg;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  text-align: left;
+  transition: border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: $ink;
+  }
+
+  &.playerMuted {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+}
+
+.playerPos {
+  font-size: 8px;
+  font-weight: 600;
+  color: $ink-muted;
+  background: $sand-surface;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 24px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.playerName {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.playerOvr {
+  font-family: $font-mono;
+  font-size: 11px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.skipBtn {
+  margin: 8px 14px;
+  padding: 8px;
+  background: $sand-surface;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}

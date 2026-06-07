@@ -1,0 +1,182 @@
+@use '../../styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px;
+  flex: 1;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  flex: 1;
+  align-items: start;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+}
+
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ttvTable {
+  width: 100%;
+  font-family: $font-mono;
+  font-size: 7.5px;
+  border-collapse: collapse;
+
+  th {
+    color: $ttv-meta;
+    font-weight: 400;
+    padding: 1px 2px;
+    text-align: left;
+    font-size: 6.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 0.5px solid $ttv-border;
+  }
+
+  th:not(:first-child):not(:nth-child(2)) {
+    text-align: right;
+  }
+
+  td {
+    color: $ttv-body;
+    padding: 2px 2px;
+  }
+
+  td:not(:first-child):not(:nth-child(2)) {
+    text-align: right;
+  }
+
+  tr.you td {
+    color: $ttv-title;
+  }
+}
+
+.rank {
+  color: $ttv-meta !important;
+}
+
+.bold {
+  font-weight: 700;
+}
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.matchRow {
+  display: flex;
+  align-items: center;
+  font-family: $font-mono;
+  font-size: 7.5px;
+  padding: 2.5px 0;
+  gap: 3px;
+  border-bottom: 0.5px solid rgba($ttv-border, 0.5);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.round {
+  color: $ttv-meta;
+  width: 12px;
+  font-size: 7px;
+  flex-shrink: 0;
+}
+
+.score {
+  width: 22px;
+  text-align: center;
+  font-weight: 500;
+  color: $ttv-body;
+  flex-shrink: 0;
+
+  &.win {
+    color: $ttv-win;
+  }
+
+  &.loss {
+    color: $ttv-loss;
+  }
+
+  &.draw {
+    color: $ttv-draw;
+  }
+}
+
+.youTeam {
+  color: $ttv-title;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.nextBtn {
+  padding: 6px 16px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.autoBtn {
+  padding: 6px 12px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 10px;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.doneBtn {
+  padding: 6px 16px;
+  background: $active-green;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}

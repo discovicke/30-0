@@ -1,0 +1,288 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .layout { display: grid; grid-template-columns: 1fr 200px; gap: 16px; align-items: start; padding: 1rem 0; }
+  .col-label { font-size: 9px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; text-align: center; }
+
+  /* ========== DESKTOP ========== */
+  .desktop { border: 0.5px solid var(--color-border-secondary); border-radius: 10px; overflow: hidden; }
+  .d-wrap { background: #F8F6F1; font-family: var(--font-sans); }
+
+  .d-nav { background: #1C1C1A; padding: 7px 14px; display: flex; align-items: center; gap: 8px; }
+  .d-nav-logo { font-size: 12px; font-weight: 500; color: #F0EDE5; }
+  .d-nav-badge { font-size: 8px; background: #F5C842; color: #1C1C1A; padding: 1px 6px; border-radius: 8px; font-weight: 500; }
+  .d-nav-links { display: flex; gap: 0; margin-left: auto; }
+  .d-nav-link { font-size: 10px; color: #6B6B68; padding: 3px 8px; border-bottom: 2px solid transparent; }
+  .d-nav-link.active { color: #F0EDE5; border-bottom-color: #F5C842; }
+
+  .d-tabs { display: flex; border-bottom: 0.5px solid #DDD9CF; background: #F8F6F1; padding: 0 14px; }
+  .d-tab { font-size: 10px; color: #888780; padding: 6px 8px; border-bottom: 2px solid transparent; }
+  .d-tab.active { color: #1C1C1A; border-bottom-color: #1C1C1A; font-weight: 500; }
+
+  .d-main { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 14px; }
+  .d-col { display: flex; flex-direction: column; gap: 8px; }
+
+  .d-sec-label { font-size: 8px; color: #888780; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 3px; }
+
+  .d-slot { border: 0.5px solid #DDD9CF; border-radius: 5px; padding: 5px 8px; background: #fff; display: flex; align-items: center; gap: 6px; }
+  .d-slot.filled { border-color: #2C2A24; }
+  .d-slot.active { border-color: #2C7A2C; border-width: 1.5px; }
+  .d-pos { font-size: 7px; font-weight: 500; background: #EAE7DF; color: #5F5E5A; padding: 1px 4px; border-radius: 3px; min-width: 22px; text-align: center; }
+  .d-pos.filled { background: #2C2A24; color: #F0EDE5; }
+  .d-pname { flex: 1; }
+  .d-player { font-size: 10px; color: #1C1C1A; font-weight: 500; line-height: 1.2; }
+  .d-pmeta { font-size: 8px; color: #888780; }
+  .d-pempty { font-size: 9px; color: #C0BDB5; }
+  .d-povr { font-size: 11px; font-weight: 500; color: #1C1C1A; }
+  .d-povr-e { font-size: 11px; color: #DDD9CF; }
+
+  .d-reroll { display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+  .d-rlabel { font-size: 8px; color: #888780; }
+  .d-rpip { width: 6px; height: 6px; border-radius: 50%; background: #1C1C1A; }
+  .d-rpip.used { background: #DDD9CF; }
+  .d-rmode { margin-left: auto; font-size: 8px; color: #888780; }
+  .d-rmode span { color: #1C1C1A; font-weight: 500; }
+
+  .d-pitch { background: #2D6A2D; border-radius: 6px; padding: 10px 8px 7px; position: relative; overflow: hidden; }
+  .d-pitch::before { content:''; position:absolute; top:50%; left:8%; right:8%; height:0.5px; background:rgba(255,255,255,0.15); }
+  .d-pitch::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:38px; height:38px; border-radius:50%; border:0.5px solid rgba(255,255,255,0.15); }
+  .d-prow { display:flex; justify-content:center; gap:5px; margin-bottom:7px; position:relative; z-index:1; }
+  .d-prow:last-child { margin-bottom:0; }
+  .d-pslot { display:flex; flex-direction:column; align-items:center; gap:1px; }
+  .d-pdot { width:22px; height:22px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; }
+  .d-pdot.filled { background:rgba(255,255,255,0.22); border-color:rgba(255,255,255,0.9); }
+  .d-pdot span { font-size:5.5px; color:rgba(255,255,255,0.9); font-weight:500; font-family:var(--font-mono); }
+  .d-pslotname { font-size:5.5px; color:rgba(255,255,255,0.65); max-width:32px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  .d-povrd { font-size:5.5px; color:#A8E6A8; font-family:var(--font-mono); }
+
+  .d-ovr { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:5px; }
+  .d-ocell { background:#EAE7DF; border-radius:4px; padding:5px 6px; }
+  .d-ocell.main { background:#1C1C1A; }
+  .d-olabel { font-size:7px; color:#888780; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1px; }
+  .d-ocell.main .d-olabel { color:#6B6B68; }
+  .d-oval { font-size:13px; font-weight:500; color:#1C1C1A; }
+  .d-ocell.main .d-oval { color:#F5C842; }
+
+  .d-bottom { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 14px 10px; }
+
+  .d-ttv { background:#0D1B4B; border-radius:5px; overflow:hidden; }
+  .d-ttv-top { padding:6px 10px 4px; border-bottom:1px solid #1A2E6E; display:flex; justify-content:space-between; }
+  .d-ttv-title { font-family:var(--font-mono); font-size:7px; color:#F5C842; letter-spacing:0.09em; }
+  .d-ttv-meta { font-family:var(--font-mono); font-size:7px; color:#7B9FD4; }
+  .d-ttv-wrap { padding:5px 8px 6px; }
+  .d-ttv-tbl { width:100%; font-family:var(--font-mono); font-size:8px; border-collapse:collapse; }
+  .d-ttv-tbl th { color:#7B9FD4; font-weight:400; padding:1px 2px; text-align:left; font-size:6.5px; text-transform:uppercase; letter-spacing:0.05em; border-bottom:0.5px solid #1A2E6E; }
+  .d-ttv-tbl th:not(:first-child):not(:nth-child(2)) { text-align:right; }
+  .d-ttv-tbl td { color:#C5D8F5; padding:2px 2px; font-size:7.5px; }
+  .d-ttv-tbl td:not(:first-child):not(:nth-child(2)) { text-align:right; }
+  .d-ttv-tbl tr.you td { color:#F5C842; }
+  .d-trank { color:#7B9FD4 !important; }
+
+  .d-res { background:#0D1B4B; border-radius:5px; overflow:hidden; }
+  .d-res-top { padding:6px 10px 4px; border-bottom:1px solid #1A2E6E; display:flex; justify-content:space-between; }
+  .d-res-title { font-family:var(--font-mono); font-size:7px; color:#F5C842; letter-spacing:0.09em; }
+  .d-res-meta { font-family:var(--font-mono); font-size:7px; color:#7B9FD4; }
+  .d-rrow { display:flex; align-items:center; font-family:var(--font-mono); font-size:7.5px; padding:2.5px 10px; gap:3px; border-bottom:0.5px solid #111F55; }
+  .d-rrow:last-child { border-bottom:none; }
+  .d-rrnd { color:#7B9FD4; width:12px; font-size:7px; flex-shrink:0; }
+  .d-rhome { color:#D8E4F5; flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .d-rhome.you,.d-raway.you { color:#F5C842; }
+  .d-rscore { color:#fff; width:22px; text-align:center; font-weight:500; flex-shrink:0; }
+  .d-rscore.win { color:#7DE87D; }
+  .d-rscore.loss { color:#E87D7D; }
+  .d-raway { color:#D8E4F5; flex:1; text-align:right; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+  /* ========== MOBILE ========== */
+  .mobile-frame { border: 1.5px solid var(--color-border-secondary); border-radius: 20px; overflow: hidden; }
+  .m-notch { background: #1C1C1A; height: 20px; display: flex; align-items: center; justify-content: center; }
+  .m-notch-bar { width: 44px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 3px; }
+  .m-wrap { background: #F8F6F1; font-family: var(--font-sans); }
+
+  .m-nav { background: #1C1C1A; padding: 6px 10px; display: flex; align-items: center; gap: 6px; }
+  .m-logo { font-size: 11px; font-weight: 500; color: #F0EDE5; }
+  .m-badge { font-size: 7px; background: #F5C842; color: #1C1C1A; padding: 1px 5px; border-radius: 7px; font-weight: 500; }
+  .m-menu { margin-left: auto; color: #6B6B68; font-size: 14px; }
+
+  .m-screen-header { padding: 8px 10px 5px; border-bottom: 0.5px solid #DDD9CF; }
+  .m-screen-title { font-size: 11px; font-weight: 500; color: #1C1C1A; }
+  .m-screen-sub { font-size: 8px; color: #888780; }
+
+  .m-draft { padding: 6px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .m-slot { border: 0.5px solid #DDD9CF; border-radius: 5px; padding: 5px 7px; background: #fff; display: flex; align-items: center; gap: 5px; }
+  .m-slot.filled { border-color: #2C2A24; }
+  .m-slot.active { border-color: #2C7A2C; border-width: 1.5px; }
+  .m-spos { font-size: 7px; font-weight: 500; background: #EAE7DF; color: #5F5E5A; padding: 1px 3px; border-radius: 2px; min-width: 20px; text-align: center; }
+  .m-spos.filled { background: #2C2A24; color: #F0EDE5; }
+  .m-sname { flex: 1; }
+  .m-splayer { font-size: 9px; color: #1C1C1A; font-weight: 500; line-height: 1.2; }
+  .m-smeta { font-size: 7.5px; color: #888780; }
+  .m-sempty { font-size: 8.5px; color: #C0BDB5; }
+  .m-sovr { font-size: 10px; font-weight: 500; color: #1C1C1A; }
+  .m-sovr-e { font-size: 10px; color: #DDD9CF; }
+
+  .m-reroll { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-top: 0.5px solid #EAE7DF; }
+  .m-rlabel { font-size: 8px; color: #888780; }
+  .m-rpip { width: 6px; height: 6px; border-radius: 50%; background: #1C1C1A; }
+  .m-rpip.used { background: #DDD9CF; }
+  .m-rbtn { margin-left: auto; font-size: 8px; background: #1C1C1A; color: #F0EDE5; border: none; border-radius: 3px; padding: 3px 7px; }
+
+  .m-tab-bar { background: #1C1C1A; display: flex; border-top: 0.5px solid #2C2C2A; }
+  .m-tab { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 5px 0 6px; gap: 1px; }
+  .m-tab.active .m-tab-icon { color: #F5C842; }
+  .m-tab-icon { font-size: 13px; color: #6B6B68; }
+  .m-tab-label { font-size: 7px; color: #6B6B68; letter-spacing: 0.04em; text-transform: uppercase; }
+  .m-tab.active .m-tab-label { color: #F5C842; }
+
+  .vote-row { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+  .vote-btn { font-size: 12px; padding: 6px 14px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); cursor: pointer; }
+  .vote-btn:hover { background: var(--color-background-secondary); }
+</style>
+
+<div style="padding:1rem 0;">
+<div class="layout">
+
+  <!-- DESKTOP -->
+  <div>
+    <div class="col-label">Desktop</div>
+    <div class="desktop">
+      <div class="d-wrap">
+        <div class="d-nav">
+          <span class="d-nav-logo">Allsvenskt 38-0</span>
+          <span class="d-nav-badge">PEAK MODE</span>
+          <div class="d-nav-links">
+            <span class="d-nav-link active">Draft</span>
+            <span class="d-nav-link">Formation</span>
+            <span class="d-nav-link">Säsong</span>
+            <span class="d-nav-link">Tabell</span>
+          </div>
+        </div>
+        <div class="d-tabs">
+          <span class="d-tab active">Välj spelare</span>
+          <span class="d-tab">Sätt formation</span>
+          <span class="d-tab">Spela säsong</span>
+        </div>
+        <div class="d-main">
+          <div class="d-col">
+            <div>
+              <div class="d-sec-label">Draftade · 5 av 11</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div class="d-slot filled"><span class="d-pos filled">GK</span><div class="d-pname"><div class="d-player">Andreas Isaksson</div><div class="d-pmeta">Djurgården · 2001</div></div><span class="d-povr">91</span></div>
+                <div class="d-slot filled"><span class="d-pos filled">CB</span><div class="d-pname"><div class="d-player">Olof Mellberg</div><div class="d-pmeta">AIK · 2002</div></div><span class="d-povr">89</span></div>
+                <div class="d-slot filled"><span class="d-pos filled">CB</span><div class="d-pname"><div class="d-player">Patrik Andersson</div><div class="d-pmeta">Malmö FF · 2003</div></div><span class="d-povr">86</span></div>
+                <div class="d-slot filled"><span class="d-pos filled">CM</span><div class="d-pname"><div class="d-player">Kim Källström</div><div class="d-pmeta">Djurgården · 2004</div></div><span class="d-povr">88</span></div>
+                <div class="d-slot active"><span class="d-pos">ST</span><div class="d-pname"><div class="d-player">Zlatan Ibrahimović</div><div class="d-pmeta">Malmö FF · 2001</div></div><span class="d-povr" style="color:#2C7A2C;">96</span></div>
+                <div class="d-slot"><span class="d-pos">LB</span><div class="d-pname"><div class="d-pempty">Inte draftad</div></div><span class="d-povr-e">—</span></div>
+              </div>
+              <div class="d-reroll">
+                <span class="d-rlabel">Rerolls:</span>
+                <span class="d-rpip"></span><span class="d-rpip"></span><span class="d-rpip used"></span>
+                <span class="d-rmode" style="margin-left:auto;">Formation: <span>4-3-3</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="d-col">
+            <div>
+              <div class="d-sec-label">Formation</div>
+              <div class="d-pitch">
+                <div class="d-prow"><div class="d-pslot"><div class="d-pdot filled"><span>ST</span></div><div class="d-pslotname">Ibrahimović</div><div class="d-povrd">96</div></div></div>
+                <div class="d-prow">
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>LW</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                  <div class="d-pslot"><div class="d-pdot filled"><span>CM</span></div><div class="d-pslotname">Källström</div><div class="d-povrd">88</div></div>
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>RW</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                </div>
+                <div class="d-prow">
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>CM</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>CDM</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                </div>
+                <div class="d-prow">
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>LB</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                  <div class="d-pslot"><div class="d-pdot filled"><span>CB</span></div><div class="d-pslotname">Mellberg</div><div class="d-povrd">89</div></div>
+                  <div class="d-pslot"><div class="d-pdot filled"><span>CB</span></div><div class="d-pslotname">Andersson</div><div class="d-povrd">86</div></div>
+                  <div class="d-pslot"><div class="d-pdot" style="opacity:.4"><span>RB</span></div><div class="d-pslotname" style="color:rgba(255,255,255,.3)">—</div></div>
+                </div>
+                <div class="d-prow"><div class="d-pslot"><div class="d-pdot filled"><span>GK</span></div><div class="d-pslotname">Isaksson</div><div class="d-povrd">91</div></div></div>
+              </div>
+            </div>
+            <div class="d-ovr">
+              <div class="d-ocell main"><div class="d-olabel">Overall</div><div class="d-oval">87</div></div>
+              <div class="d-ocell"><div class="d-olabel">Attack</div><div class="d-oval">96</div></div>
+              <div class="d-ocell"><div class="d-olabel">Mitt</div><div class="d-oval">88</div></div>
+              <div class="d-ocell"><div class="d-olabel">Försvar</div><div class="d-oval">88</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="d-bottom">
+          <div class="d-ttv">
+            <div class="d-ttv-top"><span class="d-ttv-title">SVT TEXT-TV · SID 378 · ALLSVENSKAN</span><span class="d-ttv-meta">OMG 12/30</span></div>
+            <div class="d-ttv-wrap">
+              <table class="d-ttv-tbl">
+                <thead><tr><th style="width:10px;">#</th><th>Lag</th><th>S</th><th>V</th><th>O</th><th>F</th><th>+/-</th><th>P</th></tr></thead>
+                <tbody>
+                  <tr class="you"><td class="d-trank">1</td><td>DITT LAG</td><td>12</td><td>9</td><td>1</td><td>2</td><td>+17</td><td>28</td></tr>
+                  <tr><td class="d-trank">2</td><td>Malmö FF</td><td>12</td><td>8</td><td>2</td><td>2</td><td>+14</td><td>26</td></tr>
+                  <tr><td class="d-trank">3</td><td>AIK</td><td>12</td><td>7</td><td>2</td><td>3</td><td>+8</td><td>23</td></tr>
+                  <tr><td class="d-trank">4</td><td>Djurgården</td><td>12</td><td>6</td><td>3</td><td>3</td><td>+5</td><td>21</td></tr>
+                  <tr><td class="d-trank">5</td><td>Göteborg</td><td>12</td><td>6</td><td>1</td><td>5</td><td>+2</td><td>19</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="d-res">
+            <div class="d-res-top"><span class="d-res-title">DINA MATCHER</span><span class="d-res-meta">12 SPELADE</span></div>
+            <div class="d-rrow"><span class="d-rrnd">1</span><span class="d-rhome you">Ditt lag</span><span class="d-rscore win">3–1</span><span class="d-raway">AIK</span></div>
+            <div class="d-rrow"><span class="d-rrnd">2</span><span class="d-rhome">Malmö FF</span><span class="d-rscore loss">0–2</span><span class="d-raway you">Ditt lag</span></div>
+            <div class="d-rrow"><span class="d-rrnd">3</span><span class="d-rhome you">Ditt lag</span><span class="d-rscore win">4–0</span><span class="d-raway">Göteborg</span></div>
+            <div class="d-rrow"><span class="d-rrnd">4</span><span class="d-rhome">Djurgården</span><span class="d-rscore" style="color:#F5C842;">1–1</span><span class="d-raway you">Ditt lag</span></div>
+            <div class="d-rrow"><span class="d-rrnd">5</span><span class="d-rhome you">Ditt lag</span><span class="d-rscore win">2–0</span><span class="d-raway">Hammarby</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE -->
+  <div>
+    <div class="col-label">Mobil</div>
+    <div class="mobile-frame">
+      <div class="m-notch"><div class="m-notch-bar"></div></div>
+      <div class="m-wrap">
+        <div class="m-nav">
+          <span class="m-logo">38-0</span>
+          <span class="m-badge">PEAK</span>
+          <span class="m-menu" style="margin-left:auto;"><i class="ti ti-menu-2" aria-hidden="true"></i></span>
+        </div>
+        <div class="m-screen-header">
+          <div class="m-screen-title">Välj spelare</div>
+          <div class="m-screen-sub">5 av 11 · 4-3-3</div>
+        </div>
+        <div class="m-draft">
+          <div class="m-slot filled"><span class="m-spos filled">GK</span><div class="m-sname"><div class="m-splayer">A. Isaksson</div><div class="m-smeta">Djurgården · 2001</div></div><span class="m-sovr">91</span></div>
+          <div class="m-slot filled"><span class="m-spos filled">CB</span><div class="m-sname"><div class="m-splayer">O. Mellberg</div><div class="m-smeta">AIK · 2002</div></div><span class="m-sovr">89</span></div>
+          <div class="m-slot filled"><span class="m-spos filled">CB</span><div class="m-sname"><div class="m-splayer">P. Andersson</div><div class="m-smeta">Malmö FF · 2003</div></div><span class="m-sovr">86</span></div>
+          <div class="m-slot filled"><span class="m-spos filled">CM</span><div class="m-sname"><div class="m-splayer">K. Källström</div><div class="m-smeta">Djurgården · 2004</div></div><span class="m-sovr">88</span></div>
+          <div class="m-slot active"><span class="m-spos">ST</span><div class="m-sname"><div class="m-splayer">Z. Ibrahimović</div><div class="m-smeta">Malmö FF · 2001</div></div><span class="m-sovr" style="color:#2C7A2C;">96</span></div>
+          <div class="m-slot"><span class="m-spos">LB</span><div class="m-sname"><div class="m-sempty">Inte draftad</div></div><span class="m-sovr-e">—</span></div>
+        </div>
+        <div class="m-reroll">
+          <span class="m-rlabel">Rerolls:</span>
+          <span class="m-rpip"></span><span class="m-rpip"></span><span class="m-rpip used"></span>
+          <button class="m-rbtn">Rerolla</button>
+        </div>
+        <div class="m-tab-bar">
+          <div class="m-tab active"><i class="ti ti-cards m-tab-icon" aria-hidden="true"></i><span class="m-tab-label">Draft</span></div>
+          <div class="m-tab"><i class="ti ti-layout-distribute-vertical m-tab-icon" aria-hidden="true"></i><span class="m-tab-label">Formation</span></div>
+          <div class="m-tab"><i class="ti ti-trophy m-tab-icon" aria-hidden="true"></i><span class="m-tab-label">Säsong</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="vote-row">
+  <button class="vote-btn" onclick="sendPrompt('Det här är rätt, bygg design-dokumentet nu')">Bygg designdokumentet ↗</button>
+  <button class="vote-btn" onclick="sendPrompt('Tweaka: jag vill se säsongsvyn sida vid sida istället för draftvyn')">Visa säsongsvyn ↗</button>
+  <button class="vote-btn" onclick="sendPrompt('Tweaka: gör navbadgen rund istället för pill')">Rund badge ↗</button>
+</div>
+</div>

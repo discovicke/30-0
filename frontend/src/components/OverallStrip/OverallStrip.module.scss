@@ -1,0 +1,41 @@
+@use '../../styles/variables' as *;
+
+.strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 5px;
+}
+
+.cell {
+  background: $sand-surface;
+  border-radius: 4px;
+  padding: 5px 6px;
+
+  &.main {
+    background: $ink;
+  }
+}
+
+.label {
+  display: block;
+  font-size: 7px;
+  color: $ink-ghost;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1px;
+
+  .main & {
+    color: $chrome-muted;
+  }
+}
+
+.value {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: $ink;
+
+  .main & {
+    color: $badge-yellow;
+  }
+}

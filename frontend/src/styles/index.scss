@@ -14,8 +14,8 @@ html {
 
 body {
   font-family: $font-sans;
-  background: $color-bg;
-  color: $color-text;
+  background: $sand-bg;
+  color: $ink;
   min-height: 100vh;
   line-height: 1.5;
 }
@@ -27,7 +27,7 @@ body {
 }
 
 a {
-  color: $color-primary;
+  color: $ink;
   text-decoration: none;
 }
 
@@ -43,15 +43,24 @@ input, select {
   font-size: 0.875rem;
 }
 
+::selection {
+  background: rgba($badge-yellow, 0.3);
+  color: $ink;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: $color-surface;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $color-border;
+  background: rgba($ink-ghost, 0.2);
   border-radius: 3px;
+
+  &:hover {
+    background: rgba($ink-ghost, 0.35);
+  }
 }

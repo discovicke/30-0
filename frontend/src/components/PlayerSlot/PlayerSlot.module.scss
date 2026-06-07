@@ -1,0 +1,104 @@
+@use '../../styles/variables' as *;
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  background: $sand-white;
+  text-align: left;
+  transition: border-color 0.15s;
+
+  &.filled {
+    border-color: $ink;
+  }
+
+  &.active {
+    border-color: $active-green;
+    border-width: 1.5px;
+  }
+
+  &.muted {
+    opacity: 0.35;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled) {
+    border-color: $ink;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.posBadge {
+  font-size: 7px;
+  font-weight: 500;
+  background: $sand-surface;
+  color: $ink-muted;
+  padding: 1px 4px;
+  border-radius: 3px;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+
+  &.posFilled {
+    background: $ink;
+    color: $chrome-text;
+  }
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 10px;
+  color: $ink;
+  font-weight: 500;
+  line-height: 1.2;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: 8px;
+  color: $ink-ghost;
+  line-height: 1.2;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyText {
+  font-size: 9px;
+  color: $ink-disabled;
+}
+
+.ovr {
+  font-size: 11px;
+  font-weight: 500;
+  color: $ink;
+  flex-shrink: 0;
+  min-width: 18px;
+  text-align: right;
+}
+
+.ovrActive {
+  color: $active-green;
+}
+
+.ovrEmpty {
+  font-size: 11px;
+  color: $ink-disabled;
+  flex-shrink: 0;
+  min-width: 18px;
+  text-align: right;
+}
