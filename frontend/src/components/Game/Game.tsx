@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GameConfig, GamePhase, Squad } from '../../types';
+import type { GameConfig, GamePhase, Squad, RatingMode } from '../../types';
 import Navbar from '../Navbar/Navbar';
 import GameSetup from '../GameSetup/GameSetup';
 import DraftPhase from '../DraftPhase/DraftPhase';
@@ -13,13 +13,15 @@ export default function Game() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    loadData();
+    loadData('season');
   }, []);
 
-  async function loadData() {
+  async function loadData(mode: RatingMode) {
+    setLoading(true);
     try {
-      const resp = await fetch('/data/squads.json');
-      if (!resp.ok) throw new Error('Failed to load squads data');
+      const url = mode === 'peak' ? '/data/squads_peak.json' : '/data/squads.json';
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`Failed to load ${mode} squads data`);
       const data: Squad[] = await resp.json();
       setSquads(data);
     } catch (err) {
@@ -29,8 +31,10 @@ export default function Game() {
     }
   }
 
-  const handleStart = useCallback((c: GameConfig) => {
+  const handleStart = useCallback(async (c: GameConfig) => {
     setConfig(c);
+    // Reload data if mode changed, or just reload to be safe and show loading state
+    await loadData(c.ratingMode);
     setPhase('draft');
   }, []);
 
