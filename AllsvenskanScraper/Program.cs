@@ -184,11 +184,35 @@ class Program
         foreach (var file in Directory.GetFiles(playersDir, "*.json").OrderBy(f => f))
         {
             var json = await File.ReadAllTextAsync(file);
-            var players = JsonSerializer.Deserialize<List<PlayerSeason>>(json) ?? [];
+            var players = JsonSerializer.Deserialize<List<PlayerSeason>>(json, FbrefScraper.JsonOpts) ?? [];
             allPlayers.AddRange(players);
         }
 
         Console.WriteLine($"Loaded {allPlayers.Count} player-seasons for computation");
+
+        // Compute derived per90 stats
+        foreach (var p in allPlayers)
+        {
+            if (p.Minutes <= 0) continue;
+            var factor = 90.0 / p.Minutes;
+
+            if (p.Stats.TryGetValue("goals_pens", out var gp))
+                p.Stats["goals_pens_per90"] = Math.Round(gp * factor, 4);
+            if (p.Stats.TryGetValue("pens_att", out var pa))
+                p.Stats["pens_att_per90"] = Math.Round(pa * factor, 4);
+            if (p.Stats.TryGetValue("pens_made", out var pm))
+                p.Stats["pens_made_per90"] = Math.Round(pm * factor, 4);
+            if (p.Stats.TryGetValue("cards_yellow", out var cy))
+                p.Stats["cards_yellow_per90"] = Math.Round(cy * factor, 4);
+            if (p.Stats.TryGetValue("cards_red", out var cr))
+                p.Stats["cards_red_per90"] = Math.Round(cr * factor, 4);
+            if (p.Stats.TryGetValue("goals_against", out var ga))
+                p.Stats["goals_against_per90"] = Math.Round(ga * factor, 4);
+            if (p.Stats.TryGetValue("saves", out var sv))
+                p.Stats["saves_per90"] = Math.Round(sv * factor, 4);
+            if (p.Stats.TryGetValue("clean_sheets", out var cs))
+                p.Stats["clean_sheets_per90"] = Math.Round(cs * factor, 4);
+        }
 
         // Generate baselines
         var baselines = new List<SeasonBaseline>();
@@ -222,7 +246,7 @@ class Program
         await File.WriteAllTextAsync(Path.Combine(dataDir, "baselines", "baselines.json"), blJson);
         Console.WriteLine($"Baselines saved: {baselines.Count} position-seasons");
 
-        // Calculate OVR
+        // Calculate raw OVR
         var computed = 0;
         foreach (var player in allPlayers)
         {
@@ -254,8 +278,85 @@ class Program
                 normStats[key] = Math.Clamp(ZScoreToPercentile(z) * 99, 1, 99);
             }
 
-            player.Ovr = Math.Round(CalculateWeightedOvr(broadPos, normStats), 1);
+            var rawOvr = CalculateWeightedOvr(broadPos, normStats);
+            player.Ovr = Math.Round(rawOvr, 1);
             computed++;
+        }
+
+        // Compute team strength and adjust OVR
+        var teamSeasonStats = allPlayers
+            .Where(p => p.Minutes >= 500 && p.Ovr.HasValue)
+            .GroupBy(p => (p.Season, p.Team))
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var totalMin = g.Sum(p => p.Minutes);
+                    return (
+                        AvgGoalsPer90: g.Sum(p => p.Stats.GetValueOrDefault("goals_per90", 0) * p.Minutes) / (double)totalMin,
+                        AvgOvr: g.Sum(p => p.Ovr!.Value * p.Minutes) / (double)totalMin
+                    );
+                });
+
+        var seasonAvgOvr = allPlayers
+            .Where(p => p.Minutes >= 500 && p.Ovr.HasValue)
+            .GroupBy(p => p.Season)
+            .ToDictionary(
+                g => g.Key,
+                g =>
+                {
+                    var totalMin = g.Sum(p => p.Minutes);
+                    return g.Sum(p => p.Ovr!.Value * p.Minutes) / (double)totalMin;
+                });
+
+        foreach (var player in allPlayers)
+        {
+            if (!player.Ovr.HasValue) continue;
+
+            var tsKey = (player.Season, player.Team);
+            if (!teamSeasonStats.TryGetValue(tsKey, out var ts)) continue;
+            if (!seasonAvgOvr.TryGetValue(player.Season, out var leagueOvr)) continue;
+
+            // Compute team strength factor relative to league
+            // teamFactor > 1 → stronger team, player benefits → slight discount
+            // teamFactor < 1 → weaker team, player carries → bonus
+            var teamFactor = ts.AvgOvr / leagueOvr;
+            var adjustment = 1.0 + (1.0 - teamFactor) * 0.15;
+            adjustment = Math.Clamp(adjustment, 0.85, 1.15);
+
+            // For defenders: if team concedes more (proxy: more tackles), discount defensive stats
+            var broadPos = player.BroadPositions.Count > 0 ? player.BroadPositions[0] : "Unknown";
+            if (broadPos == "DF" || broadPos == "GK")
+            {
+                var teamGoalRatio = ts.AvgGoalsPer90 / Math.Max(allPlayers
+                    .Where(p => p.Season == player.Season && p.Minutes >= 500)
+                    .Average(p => p.Stats.GetValueOrDefault("goals_per90", 0)), 0.01);
+                // If team scores a lot (strong attack), add slight discount for DF/GK
+                if (teamGoalRatio > 1.15)
+                    adjustment *= 0.97;
+            }
+
+            player.Ovr = Math.Round(player.Ovr.Value * adjustment, 1);
+        }
+
+        // Scale OVR to target display range
+        var allWithOvr = allPlayers.Where(p => p.Ovr.HasValue).ToList();
+        if (allWithOvr.Count > 0)
+        {
+            var rawMin = allWithOvr.Min(p => p.Ovr!.Value);
+            var rawMax = allWithOvr.Max(p => p.Ovr!.Value);
+
+            foreach (var player in allWithOvr)
+            {
+                // Linear scaling: worst → 50, best → 95, clamped
+                var scaled = 45.0 + player.Ovr!.Value * 0.45;
+                player.Ovr = Math.Round(Math.Clamp(scaled, 40, 99), 1);
+            }
+
+            var finalMin = allWithOvr.Min(p => p.Ovr!.Value);
+            var finalMax = allWithOvr.Max(p => p.Ovr!.Value);
+            var finalAvg = allWithOvr.Average(p => p.Ovr!.Value);
+            Console.WriteLine($"OVR range: {finalMin:F1} – {finalMax:F1} (avg {finalAvg:F1}), raw was {rawMin:F1} – {rawMax:F1}");
         }
 
         // Save updated players with OVR
@@ -282,49 +383,77 @@ class Program
         var p = 0.3275911;
 
         var sign = z < 0 ? -1 : 1;
-        z = Math.Abs(z);
-        var t = 1.0 / (1.0 + p * z);
-        var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.Exp(-z * z);
-        return Math.Clamp(0.5 * (1.0 + sign * (1.0 - y)), 0, 1);
+        var x = Math.Abs(z) / Math.Sqrt(2);
+        var t = 1.0 / (1.0 + p * x);
+        var erf = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.Exp(-x * x);
+        return Math.Clamp(0.5 * (1.0 + sign * erf), 0, 1);
     }
 
     static double CalculateWeightedOvr(string pos, Dictionary<string, double> norm)
     {
         double S(string key) => norm.GetValueOrDefault(key, 50);
 
-        return pos switch
+        var weightTable = pos switch
         {
-            "FW" => S("goals_per90") * 0.35
-                  + S("assists_per90") * 0.15
-                  + S("xg_per90") * 0.25
-                  + S("xag_per90") * 0.10
-                  + S("progressive_carries_per90") * 0.15,
-
-            "MF" => S("goals_per90") * 0.15
-                  + S("assists_per90") * 0.20
-                  + S("xg_per90") * 0.10
-                  + S("xag_per90") * 0.15
-                  + S("progressive_carries_per90") * 0.10
-                  + S("progressive_passes_per90") * 0.10
-                  + S("tackles_won_per90") * 0.10
-                  + S("interceptions_per90") * 0.10,
-
-            "DF" => S("goals_per90") * 0.05
-                  + S("assists_per90") * 0.05
-                  + S("tackles_won_per90") * 0.25
-                  + S("interceptions_per90") * 0.25
-                  + S("progressive_passes_per90") * 0.15
-                  + S("clearances_per90") * 0.10
-                  + S("blocks_per90") * 0.10
-                  + S("xg_per90") * 0.05,
-
-            "GK" => S("save_pct") * 0.35
-                  + S("clean_sheets_pct") * 0.25
-                  + S("psxg_net") * 0.25
-                  + S("crosses_stopped_pct") * 0.15,
-
-            _ => norm.Values.Average()
+            "FW" => new (string key, double w)[]
+            {
+                ("goals_per90", 0.30),
+                ("assists_per90", 0.15),
+                ("shots_on_target_per90", 0.15),
+                ("goals_per_shot", 0.10),
+                ("shots_on_target_pct", 0.08),
+                ("tackles_won_per90", 0.07),
+                ("goals_pens_per90", 0.05),
+                ("interceptions_per90", 0.05),
+                ("goals_per_shot_on_target", 0.05),
+            },
+            "MF" => new (string key, double w)[]
+            {
+                ("goals_per90", 0.15),
+                ("assists_per90", 0.18),
+                ("tackles_won_per90", 0.20),
+                ("interceptions_per90", 0.15),
+                ("shots_on_target_per90", 0.10),
+                ("goals_per_shot", 0.05),
+                ("shots_on_target_pct", 0.05),
+                ("goals_pens_per90", 0.05),
+                ("goals_per_shot_on_target", 0.04),
+                ("crosses_per90", 0.03),
+            },
+            "DF" => new (string key, double w)[]
+            {
+                ("tackles_won_per90", 0.30),
+                ("interceptions_per90", 0.25),
+                ("goals_per90", 0.10),
+                ("assists_per90", 0.10),
+                ("goals_per_shot", 0.05),
+                ("shots_on_target_per90", 0.05),
+                ("shots_on_target_pct", 0.05),
+                ("goals_per_shot_on_target", 0.05),
+                ("goals_pens_per90", 0.05),
+            },
+            "GK" => new (string key, double w)[]
+            {
+                ("tackles_won_per90", 0.30),
+                ("interceptions_per90", 0.25),
+                ("assists_per90", 0.20),
+                ("goals_per90", 0.15),
+                ("shots_on_target_pct", 0.10),
+            },
+            _ => new (string key, double w)[] { }
         };
+
+        double total = 0, totalWeight = 0;
+        foreach (var (key, w) in weightTable)
+        {
+            if (norm.ContainsKey(key))
+            {
+                total += w * S(key);
+                totalWeight += w;
+            }
+        }
+
+        return totalWeight > 0 ? total / totalWeight : 50;
     }
 }
 
@@ -340,7 +469,7 @@ public class FbrefScraper : IAsyncDisposable
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IBrowserContext? _context;
-    private static readonly JsonSerializerOptions JsonOpts = new()
+    internal static readonly JsonSerializerOptions JsonOpts = new()
     {
         WriteIndented = false,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -393,6 +522,14 @@ public class FbrefScraper : IAsyncDisposable
                 "stats_defense", ParseDefensiveRow));
             pages.Add(($"https://fbref.com/en/comps/29/{year}/possession/{year}-Allsvenskan-Stats",
                 "stats_possession", ParsePossessionRow));
+        }
+
+        if (hasAdvanced)
+        {
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/misc/{year}-Allsvenskan-Stats",
+                "stats_misc", ParseMiscRow));
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/playingtime/{year}-Allsvenskan-Stats",
+                "stats_playing_time", ParsePlayingTimeRow));
         }
 
         pages.Add(($"https://fbref.com/en/comps/29/{year}/keepers/{year}-Allsvenskan-Stats",
@@ -494,24 +631,34 @@ public class FbrefScraper : IAsyncDisposable
         Action<IElement, PlayerSeason> parseRow,
         Dictionary<string, PlayerSeason> players)
     {
-        var path = GetLocalHtmlPath(year, tableId);
-        if (!File.Exists(path))
+        var dir = Path.Combine(_dataDir, "pages", year.ToString());
+        if (!Directory.Exists(dir))
         {
-            Console.Error.WriteLine($"  Table #{tableId}: filen {path} finns inte, hoppar över");
+            Console.Error.WriteLine($"  Table #{tableId}: katalogen {dir} finns inte");
             return;
         }
-        var html = await File.ReadAllTextAsync(path);
-        var config = Configuration.Default;
-        var ctx = BrowsingContext.New(config);
-        var doc = await ctx.OpenAsync(req => req.Content(html));
-        var table = doc.QuerySelector($"table#{tableId}");
-        if (table == null)
+
+        // Läs alla .html-filer i katalogen och hitta den som innehåller rätt tabell-ID
+        foreach (var file in Directory.GetFiles(dir, "*.html"))
         {
-            Console.Error.WriteLine($"  Table #{tableId} not found in {path}");
+            var html = await File.ReadAllTextAsync(file);
+            if (!html.Contains($"id=\"{tableId}\"")) continue;
+
+            var config = Configuration.Default;
+            var ctx = BrowsingContext.New(config);
+            var doc = await ctx.OpenAsync(req => req.Content(html));
+            var table = doc.QuerySelector($"table#{tableId}");
+            if (table == null)
+            {
+                Console.Error.WriteLine($"  Table #{tableId} nämns i {file} men hittades inte");
+                return;
+            }
+            ParseTableRows(table, year, players, parseRow);
+            Console.WriteLine($"  -> {Path.GetFileName(file)} OK");
             return;
         }
-        ParseTableRows(table, year, players, parseRow);
-        Console.WriteLine($"  -> {path} OK");
+
+        Console.Error.WriteLine($"  Table #{tableId} hittades inte i någon fil i {dir}");
     }
 
     private async Task ParseTableAsync(
@@ -598,7 +745,7 @@ public class FbrefScraper : IAsyncDisposable
     {
         SetCellStr(row, "nationality", v => player.Nationality = v);
         SetCellInt(row, "age", v => player.Age = v);
-        SetCellStr(row, "pos", v =>
+        SetCellStr(row, "position", v =>
         {
             var parts = v.Split(',').Select(p => p.Trim()).Where(p => p.Length > 0).ToList();
             player.BroadPositions = parts;
@@ -736,6 +883,26 @@ public class FbrefScraper : IAsyncDisposable
         SetStat(row, "crosses_stopped_pct", "crosses_stopped_pct", player);
     }
 
+    private void ParseMiscRow(IElement row, PlayerSeason player)
+    {
+        SetPer90(row, "fouls", "fouls_per90", player);
+        SetPer90(row, "fouled", "fouled_per90", player);
+        SetPer90(row, "offsides", "offsides_per90", player);
+        SetPer90(row, "crosses", "crosses_per90", player);
+        SetPer90(row, "pens_won", "pens_won_per90", player);
+        SetPer90(row, "pens_conceded", "pens_conceded_per90", player);
+        SetStat(row, "cards_yellow", "cards_yellow", player);
+        SetStat(row, "cards_red", "cards_red", player);
+    }
+
+    private void ParsePlayingTimeRow(IElement row, PlayerSeason player)
+    {
+        SetStat(row, "minutes_per90", "minutes_per90", player);
+        SetStat(row, "minutes_midfield", "minutes_midfield", player);
+        SetStat(row, "minutes_at_am", "minutes_at_am", player);
+        SetStat(row, "minutes_at_fw", "minutes_at_fw", player);
+    }
+
     // Helpers 
 
     private static string MakeId(string name, string team, int year)
@@ -767,8 +934,12 @@ public class FbrefScraper : IAsyncDisposable
     private static void SetCellInt(IElement row, string dataStat, Action<int> set)
     {
         var cell = row.QuerySelector($"td[data-stat='{dataStat}']");
-        if (cell != null && int.TryParse(cell.TextContent.Trim(), out var val))
-            set(val);
+        if (cell != null)
+        {
+            var text = cell.TextContent.Trim().Replace(",", "");
+            if (int.TryParse(text, out var val))
+                set(val);
+        }
     }
 
     private static void SetCellDouble(IElement row, string dataStat, Action<double> set)
@@ -776,7 +947,7 @@ public class FbrefScraper : IAsyncDisposable
         var cell = row.QuerySelector($"td[data-stat='{dataStat}']");
         if (cell != null)
         {
-            var text = cell.TextContent.Trim();
+            var text = cell.TextContent.Trim().Replace(",", "");
             if (double.TryParse(text, System.Globalization.NumberStyles.Any,
                     System.Globalization.CultureInfo.InvariantCulture, out var val))
                 set(val);
