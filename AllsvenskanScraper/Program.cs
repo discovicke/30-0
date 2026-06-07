@@ -49,31 +49,37 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        var command = args.Length > 0 ? args[0].ToLower() : "help";
+        var headless = !args.Contains("--headed");
+        var debug = args.Contains("--debug");
+        var local = args.Contains("--local");
+        var cleanArgs = args.Where(a => !a.StartsWith("--")).ToArray();
+        var command = cleanArgs.Length > 0 ? cleanArgs[0].ToLower() : "help";
 
         switch (command)
         {
             case "scrape":
-                await RunScrape(args.Length > 1 ? int.Parse(args[1]) : 2025,
-                               args.Length > 2 ? int.Parse(args[2]) : 2025);
+                await RunScrape(
+                    cleanArgs.Length > 1 ? int.Parse(cleanArgs[1]) : 2025,
+                    cleanArgs.Length > 2 ? int.Parse(cleanArgs[2]) : 2025,
+                    headless, debug, local);
                 break;
             case "compute":
                 await RunCompute();
                 break;
             case "all":
-                await RunScrape(2025, 2001);
+                await RunScrape(2025, 2001, headless, debug, local);
                 await RunCompute();
                 break;
             default:
                 Console.WriteLine("Usage:");
-                Console.WriteLine("  dotnet run -- scrape [startYear] [endYear]");
+                Console.WriteLine("  dotnet run -- scrape [startYear] [endYear] [--headed] [--debug] [--local]");
                 Console.WriteLine("  dotnet run -- compute");
-                Console.WriteLine("  dotnet run -- all");
+                Console.WriteLine("  dotnet run -- all [--headed] [--debug] [--local]");
                 Console.WriteLine();
                 Console.WriteLine("Examples:");
-                Console.WriteLine("  dotnet run -- scrape 2025 2025    # only 2025");
-                Console.WriteLine("  dotnet run -- scrape 2025 2014    # 2025-2014");
-                Console.WriteLine("  dotnet run -- all                 # everything");
+                Console.WriteLine("  dotnet run -- scrape 2025           # live (kräver --headed för CF)");
+                Console.WriteLine("  dotnet run -- scrape 2025 2025 --local  # läs från data/pages/2025/");
+                Console.WriteLine("  dotnet run -- all --local               # alla år lokalt");
                 break;
         }
     }
@@ -84,14 +90,25 @@ class Program
         return Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "data");
     }
 
-    static async Task RunScrape(int startYear, int endYear)
+    static async Task RunScrape(int startYear, int endYear, bool headless = true, bool debug = false, bool local = false)
     {
         var dataDir = GetDataDir();
         Directory.CreateDirectory(Path.Combine(dataDir, "players"));
         Directory.CreateDirectory(Path.Combine(dataDir, "teams"));
         Directory.CreateDirectory(Path.Combine(dataDir, "baselines"));
 
-        var scraper = new FbrefScraper(dataDir);
+        var debugDir = debug
+            ? Directory.CreateDirectory(Path.Combine(dataDir, "debug")).FullName
+            : null;
+
+        var scraper = new FbrefScraper(dataDir, headless, local, debugDir);
+
+        // Skapa pages-kataloger om --local används
+        if (local)
+        {
+            for (var y = startYear; y >= endYear; y--)
+                Directory.CreateDirectory(Path.Combine(dataDir, "pages", y.ToString()));
+        }
         var allTeams = new Dictionary<string, TeamEntry>();
 
         var years = new List<int>();
@@ -316,6 +333,10 @@ class Program
 public class FbrefScraper : IAsyncDisposable
 {
     private readonly string _dataDir;
+    private readonly bool _headless;
+    private readonly bool _localMode;
+    private readonly string? _debugDir;
+    private bool _debugWritten;
     private IPlaywright? _playwright;
     private IBrowser? _browser;
     private IBrowserContext? _context;
@@ -325,69 +346,78 @@ public class FbrefScraper : IAsyncDisposable
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public FbrefScraper(string dataDir)
+    public FbrefScraper(string dataDir, bool headless = true, bool localMode = false, string? debugDir = null)
     {
         _dataDir = dataDir;
+        _headless = headless;
+        _localMode = localMode;
+        _debugDir = debugDir;
     }
 
     private async Task EnsureBrowserAsync()
     {
         if (_context != null) return;
         _playwright = await Playwright.CreateAsync();
+
+        // Använd systemets riktiga Chrome om möjligt (undviker Cloudflare-detektion)
         _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = true
+            Channel = "chrome",
+            Headless = _headless,
+            Args = ["--disable-blink-features=AutomationControlled"]
         });
         _context = await _browser.NewContextAsync(new BrowserNewContextOptions
         {
-            UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            Locale = "en-US"
         });
     }
 
     public async Task<List<PlayerSeason>> ScrapeSeasonAsync(int year)
     {
-        await EnsureBrowserAsync();
         var hasAdvanced = year >= 2014;
         var players = new Dictionary<string, PlayerSeason>();
+        var pages = new List<(string url, string tableId, Action<IElement, PlayerSeason> parser)>();
 
-        await ParseTableAsync(
+        pages.Add((
             $"https://fbref.com/en/comps/29/{year}/stats/{year}-Allsvenskan-Stats",
-            "stats_standard", year, players, ParseStandardRow);
+            "stats_standard", ParseStandardRow));
 
         if (hasAdvanced)
         {
-            await Task.Delay(4000);
-            await ParseTableAsync(
-                $"https://fbref.com/en/comps/29/{year}/shooting/{year}-Allsvenskan-Stats",
-                "stats_shooting", year, players, ParseShootingRow);
-
-            await Task.Delay(4000);
-            await ParseTableAsync(
-                $"https://fbref.com/en/comps/29/{year}/passing/{year}-Allsvenskan-Stats",
-                "stats_passing", year, players, ParsePassingRow);
-
-            await Task.Delay(4000);
-            await ParseTableAsync(
-                $"https://fbref.com/en/comps/29/{year}/defense/{year}-Allsvenskan-Stats",
-                "stats_defense", year, players, ParseDefensiveRow);
-
-            await Task.Delay(4000);
-            await ParseTableAsync(
-                $"https://fbref.com/en/comps/29/{year}/possession/{year}-Allsvenskan-Stats",
-                "stats_possession", year, players, ParsePossessionRow);
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/shooting/{year}-Allsvenskan-Stats",
+                "stats_shooting", ParseShootingRow));
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/passing/{year}-Allsvenskan-Stats",
+                "stats_passing", ParsePassingRow));
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/defense/{year}-Allsvenskan-Stats",
+                "stats_defense", ParseDefensiveRow));
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/possession/{year}-Allsvenskan-Stats",
+                "stats_possession", ParsePossessionRow));
         }
 
-        await Task.Delay(4000);
-        await ParseTableAsync(
-            $"https://fbref.com/en/comps/29/{year}/keepers/{year}-Allsvenskan-Stats",
-            "stats_keeper", year, players, ParseGkRow);
+        pages.Add(($"https://fbref.com/en/comps/29/{year}/keepers/{year}-Allsvenskan-Stats",
+            "stats_keeper", ParseGkRow));
 
         if (hasAdvanced)
         {
-            await Task.Delay(4000);
-            await ParseTableAsync(
-                $"https://fbref.com/en/comps/29/{year}/keepers/adv/{year}-Allsvenskan-Stats",
-                "stats_keeper_adv", year, players, ParseGkAdvRow);
+            pages.Add(($"https://fbref.com/en/comps/29/{year}/keepers/adv/{year}-Allsvenskan-Stats",
+                "stats_keeper_adv", ParseGkAdvRow));
+        }
+
+        if (_localMode)
+        {
+            foreach (var (url, tableId, parser) in pages)
+                await ParseTableLocalAsync(year, tableId, parser, players);
+        }
+        else
+        {
+            await EnsureBrowserAsync();
+            for (var i = 0; i < pages.Count; i++)
+            {
+                var (url, tableId, parser) = pages[i];
+                if (i > 0) await Task.Delay(4000);
+                await ParseTableAsync(url, tableId, year, players, parser);
+            }
         }
 
         foreach (var p in players.Values)
@@ -409,17 +439,79 @@ public class FbrefScraper : IAsyncDisposable
         var page = await _context!.NewPageAsync();
         try
         {
+            await page.AddInitScriptAsync(@"
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3] });
+            ");
+
             await page.GotoAsync(url, new PageGotoOptions
             {
-                WaitUntil = WaitUntilState.NetworkIdle,
-                Timeout = 30000
+                WaitUntil = WaitUntilState.DOMContentLoaded,
+                Timeout = 60000
             });
+
+            // Vänta på att en riktig tabell dyker upp (max 120s)
+            // Detta hanterar både automatisk och manuell Cloudflare-challenge
+            var hasContent = false;
+            for (var i = 0; i < 120; i++)
+            {
+                var table = await page.QuerySelectorAsync("table.stats_table, table#stats_standard");
+                if (table != null) { hasContent = true; break; }
+                await Task.Delay(1000);
+            }
+
+            if (!hasContent)
+            {
+                var title = await page.QuerySelectorAsync("title");
+                var titleText = title != null ? await title.InnerTextAsync() : "?";
+                Console.Error.WriteLine($"  [warn] Ingen tabell funnen efter 120s. Sidtitel: {titleText}");
+            }
+
+            // Debug: spara HTML för första URL
+            if (_debugDir != null && !_debugWritten)
+            {
+                _debugWritten = true;
+                var html = await page.ContentAsync();
+                var name = url.Replace("https://", "").Replace("/", "_");
+                var path = Path.Combine(_debugDir, $"{name}.html");
+                await File.WriteAllTextAsync(path, html);
+                Console.Error.WriteLine($"  [debug] Sparade HTML till {path}");
+            }
+
             return await page.ContentAsync();
         }
         finally
         {
             await page.CloseAsync();
         }
+    }
+
+    // Hämta HTML från lokal fil (sparad manuellt från vanlig webbläsare)
+    private string GetLocalHtmlPath(int year, string tableId)
+        => Path.Combine(_dataDir, "pages", year.ToString(), $"{tableId}.html");
+
+    private async Task ParseTableLocalAsync(int year, string tableId,
+        Action<IElement, PlayerSeason> parseRow,
+        Dictionary<string, PlayerSeason> players)
+    {
+        var path = GetLocalHtmlPath(year, tableId);
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine($"  Table #{tableId}: filen {path} finns inte, hoppar över");
+            return;
+        }
+        var html = await File.ReadAllTextAsync(path);
+        var config = Configuration.Default;
+        var ctx = BrowsingContext.New(config);
+        var doc = await ctx.OpenAsync(req => req.Content(html));
+        var table = doc.QuerySelector($"table#{tableId}");
+        if (table == null)
+        {
+            Console.Error.WriteLine($"  Table #{tableId} not found in {path}");
+            return;
+        }
+        ParseTableRows(table, year, players, parseRow);
+        Console.WriteLine($"  -> {path} OK");
     }
 
     private async Task ParseTableAsync(
@@ -441,42 +533,7 @@ public class FbrefScraper : IAsyncDisposable
                 return;
             }
 
-            var rows = table.QuerySelectorAll("tbody tr");
-            foreach (var row in rows)
-            {
-                if (row.ClassList.Contains("spacer") ||
-                    row.ClassList.Contains("thead") ||
-                    row.ClassList.Contains("over_header") ||
-                    row.ClassList.Contains("totals") ||
-                    row.ClassList.Contains("partial_table"))
-                    continue;
-
-                var playerCell = row.QuerySelector("td[data-stat='player']");
-                if (playerCell == null) continue;
-
-                var name = playerCell.TextContent.Trim();
-                var teamCell = row.QuerySelector("td[data-stat='team']");
-                var team = teamCell?.TextContent.Trim() ?? "";
-
-                if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(team))
-                    continue;
-
-                var key = $"{name}|{team}|{year}";
-
-                if (!players.TryGetValue(key, out var player))
-                {
-                    player = new PlayerSeason
-                    {
-                        Id = MakeId(name, team, year),
-                        Name = name,
-                        Team = team,
-                        Season = year
-                    };
-                    players[key] = player;
-                }
-
-                parseRow(row, player);
-            }
+            ParseTableRows(table, year, players, parseRow);
         }
         catch (Exception ex)
         {
@@ -484,10 +541,54 @@ public class FbrefScraper : IAsyncDisposable
         }
     }
 
+    private void ParseTableRows(IElement table, int year,
+        Dictionary<string, PlayerSeason> players,
+        Action<IElement, PlayerSeason> parseRow)
+    {
+        var rows = table.QuerySelectorAll("tbody tr");
+        foreach (var row in rows)
+        {
+            if (row.ClassList.Contains("spacer") ||
+                row.ClassList.Contains("thead") ||
+                row.ClassList.Contains("over_header") ||
+                row.ClassList.Contains("totals") ||
+                row.ClassList.Contains("partial_table"))
+                continue;
+
+            var playerCell = row.QuerySelector("td[data-stat='player']");
+            if (playerCell == null) continue;
+
+            var name = playerCell.TextContent.Trim();
+            var teamCell = row.QuerySelector("td[data-stat='team']");
+            var team = teamCell?.TextContent.Trim() ?? "";
+
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(team))
+                continue;
+
+            var key = $"{name}|{team}|{year}";
+
+            if (!players.TryGetValue(key, out var player))
+            {
+                player = new PlayerSeason
+                {
+                    Id = MakeId(name, team, year),
+                    Name = name,
+                    Team = team,
+                    Season = year
+                };
+                players[key] = player;
+            }
+
+            parseRow(row, player);
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
-        _context?.CloseAsync();
-        _browser?.CloseAsync();
+        if (_context != null)
+            await _context.CloseAsync();
+        if (_browser != null)
+            await _browser.CloseAsync();
         _playwright?.Dispose();
     }
 
