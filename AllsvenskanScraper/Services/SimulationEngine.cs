@@ -1,133 +1,8 @@
-using System.Text.Json;
-
 namespace AllsvenskanScraper;
-
-// Game models
-
-public class PlayerCard
-{
-    public string Name { get; set; } = "";
-    public int Season { get; set; }
-    public string Team { get; set; } = "";
-    public double Ovr { get; set; }
-    public List<string> Positions { get; set; } = [];
-    public string Id { get; set; } = "";
-}
-
-public class Squad
-{
-    public string Team { get; set; } = "";
-    public int Season { get; set; }
-    public List<SquadPlayer> Players { get; set; } = [];
-}
-
-public class SquadPlayer
-{
-    public string Name { get; set; } = "";
-    public int Season { get; set; }
-    public string Team { get; set; } = "";
-    public double Ovr { get; set; }
-    public List<string> Positions { get; set; } = [];
-    public string Id { get; set; } = "";
-}
-
-public class FormationSlot
-{
-    public string Label { get; set; } = "";
-    public string Position { get; set; } = ""; // broad position: GK, DF, MF, FW
-    public List<string> SpecificPositions { get; set; } = []; // "GK", "CB", "ST" etc
-}
-
-public class TeamXI
-{
-    public string Name { get; set; } = "Your XI";
-    public Dictionary<string, PlayerCard> Slots { get; set; } = [];
-    public string Formation { get; set; } = "4-3-3";
-    public double Attack { get; set; }
-    public double Midfield { get; set; }
-    public double Defence { get; set; }
-    public double GkRating { get; set; }
-    public double Overall { get; set; }
-    public int GoalsFor { get; set; }
-    public int GoalsAgainst { get; set; }
-    public int Wins { get; set; }
-    public int Draws { get; set; }
-    public int Losses { get; set; }
-    public int Points { get; set; }
-}
-
-public class AITeam
-{
-    public string Name { get; set; } = "";
-    public double Strength { get; set; }
-    public string Tier { get; set; } = "";
-    public int GoalsFor { get; set; }
-    public int GoalsAgainst { get; set; }
-    public int Wins { get; set; }
-    public int Draws { get; set; }
-    public int Losses { get; set; }
-    public int Points { get; set; }
-}
-
-public class GoalEvent
-{
-    public int Minute { get; set; }
-    public string Scorer { get; set; } = "";
-    public string? Assistant { get; set; }
-    public bool IsPenalty { get; set; }
-    public bool IsOwnGoal { get; set; }
-}
-
-public class MatchResult
-{
-    public string HomeTeam { get; set; } = "";
-    public string AwayTeam { get; set; } = "";
-    public bool IsUserHome { get; set; }
-    public int HomeGoals { get; set; }
-    public int AwayGoals { get; set; }
-    public List<GoalEvent> Goals { get; set; } = [];
-    public int? UserCleanSheet => IsUserHome ? (AwayGoals == 0 ? 1 : 0) : (HomeGoals == 0 ? 1 : 0);
-    public string HomeScorers => string.Join(", ", Goals.Where(g => !g.IsOwnGoal).Select(g => g.Scorer));
-    public string AwayScorers => string.Join(", ", Goals.Where(g => g.IsOwnGoal).Select(g => g.Scorer));
-}
-
-public class SeasonAward
-{
-    public string PlayerName { get; set; } = "";
-    public int Goals { get; set; }
-    public int Assists { get; set; }
-    public int CleanSheets { get; set; }
-    public string? Award { get; set; }
-}
-
-public class SeasonResult
-{
-    public TeamXI UserTeam { get; set; } = new();
-    public List<AITeam> AiTeams { get; set; } = [];
-    public List<MatchResult> Matches { get; set; } = [];
-    public Dictionary<string, int> GoalScorers { get; set; } = [];
-    public Dictionary<string, int> Assists { get; set; } = [];
-    public Dictionary<string, int> CleanSheets { get; set; } = [];
-    public int FinalPosition { get; set; }
-    public int ExpectedPoints { get; set; }
-    public double ExpectedPosition { get; set; }
-    public List<AITeam> FinalTable { get; set; } = [];
-    public SeasonAward? GoldenBoot { get; set; }
-    public SeasonAward? Playmaker { get; set; }
-    public SeasonAward? GoldenGlove { get; set; }
-    public SeasonAward? PlayerOfSeason { get; set; }
-}
-
-// Simulation engine
 
 public static class SimulationEngine
 {
     private static readonly Random Rng = new();
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
     public static readonly Dictionary<string, List<FormationSlot>> Formations = new()
     {
@@ -237,8 +112,6 @@ public static class SimulationEngine
     {
         ComputeTeamRatings(user);
 
-        // Offence: attack (40%) + midfield (60%)
-        // Defence: midfield (20%) + defence (50%) + GK (30%)
         var userOffence = user.Attack * 0.4 + user.Midfield * 0.6;
         var userDefence = user.Midfield * 0.2 + user.Defence * 0.5 + user.GkRating * 0.3;
         var userStrength = (userOffence + userDefence) / 2.0;
@@ -266,7 +139,6 @@ public static class SimulationEngine
             AwayGoals = isUserHome ? aiGoals : userGoals,
         };
 
-        // Distribute goals to players
         var allGoals = new List<(bool isUser, int minute)>();
         for (var i = 0; i < userGoals; i++)
             allGoals.Add((true, Rng.Next(1, 91)));
@@ -324,7 +196,6 @@ public static class SimulationEngine
 
     public static SeasonResult SimulateSeason(TeamXI user, string formation)
     {
-        // Reset season stats from any previous run
         user.GoalsFor = 0; user.GoalsAgainst = 0;
         user.Wins = 0; user.Draws = 0; user.Losses = 0; user.Points = 0;
 
@@ -338,10 +209,8 @@ public static class SimulationEngine
         var assists = new Dictionary<string, int>();
         var cleanSheets = new Dictionary<string, int>();
 
-        // Each AI team plays twice (home/away) = 30 games for 16-team league
         foreach (var ai in aiTeams)
         {
-            // Home
             var homeMatch = SimulateMatch(userTeam, ai, true, formation);
             matches.Add(homeMatch);
 
@@ -351,7 +220,6 @@ public static class SimulationEngine
                 if (gk != null) cleanSheets[gk.Name] = cleanSheets.GetValueOrDefault(gk.Name, 0) + 1;
             }
 
-            // Away
             var awayMatch = SimulateMatch(userTeam, ai, false, formation);
             matches.Add(awayMatch);
 
@@ -362,7 +230,6 @@ public static class SimulationEngine
             }
         }
 
-        // Simulate AI vs AI matches (each pair, home and away = 210 matches)
         for (var i = 0; i < aiTeams.Count; i++)
         {
             for (var j = i + 1; j < aiTeams.Count; j++)
@@ -372,13 +239,11 @@ public static class SimulationEngine
             }
         }
 
-        // Aggregate user stats (only from user matches)
         var userMatches = matches.Where(m => m.HomeTeam == userTeam.Name || m.AwayTeam == userTeam.Name).ToList();
         foreach (var match in userMatches)
         {
             foreach (var goal in match.Goals)
             {
-                // Track user goals/assists
                 var isUserGoal = false;
                 foreach (var slot in userTeam.Slots.Values)
                 {
@@ -410,7 +275,6 @@ public static class SimulationEngine
         userTeam.Draws = userMatches.Count - userTeam.Wins - userTeam.Losses;
         userTeam.Points = userTeam.Wins * 3 + userTeam.Draws;
 
-        // Compute AI team records
         foreach (var ai in aiTeams)
         {
             var aiMatches = matches.Where(m => m.HomeTeam == ai.Name || m.AwayTeam == ai.Name).ToList();
@@ -433,7 +297,6 @@ public static class SimulationEngine
             ai.Points = ai.Wins * 3 + ai.Draws;
         }
 
-        // Build final table
         var allTeams = new List<AITeam>(aiTeams)
         {
             new()
@@ -460,19 +323,15 @@ public static class SimulationEngine
 
         var userPosition = allTeams.FindIndex(t => t.Name == "Your XI") + 1;
 
-        // Expected position based on OVR
         var allStrengths = aiTeams.Select(t => t.Strength).Concat(new[] { userTeam.Overall }).OrderByDescending(s => s).ToList();
         var userStrengthRank = allStrengths.IndexOf(userTeam.Overall);
         var expectedPos = 1.0 + userStrengthRank;
         var expectedPts = EstimateExpectedPoints(userTeam.Overall, aiTeams);
 
-        // Awards
         var goldenBoot = goalScorers.OrderByDescending(kv => kv.Value).FirstOrDefault();
         var playmaker = assists.OrderByDescending(kv => kv.Value).FirstOrDefault();
         var goldenGlove = cleanSheets.OrderByDescending(kv => kv.Value).FirstOrDefault();
-        
 
-        // Player of the season: goals + assists combined
         var potScores = new Dictionary<string, int>();
         foreach (var kv in goalScorers) potScores[kv.Key] = kv.Value * 2;
         foreach (var kv in assists) potScores[kv.Key] = potScores.GetValueOrDefault(kv.Key, 0) + kv.Value;
@@ -513,130 +372,12 @@ public static class SimulationEngine
         };
     }
 
-    private static int Poisson(double lambda)
-    {
-        if (lambda <= 0) return 0;
-        var L = Math.Exp(-lambda);
-        var k = 0;
-        var p = 1.0;
-
-        do
-        {
-            k++;
-            p *= Rng.NextDouble();
-        } while (p > L);
-
-        return k - 1;
-    }
-
-    private static (string scorer, string? assistant) PickGoalScorer(TeamXI xi, string formation)
-    {
-        var slots = Formations.GetValueOrDefault(formation, Formations["4-3-3"]);
-        var players = slots.Select(s => xi.Slots.GetValueOrDefault(s.Label)).Where(p => p != null).ToList()!;
-
-        var positionWeights = new Dictionary<string, double>
-        {
-            ["FW"] = 0.50,
-            ["MF"] = 0.30,
-            ["DF"] = 0.18,
-            ["GK"] = 0.005, // extremely rare (penalties only)
-        };
-
-        // Pick position for scorer
-        var roll = Rng.NextDouble();
-        var cumul = 0.0;
-        var scorerPos = "";
-        foreach (var (pos, w) in positionWeights)
-        {
-            cumul += w;
-            if (roll <= cumul) { scorerPos = pos; break; }
-        }
-        if (string.IsNullOrEmpty(scorerPos)) scorerPos = "FW";
-
-        // Pick a player in that position
-        var candidates = slots
-            .Select((s, i) => (s, i))
-            .Where(x => x.s.Position == scorerPos && xi.Slots.ContainsKey(x.s.Label))
-            .Select(x => xi.Slots[x.s.Label])
-            .ToList();
-
-        if (candidates.Count == 0)
-        {
-            candidates = players;
-            scorerPos = players.FirstOrDefault()?.Positions.FirstOrDefault() ?? "FW";
-        }
-
-        var scorer = WeightedPick(candidates, p => p.Ovr);
-
-        // Pick assistant (can be same position or different)
-        var assistPosWeights = new Dictionary<string, double>
-        {
-            ["MF"] = 0.45,
-            ["FW"] = 0.30,
-            ["DF"] = 0.20,
-            ["GK"] = 0.05,
-        };
-
-        roll = Rng.NextDouble();
-        cumul = 0.0;
-        var assistPos = "";
-        foreach (var (pos, w) in assistPosWeights)
-        {
-            cumul += w;
-            if (roll <= cumul) { assistPos = pos; break; }
-        }
-        if (string.IsNullOrEmpty(assistPos)) assistPos = "MF";
-
-        var assistCandidates = slots
-            .Where(x => x.Position == assistPos && xi.Slots.ContainsKey(x.Label))
-            .Select(x => xi.Slots[x.Label])
-            .Where(p => p.Name != scorer.Name)
-            .ToList();
-
-        if (assistCandidates.Count == 0)
-            assistCandidates = players.Where(p => p.Name != scorer.Name).ToList();
-
-        string? assistant = null;
-        if (assistCandidates.Count > 0 && Rng.NextDouble() < 0.75) // 75% of goals have an assist
-        {
-            assistant = WeightedPick(assistCandidates, p => p.Ovr).Name;
-        }
-
-        return (scorer.Name, assistant);
-    }
-
-    private static T WeightedPick<T>(List<T> items, Func<T, double> weight) where T : class
-    {
-        if (items.Count == 0) throw new ArgumentException("Cannot pick from empty list");
-        if (items.Count == 1) return items[0];
-
-        var totalWeight = items.Sum(weight);
-        var roll = Rng.NextDouble() * totalWeight;
-        var cumul = 0.0;
-
-        foreach (var item in items)
-        {
-            cumul += weight(item);
-            if (roll <= cumul) return item;
-        }
-
-        return items[^1];
-    }
-
-    private static int EstimateExpectedPoints(double userOvr, List<AITeam> aiTeams)
-    {
-        // Simple estimate based on OVR compared to league
-        var leagueAvg = aiTeams.Average(t => t.Strength);
-        var diff = userOvr - leagueAvg;
-        return (int)Math.Round(45 + diff * 3.0); // baseline 45 pts, +3 per OVR point above average
-    }
-
     public static void PrintSeasonResults(SeasonResult result)
     {
         var u = result.UserTeam;
 
         Console.WriteLine($"\n{'='.ToString().PadRight(60, '=')}");
-        Console.WriteLine($"  {u.Name} — {u.Formation} | Overall {u.Overall}");
+        Console.WriteLine($"  {u.Name} - {u.Formation} | Overall {u.Overall}");
         Console.WriteLine($"  ATT {u.Attack}  MID {u.Midfield}  DEF {u.Defence}  GK {u.GkRating}");
         Console.WriteLine($"\n  Season: {u.Wins}-{u.Draws}-{u.Losses} | {u.Points} pts | {u.GoalsFor} GF, {u.GoalsAgainst} GA");
         var gd = u.GoalsFor - u.GoalsAgainst;
@@ -676,13 +417,127 @@ public static class SimulationEngine
 
         Console.WriteLine($"\n  AWARDS:");
         if (result.GoldenBoot != null)
-            Console.WriteLine($"  ⚽ Golden Boot: {result.GoldenBoot.PlayerName} ({result.GoldenBoot.Goals} goals)");
+            Console.WriteLine($"  Golden Boot: {result.GoldenBoot.PlayerName} ({result.GoldenBoot.Goals} goals)");
         if (result.Playmaker != null)
-            Console.WriteLine($"  🎯 Playmaker: {result.Playmaker.PlayerName} ({result.Playmaker.Assists} assists)");
+            Console.WriteLine($"  Playmaker: {result.Playmaker.PlayerName} ({result.Playmaker.Assists} assists)");
         if (result.GoldenGlove != null)
-            Console.WriteLine($"  🧤 Golden Glove: {result.GoldenGlove.PlayerName} ({result.GoldenGlove.CleanSheets} clean sheets)");
+            Console.WriteLine($"  Golden Glove: {result.GoldenGlove.PlayerName} ({result.GoldenGlove.CleanSheets} clean sheets)");
         if (result.PlayerOfSeason != null)
-            Console.WriteLine($"  🏆 Player of the Season: {result.PlayerOfSeason.PlayerName} ({result.PlayerOfSeason.Goals}G, {result.PlayerOfSeason.Assists}A)");
+            Console.WriteLine($"  Player of the Season: {result.PlayerOfSeason.PlayerName} ({result.PlayerOfSeason.Goals}G, {result.PlayerOfSeason.Assists}A)");
+    }
+
+    private static int Poisson(double lambda)
+    {
+        if (lambda <= 0) return 0;
+        var L = Math.Exp(-lambda);
+        var k = 0;
+        var p = 1.0;
+
+        do
+        {
+            k++;
+            p *= Rng.NextDouble();
+        } while (p > L);
+
+        return k - 1;
+    }
+
+    private static (string scorer, string? assistant) PickGoalScorer(TeamXI xi, string formation)
+    {
+        var slots = Formations.GetValueOrDefault(formation, Formations["4-3-3"]);
+        var players = slots.Select(s => xi.Slots.GetValueOrDefault(s.Label)).Where(p => p != null).ToList()!;
+
+        var positionWeights = new Dictionary<string, double>
+        {
+            ["FW"] = 0.50,
+            ["MF"] = 0.30,
+            ["DF"] = 0.18,
+            ["GK"] = 0.005,
+        };
+
+        var roll = Rng.NextDouble();
+        var cumul = 0.0;
+        var scorerPos = "";
+        foreach (var (pos, w) in positionWeights)
+        {
+            cumul += w;
+            if (roll <= cumul) { scorerPos = pos; break; }
+        }
+        if (string.IsNullOrEmpty(scorerPos)) scorerPos = "FW";
+
+        var candidates = slots
+            .Select((s, i) => (s, i))
+            .Where(x => x.s.Position == scorerPos && xi.Slots.ContainsKey(x.s.Label))
+            .Select(x => xi.Slots[x.s.Label])
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            candidates = players;
+            scorerPos = players.FirstOrDefault()?.Positions.FirstOrDefault() ?? "FW";
+        }
+
+        var scorer = WeightedPick(candidates, p => p.Ovr);
+
+        var assistPosWeights = new Dictionary<string, double>
+        {
+            ["MF"] = 0.45,
+            ["FW"] = 0.30,
+            ["DF"] = 0.20,
+            ["GK"] = 0.05,
+        };
+
+        roll = Rng.NextDouble();
+        cumul = 0.0;
+        var assistPos = "";
+        foreach (var (pos, w) in assistPosWeights)
+        {
+            cumul += w;
+            if (roll <= cumul) { assistPos = pos; break; }
+        }
+        if (string.IsNullOrEmpty(assistPos)) assistPos = "MF";
+
+        var assistCandidates = slots
+            .Where(x => x.Position == assistPos && xi.Slots.ContainsKey(x.Label))
+            .Select(x => xi.Slots[x.Label])
+            .Where(p => p.Name != scorer.Name)
+            .ToList();
+
+        if (assistCandidates.Count == 0)
+            assistCandidates = players.Where(p => p.Name != scorer.Name).ToList();
+
+        string? assistant = null;
+        if (assistCandidates.Count > 0 && Rng.NextDouble() < 0.75)
+        {
+            assistant = WeightedPick(assistCandidates, p => p.Ovr).Name;
+        }
+
+        return (scorer.Name, assistant);
+    }
+
+    private static T WeightedPick<T>(List<T> items, Func<T, double> weight) where T : class
+    {
+        if (items.Count == 0) throw new ArgumentException("Cannot pick from empty list");
+        if (items.Count == 1) return items[0];
+
+        var totalWeight = items.Sum(weight);
+        var roll = Rng.NextDouble() * totalWeight;
+        var cumul = 0.0;
+
+        foreach (var item in items)
+        {
+            cumul += weight(item);
+            if (roll <= cumul) return item;
+        }
+
+        return items[^1];
+    }
+
+    private static int EstimateExpectedPoints(double userOvr, List<AITeam> aiTeams)
+    {
+        var leagueAvg = aiTeams.Average(t => t.Strength);
+        var diff = userOvr - leagueAvg;
+        return (int)Math.Round(45 + diff * 3.0);
     }
 
     private static string Ordinal(int n) => n switch
