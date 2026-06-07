@@ -1,0 +1,59 @@
+@use '../../styles/variables' as *;
+
+.steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 8px 0 4px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 1px;
+    background: $sand-border;
+  }
+
+  &:last-child::after {
+    display: none;
+  }
+
+  &.active .dot {
+    background: $badge-yellow;
+    box-shadow: 0 0 0 3px rgba($badge-yellow, 0.2);
+  }
+
+  &.active .label {
+    color: $ink;
+    font-weight: 600;
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $ink-disabled;
+  transition: background 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 11px;
+  color: $ink-ghost;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}

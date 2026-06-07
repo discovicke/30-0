@@ -1,0 +1,397 @@
+@use '../../styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 14px;
+  flex: 1;
+  position: relative;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.progressLabel {
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.progressCount {
+  font-family: $font-mono;
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 12px;
+  flex: 1;
+  align-items: stretch;
+}
+
+.left {
+  display: flex;
+  flex-direction: column;
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0 0;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// ── Reroll dots ──
+
+.rerollRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rerollLabel {
+  font-size: 11px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rerollDots {
+  display: flex;
+  gap: 6px;
+}
+
+.rerollDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $ink-disabled;
+  transition: background 0.2s;
+
+  &.rerollActive {
+    background: $ink;
+  }
+}
+
+// ── Spin button ──
+
+.spinBtn {
+  padding: 10px 18px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  text-align: center;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+}
+
+.hint {
+  font-size: 10px;
+  color: $ink-ghost;
+  text-align: center;
+}
+
+// ── Slot machine ──
+
+.slotMachine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 12px;
+}
+
+.slotReel {
+  background: $sand-surface;
+  border: 1px solid $ink;
+  border-radius: $radius-sm;
+  width: 160px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.reelClip {
+  overflow: hidden;
+  height: 22px;
+  line-height: 22px;
+}
+
+.slotText {
+  display: block;
+  font-family: $font-mono;
+  font-size: 16px;
+  font-weight: 700;
+  color: $ink;
+  white-space: nowrap;
+  text-align: center;
+  animation: slideUp 0.1s ease-out;
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slotStatic {
+  animation: none;
+}
+
+.slotX {
+  font-size: 20px;
+  font-weight: 700;
+  color: $ink-muted;
+  flex-shrink: 0;
+}
+
+// ── Spinner / center ──
+
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  p {
+    font-size: 13px;
+    color: $ink-muted;
+  }
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid $sand-border;
+  border-top-color: $ink;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Squad overlay ──
+
+.squadOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.squadCard {
+  background: $sand-white;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-lg;
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.squadHeader {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 0.5px solid $sand-border;
+}
+
+.squadName {
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink;
+}
+
+.squadSeason {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ink-ghost;
+}
+
+.playerList {
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: $sand-bg;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  text-align: left;
+  transition: border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: $ink;
+  }
+
+  &.playerMuted {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+}
+
+.playerPos {
+  font-size: 8px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 24px;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  background: $ink-muted;
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
+}
+
+.playerName {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.playerOvr {
+  font-family: $font-mono;
+  font-size: 11px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.skipBtn {
+  margin: 8px 14px;
+  padding: 8px;
+  background: $sand-surface;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.overlayReroll {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 0.5px solid $sand-border;
+}
+
+.rerollBtn {
+  padding: 6px 12px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 10px;
+  font-weight: 500;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.spinBtnSm {
+  padding: 5px 12px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.posChooser {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.posChooserText {
+  font-size: 12px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.posChooserBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.posChooserBtn {
+  padding: 8px 20px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
+}

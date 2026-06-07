@@ -1,0 +1,106 @@
+@use '../../styles/variables' as *;
+
+.browser {
+  display: flex;
+  flex-direction: column;
+  background: $ttv-bg;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  align-self: stretch;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid $ttv-border;
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ttv-meta;
+  letter-spacing: 0.06em;
+}
+
+.headerCenter {
+  font-family: $font-mono;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ttv-title;
+}
+
+.headerRight {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ttv-meta;
+  letter-spacing: 0.06em;
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 16px;
+  min-height: 0;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-top: 2px solid $ttv-border;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.navBtn {
+  font-family: $font-mono;
+  font-size: 14px;
+  font-weight: 700;
+  color: $ttv-body;
+  background: none;
+  border: 1px solid $ttv-border;
+  cursor: pointer;
+  padding: 6px 14px;
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 80px;
+
+  &:hover {
+    background: rgba($ttv-body, 0.1);
+    border-color: $ttv-body;
+  }
+}
+
+.inputArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inputLabel {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ttv-meta;
+  letter-spacing: 0.08em;
+}
+
+.inputDisplay {
+  font-family: $font-mono;
+  font-size: 18px;
+  font-weight: 700;
+  color: $ttv-title;
+  letter-spacing: 0.15em;
+  min-width: 52px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid $ttv-border;
+}

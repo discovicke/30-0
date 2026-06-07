@@ -1,0 +1,57 @@
+@use '../../styles/variables' as *;
+
+.strip {
+  width: 100%;
+  margin-bottom: 14px;
+  border: 1px solid $sand-border;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.mainRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  background: $ink;
+  padding: 10px 16px;
+}
+
+.mainLabel {
+  font-size: 13px;
+  color: $badge-yellow;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.mainValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: $badge-yellow;
+}
+
+.subRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  background: $sand-white;
+  padding: 8px 16px;
+  border-top: 0.5px solid $sand-border;
+
+  &:last-child {
+    border-radius: 0 0 6px 6px;
+  }
+}
+
+.subLabel {
+  font-size: 12px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.subValue {
+  font-family: $font-mono;
+  font-size: 20px;
+  font-weight: 600;
+  color: $ink;
+}

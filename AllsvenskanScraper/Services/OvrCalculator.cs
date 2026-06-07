@@ -192,6 +192,11 @@ public static class OvrCalculator
         }
 
         Console.WriteLine($"OVR computed for {computed} players ({allPlayers.Count - computed} skipped, <500 min)");
+
+        Console.WriteLine("Generating game databases...");
+        GenerateGameDb(dataDir);
+        GenerateSquadsDb(dataDir);
+
         Console.WriteLine("Compute complete!");
     }
 
@@ -290,11 +295,9 @@ public static class OvrCalculator
             },
             "GK" => new (string key, double w)[]
             {
-                ("tackles_won_per90", 0.30),
-                ("interceptions_per90", 0.25),
-                ("assists_per90", 0.20),
-                ("goals_per90", 0.15),
-                ("shots_on_target_pct", 0.10),
+                ("save_pct", 0.50),
+                ("saves_per90", 0.25),
+                ("clean_sheets_per90", 0.25),
             },
             _ => new (string key, double w)[] { }
         };
@@ -310,5 +313,47 @@ public static class OvrCalculator
         }
 
         return totalWeight > 0 ? total / totalWeight : 50;
+    }
+
+    public static void GenerateSquadsDb(string dataDir)
+    {
+        var playersDir = Path.Combine(dataDir, "players");
+        var outputPath = Path.Combine(dataDir, "game", "squads.json");
+
+        var squads = new Dictionary<string, Squad>();
+
+        foreach (var file in Directory.GetFiles(playersDir, "*.json").OrderBy(f => f))
+        {
+            var json = File.ReadAllText(file);
+            var players = JsonSerializer.Deserialize<List<PlayerSeason>>(json, FbrefScraper.JsonOpts) ?? [];
+            foreach (var p in players)
+            {
+                if (p.Ovr == null) continue;
+                var key = $"{p.Team}|{p.Season}";
+                if (!squads.TryGetValue(key, out var squad))
+                {
+                    squad = new Squad { Team = p.Team, Season = p.Season };
+                    squads[key] = squad;
+                }
+                squad.Players.Add(new SquadPlayer
+                {
+                    Name = p.Name,
+                    Season = p.Season,
+                    Team = p.Team,
+                    Ovr = p.Ovr.Value,
+                    Positions = p.Positions,
+                    Id = p.Id
+                });
+            }
+        }
+
+        var dir = Path.GetDirectoryName(outputPath);
+        if (dir != null) Directory.CreateDirectory(dir);
+        File.WriteAllText(outputPath, JsonSerializer.Serialize(squads.Values.OrderBy(s => s.Season).ThenBy(s => s.Team).ToList(), new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        }));
+        Console.WriteLine($"Generated squads database: {squads.Count} squads");
     }
 }
