@@ -70,15 +70,22 @@ class Program
                 await RunScrape(2025, 2001, headless, debug, local);
                 await RunCompute();
                 break;
+            case "simulate":
+            case "sim":
+                var formation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
+                RunSimulate(formation);
+                break;
             default:
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  dotnet run -- scrape [startYear] [endYear] [--headed] [--debug] [--local]");
                 Console.WriteLine("  dotnet run -- compute");
+                Console.WriteLine("  dotnet run -- simulate [formation]");
                 Console.WriteLine("  dotnet run -- all [--headed] [--debug] [--local]");
                 Console.WriteLine();
                 Console.WriteLine("Examples:");
                 Console.WriteLine("  dotnet run -- scrape 2025           # live (kräver --headed för CF)");
                 Console.WriteLine("  dotnet run -- scrape 2025 2025 --local  # läs från data/pages/2025/");
+                Console.WriteLine("  dotnet run -- simulate 4-3-3            # testa säsongssimulation");
                 Console.WriteLine("  dotnet run -- all --local               # alla år lokalt");
                 break;
         }
@@ -321,7 +328,7 @@ class Program
             // teamFactor > 1 → stronger team, player benefits → slight discount
             // teamFactor < 1 → weaker team, player carries → bonus
             var teamFactor = ts.AvgOvr / leagueOvr;
-            var adjustment = 1.0 + (1.0 - teamFactor) * 0.15;
+            var adjustment = 1.0 + (1.0 - teamFactor) * 0.08;
             adjustment = Math.Clamp(adjustment, 0.85, 1.15);
 
             // For defenders: if team concedes more (proxy: more tackles), discount defensive stats
@@ -371,6 +378,121 @@ class Program
 
         Console.WriteLine($"OVR computed for {computed} players ({allPlayers.Count - computed} skipped, <500 min)");
         Console.WriteLine("Compute complete!");
+    }
+
+    static void RunSimulate(string formation)
+    {
+        var dataDir = GetDataDir();
+        var gameDbPath = Path.Combine(dataDir, "game", "players.json");
+        if (!File.Exists(gameDbPath))
+        {
+            Console.Error.WriteLine("No game database found. Run 'scrape' and 'compute' first.");
+
+            // Try to generate it from player data
+            var playersDir = Path.Combine(dataDir, "players");
+            if (Directory.Exists(playersDir))
+            {
+                Console.WriteLine("Generating game database from player data...");
+                var pythonScript = Path.Combine(dataDir, "..", "scripts", "export_game_db.py");
+                // Fallback: use embedded logic
+                GenerateGameDb(playersDir, gameDbPath);
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        var json = File.ReadAllText(gameDbPath);
+        var allCards = JsonSerializer.Deserialize<List<PlayerCard>>(json, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }) ?? [];
+
+        if (allCards.Count == 0)
+        {
+            Console.Error.WriteLine("No players in game database.");
+            return;
+        }
+
+        Console.WriteLine($"Loaded {allCards.Count} players for simulation");
+
+        // Build a dream team: best available player per position
+        if (!SimulationEngine.Formations.ContainsKey(formation))
+        {
+            Console.Error.WriteLine($"Unknown formation '{formation}'. Available: {string.Join(", ", SimulationEngine.Formations.Keys)}");
+            return;
+        }
+
+        var xi = new TeamXI { Formation = formation };
+        var slots = SimulationEngine.Formations[formation];
+
+        foreach (var slot in slots)
+        {
+            var best = allCards
+                .Where(p => p.Positions.Any(sp => slot.SpecificPositions.Contains(sp)))
+                .OrderByDescending(p => p.Ovr)
+                .FirstOrDefault();
+
+            if (best != null)
+            {
+                xi.Slots[slot.Label] = best;
+                allCards.Remove(best);
+            }
+        }
+
+        if (xi.Slots.Count < 11)
+        {
+            Console.Error.WriteLine($"Could only fill {xi.Slots.Count}/11 positions.");
+            return;
+        }
+
+        Console.WriteLine($"\nDream Team XI ({formation}):");
+        Console.WriteLine("  {0,-5} {1,-30} {2,-5}", "Slot", "Player", "OVR");
+        Console.WriteLine("  {0,-5} {1,-30} {2,-5}", "----", "------", "---");
+        foreach (var slot in slots)
+        {
+            if (xi.Slots.TryGetValue(slot.Label, out var player))
+                Console.WriteLine("  {0,-5} {1,-30} {2,-5:F1}", slot.Label, $"{player.Name} ({player.Team} {player.Season})", player.Ovr);
+        }
+        SimulationEngine.ComputeTeamRatings(xi);
+        Console.WriteLine($"\n  Overall: {xi.Overall} | ATT {xi.Attack} MID {xi.Midfield} DEF {xi.Defence} GK {xi.GkRating}");
+
+        // Simulate season
+        Console.WriteLine($"\nSimulating 30-game Allsvenskan season...");
+        var result = SimulationEngine.SimulateSeason(xi, formation);
+        SimulationEngine.PrintSeasonResults(result);
+    }
+
+    static void GenerateGameDb(string playersDir, string outputPath)
+    {
+        var allPlayers = new List<PlayerCard>();
+        foreach (var file in Directory.GetFiles(playersDir, "*.json").OrderBy(f => f))
+        {
+            var json = File.ReadAllText(file);
+            var players = JsonSerializer.Deserialize<List<PlayerSeason>>(json, FbrefScraper.JsonOpts) ?? [];
+            foreach (var p in players)
+            {
+                if (p.Ovr == null) continue;
+                allPlayers.Add(new PlayerCard
+                {
+                    Name = p.Name,
+                    Season = p.Season,
+                    Team = p.Team,
+                    Ovr = p.Ovr.Value,
+                    Positions = p.Positions,
+                    Id = p.Id
+                });
+            }
+        }
+
+        var dir = Path.GetDirectoryName(outputPath);
+        if (dir != null) Directory.CreateDirectory(dir);
+        File.WriteAllText(outputPath, JsonSerializer.Serialize(allPlayers, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }));
+        Console.WriteLine($"Generated game database: {allPlayers.Count} players");
     }
 
     static double ZScoreToPercentile(double z)
