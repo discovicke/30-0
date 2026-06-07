@@ -847,11 +847,9 @@ class Program
             },
             "GK" => new (string key, double w)[]
             {
-                ("tackles_won_per90", 0.30),
-                ("interceptions_per90", 0.25),
-                ("assists_per90", 0.20),
-                ("goals_per90", 0.15),
-                ("shots_on_target_pct", 0.10),
+                ("save_pct", 0.45),
+                ("clean_sheets_pct", 0.30),
+                ("saves_per90", 0.25),
             },
             _ => new (string key, double w)[] { }
         };
