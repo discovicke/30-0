@@ -84,24 +84,31 @@ class Program
             case "draft":
                 var draftFormation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
                 var nDraftSims = cleanArgs.Length > 2 ? int.Parse(cleanArgs[2]) : 10000;
-                var rerollMode = cleanArgs.Length > 3 ? int.Parse(cleanArgs[3]) : 0;
-                RunDraftSimulate(draftFormation, nDraftSims, rerollMode);
+                var nRerolls = cleanArgs.Length > 3 ? int.Parse(cleanArgs[3]) : 0;
+                var draftMode = cleanArgs.Length > 4 ? cleanArgs[4] : "season";
+                RunDraftSimulate(draftFormation, nDraftSims, nRerolls, draftMode);
+                break;
+            case "build-peak":
+                RunBuildPeak();
                 break;
             default:
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  dotnet run -- scrape [startYear] [endYear] [--headed] [--debug] [--local]");
                 Console.WriteLine("  dotnet run -- compute");
                 Console.WriteLine("  dotnet run -- simulate [formation]");
-                Console.WriteLine("  dotnet run -- batch [formation] [n]");
-                Console.WriteLine("  dotnet run -- draft [formation] [n]");
+                Console.WriteLine("  dotnet run -- batch [formation] [n] [targetOvr]");
+                Console.WriteLine("  dotnet run -- draft [formation] [n] [rerolls] [season|peak]");
+                Console.WriteLine("  dotnet run -- build-peak");
                 Console.WriteLine("  dotnet run -- all [--headed] [--debug] [--local]");
                 Console.WriteLine();
                 Console.WriteLine("Examples:");
                 Console.WriteLine("  dotnet run -- scrape 2025           # live (kräver --headed för CF)");
                 Console.WriteLine("  dotnet run -- scrape 2025 2025 --local  # läs från data/pages/2025/");
                 Console.WriteLine("  dotnet run -- simulate 4-3-3            # testa säsongssimulation");
-                Console.WriteLine("  dotnet run -- batch 4-3-3 100          # 100 simuleringar");
-                Console.WriteLine("  dotnet run -- draft 4-3-3 10000        # 10k drafts");
+                Console.WriteLine("  dotnet run -- batch 4-3-3 100          # 100 batch-simuleringar");
+                Console.WriteLine("  dotnet run -- draft 4-3-3 10000        # 10k season-drafts");
+                Console.WriteLine("  dotnet run -- draft 4-3-3 10000 0 peak # 10k peak-drafts");
+                Console.WriteLine("  dotnet run -- build-peak                # bygg peak-DB");
                 Console.WriteLine("  dotnet run -- all --local               # alla år lokalt");
                 break;
         }
@@ -578,11 +585,81 @@ class Program
         return first;
     }
 
-    static void RunDraftSimulate(string formation, int nSims, int rerollMode = 0)
+    static void RunBuildPeak()
     {
         var dataDir = GetDataDir();
         var squadsPath = Path.Combine(dataDir, "game", "squads.json");
-        if (!File.Exists(squadsPath)) { Console.Error.WriteLine("No squads database."); return; }
+        if (!File.Exists(squadsPath)) { Console.Error.WriteLine("No squads database found."); return; }
+
+        var squads = JsonSerializer.Deserialize<List<Squad>>(File.ReadAllText(squadsPath), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? [];
+        Console.WriteLine($"Loaded {squads.Count} squads, {squads.Sum(s => s.Players.Count)} player entries");
+
+        // Find peak OVR per player (by name)
+        var peakByName = new Dictionary<string, SquadPlayer>(StringComparer.OrdinalIgnoreCase);
+        foreach (var sq in squads)
+        {
+            foreach (var p in sq.Players)
+            {
+                if (!peakByName.ContainsKey(p.Name) || p.Ovr > peakByName[p.Name].Ovr)
+                    peakByName[p.Name] = p;
+            }
+        }
+
+        Console.WriteLine($"Unique players (by name): {peakByName.Count}");
+
+        // Build peak squads: each player gets their peak OVR within the squad
+        var peakSquads = new List<Squad>();
+        foreach (var sq in squads)
+        {
+            var squadPeakPlayers = sq.Players
+                .Select(p =>
+                {
+                    if (peakByName.TryGetValue(p.Name, out var peak))
+                    {
+                        return new SquadPlayer
+                        {
+                            Name = p.Name, Season = peak.Season, Team = peak.Team,
+                            Ovr = peak.Ovr, Positions = new List<string>(peak.Positions),
+                            Id = peak.Id
+                        };
+                    }
+                    return p;
+                })
+                .ToList();
+
+            peakSquads.Add(new Squad { Team = sq.Team, Season = sq.Season, Players = squadPeakPlayers });
+        }
+
+        var opts = new JsonSerializerOptions { WriteIndented = false, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+        // Write peak squads
+        var peakSquadsPath = Path.Combine(dataDir, "game", "squads_peak.json");
+        File.WriteAllText(peakSquadsPath, JsonSerializer.Serialize(peakSquads, opts));
+        Console.WriteLine($"Written squads_peak.json ({peakSquads.Count} squads)");
+
+        // Write peak players (unique, by name)
+        var peakPlayerList = peakByName.Values
+            .Select(p => new PlayerCard
+            {
+                Name = p.Name, Season = p.Season, Team = p.Team,
+                Ovr = p.Ovr, Positions = new List<string>(p.Positions), Id = p.Id
+            })
+            .OrderByDescending(p => p.Ovr)
+            .ToList();
+
+        var peakPlayersPath = Path.Combine(dataDir, "game", "players_peak.json");
+        File.WriteAllText(peakPlayersPath, JsonSerializer.Serialize(peakPlayerList, opts));
+        Console.WriteLine($"Written players_peak.json ({peakPlayerList.Count} players)");
+        Console.WriteLine($"Peak OVR range: {peakPlayerList.Min(p => p.Ovr):F1} – {peakPlayerList.Max(p => p.Ovr):F1}");
+    }
+
+    static void RunDraftSimulate(string formation, int nSims, int nRerolls, string mode)
+    {
+        var dataDir = GetDataDir();
+        var isPeak = mode == "peak";
+        var squadsFile = isPeak ? "squads_peak.json" : "squads.json";
+        var squadsPath = Path.Combine(dataDir, "game", squadsFile);
+        if (!File.Exists(squadsPath)) { Console.Error.WriteLine($"No {squadsFile} found. Run 'build-peak' first if using peak mode."); return; }
 
         var squads = JsonSerializer.Deserialize<List<Squad>>(File.ReadAllText(squadsPath), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? [];
         if (squads.Count == 0) { Console.Error.WriteLine("No squads."); return; }
@@ -591,80 +668,49 @@ class Program
         var slots = SimulationEngine.Formations[formation];
         var rng = Random.Shared;
         var ovrs = new List<double>(nSims);
+        var rerollThreshold = isPeak ? 72.0 : 65.0;
 
-        var modeLabel = rerollMode switch
+        var modeLabel = $"{mode}, {nRerolls} rerolls (tröskel {rerollThreshold:F0})";
+
+        PlayerCard? SpinOne(FormationSlot slot, HashSet<string> usedIds)
         {
-            1 => "1 auto-reroll per slot (om <68 OVR)",
-            3 => "3 strategiska rerolls totalt",
-            _ => "inga rerolls"
-        };
+            var squad = squads[rng.Next(squads.Count)];
+            var matches = squad.Players
+                .Where(p => !usedIds.Contains(p.Id))
+                .Where(p => p.Positions.Any(sp => slot.SpecificPositions.Contains(sp)))
+                .ToList();
+            if (matches.Count == 0) return null;
+            var pick = matches.OrderByDescending(p => p.Ovr).First();
+            return new PlayerCard
+            {
+                Name = pick.Name, Season = pick.Season, Team = pick.Team,
+                Ovr = pick.Ovr, Positions = new List<string>(pick.Positions), Id = pick.Id
+            };
+        }
 
         for (var sim = 0; sim < nSims; sim++)
         {
             var xi = new TeamXI { Formation = formation };
             var usedIds = new HashSet<string>();
+            var rerollsLeft = nRerolls;
 
-            if (rerollMode == 1)
+            foreach (var slot in slots)
             {
-                // 1 auto-reroll per slot if best < 68
-                foreach (var slot in slots)
+                // Spin until good player or no rerolls left
+                PlayerCard? pick = null;
+                while (true)
                 {
-                    var pick = SpinSlot(slot, squads, usedIds, true, 68);
-                    if (pick != null)
-                    {
-                        xi.Slots[slot.Label] = pick;
-                        usedIds.Add(pick.Id);
-                    }
-                }
-            }
-            else if (rerollMode == 3)
-            {
-                // Baseline draft first
-                foreach (var slot in slots)
-                {
-                    var pick = SpinSlot(slot, squads, usedIds, false, 0);
-                    if (pick != null)
-                    {
-                        xi.Slots[slot.Label] = pick;
-                        usedIds.Add(pick.Id);
-                    }
+                    pick = SpinOne(slot, usedIds);
+                    if (pick == null) break;
+                    if (pick.Ovr >= rerollThreshold || rerollsLeft <= 0) break;
+                    // Reroll: try again
+                    rerollsLeft--;
                 }
 
-                // Reroll the 3 worst slots (by player OVR)
-                for (var r = 0; r < 3; r++)
+                if (pick != null)
                 {
-                    var worstSlot = slots
-                        .Where(s => xi.Slots.ContainsKey(s.Label))
-                        .OrderBy(s => xi.Slots[s.Label].Ovr)
-                        .FirstOrDefault();
-                    if (worstSlot == null) break;
-
-                    var oldId = xi.Slots[worstSlot.Label].Id;
-                    usedIds.Remove(oldId);
-
-                    var newPick = SpinSlot(worstSlot, squads, usedIds, false, 0);
-                    if (newPick != null)
-                    {
-                        usedIds.Add(newPick.Id);
-                        xi.Slots[worstSlot.Label] = newPick;
-                    }
-                    else
-                    {
-                        usedIds.Add(oldId);
-                    }
-                }
-            }
-            else
-            {
-                // Baseline: 1 spin per slot, pick best
-                foreach (var slot in slots)
-                {
-                    var pick = SpinSlot(slot, squads, usedIds, false, 0);
-                    if (pick != null)
-                    {
-                        xi.Slots[slot.Label] = pick;
-                        usedIds.Add(pick.Id);
-                    }
+                    xi.Slots[slot.Label] = pick;
+                    usedIds.Add(pick.Id);
                 }
             }
 
@@ -1213,24 +1259,25 @@ public class FbrefScraper : IAsyncDisposable
         if (player.BroadPositions.Count == 0)
             player.BroadPositions = ["GK"];
 
-        SetStat(row, "goals_against", "goals_against", player);
-        SetStat(row, "goals_against_per90", "goals_against_per90", player);
-        SetStat(row, "shots_on_target_against", "shots_on_target_against", player);
-        SetStat(row, "saves", "saves", player);
-        SetStat(row, "save_pct", "save_pct", player);
-        SetStat(row, "wins", "wins", player);
-        SetStat(row, "draws", "draws", player);
-        SetStat(row, "losses", "losses", player);
-        SetStat(row, "clean_sheets", "clean_sheets", player);
-        SetStat(row, "clean_sheets_pct", "clean_sheets_pct", player);
-        SetStat(row, "pens_att", "gk_pens_att", player);
-        SetStat(row, "pens_allowed", "gk_pens_allowed", player);
-        SetStat(row, "pens_saved", "gk_pens_saved", player);
-        SetStat(row, "pens_missed", "gk_pens_missed", player);
-        SetStat(row, "save_pct_pens", "save_pct_pens", player);
+        // FBref keeper table uses gk_ prefix on data-stat attributes
+        SetStat(row, "gk_goals_against", "goals_against", player);
+        SetStat(row, "gk_goals_against_per90", "goals_against_per90", player);
+        SetStat(row, "gk_shots_on_target_against", "shots_on_target_against", player);
+        SetStat(row, "gk_saves", "saves", player);
+        SetStat(row, "gk_save_pct", "save_pct", player);
+        SetStat(row, "gk_wins", "wins", player);
+        SetStat(row, "gk_ties", "draws", player);
+        SetStat(row, "gk_losses", "losses", player);
+        SetStat(row, "gk_clean_sheets", "clean_sheets", player);
+        SetStat(row, "gk_clean_sheets_pct", "clean_sheets_pct", player);
+        SetStat(row, "gk_pens_att", "gk_pens_att", player);
+        SetStat(row, "gk_pens_allowed", "gk_pens_allowed", player);
+        SetStat(row, "gk_pens_saved", "gk_pens_saved", player);
+        SetStat(row, "gk_pens_missed", "gk_pens_missed", player);
+        SetStat(row, "gk_pens_save_pct", "save_pct_pens", player);
 
         if (player.Minutes == 0)
-            SetCellInt(row, "minutes", v => player.Minutes = v);
+            SetCellInt(row, "gk_minutes", v => player.Minutes = v);
     }
 
     private void ParseGkAdvRow(IElement row, PlayerSeason player)
@@ -1239,15 +1286,16 @@ public class FbrefScraper : IAsyncDisposable
         if (player.BroadPositions.Count == 0)
             player.BroadPositions = ["GK"];
 
-        SetStat(row, "psxg", "psxg", player);
-        SetStat(row, "psxg_per_shot_on_target", "psxg_per_shot_on_target", player);
-        SetStat(row, "psxg_plus_minus", "psxg_plus_minus", player);
-        SetStat(row, "psxg_net", "psxg_net", player);
+        // FBref advanced keeper table also uses gk_ prefix
+        SetStat(row, "gk_psxg", "psxg", player);
+        SetStat(row, "gk_psxg_per_shot_on_target", "psxg_per_shot_on_target", player);
+        SetStat(row, "gk_psxg_plus_minus", "psxg_plus_minus", player);
+        SetStat(row, "gk_psxg_net", "psxg_net", player);
         SetStat(row, "gk_goals_against_per90", "gk_goals_against_per90", player);
-        SetStat(row, "psxg_per90", "psxg_per90", player);
-        SetStat(row, "crosses", "crosses_faced", player);
-        SetStat(row, "crosses_stopped", "crosses_stopped", player);
-        SetStat(row, "crosses_stopped_pct", "crosses_stopped_pct", player);
+        SetStat(row, "gk_psxg_per90", "psxg_per90", player);
+        SetStat(row, "gk_crosses", "crosses_faced", player);
+        SetStat(row, "gk_crosses_stopped", "crosses_stopped", player);
+        SetStat(row, "gk_crosses_stopped_pct", "crosses_stopped_pct", player);
     }
 
     private void ParseMiscRow(IElement row, PlayerSeason player)
