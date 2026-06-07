@@ -1,0 +1,204 @@
+@use '../../styles/variables' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $color-text-muted;
+
+  select {
+    padding: 0.5rem 0.75rem;
+    background: $color-bg;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    color: $color-text;
+    min-width: 120px;
+
+    &:focus {
+      outline: none;
+      border-color: $color-primary;
+    }
+  }
+}
+
+.button {
+  padding: 0.625rem 1.5rem;
+  background: $color-primary;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: $radius-md;
+  transition: background 0.15s;
+  align-self: flex-start;
+
+  &:hover:not(:disabled) {
+    background: $color-primary-hover;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background: rgba($color-danger, 0.1);
+  border: 1px solid $color-danger;
+  border-radius: $radius-md;
+  color: $color-danger;
+  font-size: 0.875rem;
+}
+
+.results {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.teamHeader {
+  display: flex;
+  justify-content: center;
+}
+
+.ratingGroup {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.rating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+  min-width: 70px;
+}
+
+.ratingLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $color-text-muted;
+}
+
+.ratingValue {
+  font-family: $font-mono;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: $color-text;
+  margin-top: 0.125rem;
+}
+
+.xi {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.xiSlot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+}
+
+.xiLabel {
+  font-family: $font-mono;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: $color-text-muted;
+  min-width: 2.5rem;
+}
+
+.xiPlayer {
+  font-size: 0.8125rem;
+  color: $color-text;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xiOvr {
+  font-family: $font-mono;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: $color-primary;
+  margin-left: auto;
+}
+
+.xiEmpty {
+  color: $color-text-muted;
+  font-size: 0.8125rem;
+}
+
+.seasonCard {
+  padding: 1rem;
+  background: $color-bg;
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+
+  h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-text-muted;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.seasonGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.seasonStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.seasonLabel {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: $color-text-muted;
+}
+
+.seasonValue {
+  font-family: $font-mono;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: $color-text;
+}

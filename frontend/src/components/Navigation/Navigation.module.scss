@@ -1,0 +1,43 @@
+@use '../../styles/variables' as *;
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1rem 2rem;
+  background: $color-surface;
+  border-bottom: 1px solid $color-border;
+}
+
+.brand {
+  font-family: $font-mono;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: $color-primary;
+  letter-spacing: -0.02em;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: $color-text-muted;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: $radius-md;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: $color-surface-alt;
+    color: $color-text;
+  }
+
+  &.active {
+    background: $color-primary;
+    color: white;
+  }
+}
