@@ -1,25 +1,28 @@
-import { useState, useCallback } from 'react';
-import type { Squad, SquadPlayer, GameConfig, PlayerCard } from '../../types';
-import { formations, computeTeamRatings } from '../../engine/simulationEngine';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult } from '../../types';
+import { formations, simulateSeason, computeTeamRatings, extractUserMatches } from '../../engine/simulationEngine';
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
 } from '../../engine/draftEngine';
-import PlayerSlot from '../PlayerSlot/PlayerSlot';
 import FormationView from '../FormationView/FormationView';
+import PlayerSlot from '../PlayerSlot/PlayerSlot';
 import OverallStrip from '../OverallStrip/OverallStrip';
+import TextTVPanel from '../TextTVPanel/TextTVPanel';
 import StepIndicator from '../StepIndicator/StepIndicator';
 import styles from './DraftPhase.module.scss';
 
 interface Props {
   config: GameConfig;
   squads: Squad[];
-  onComplete: (xi: Record<string, PlayerCard>) => void;
+  onRestart: () => void;
 }
 
 const stepLabels = ['Start', 'Draft', 'Spela', 'Resultat'];
 
-export default function DraftPhase({ config, squads, onComplete }: Props) {
+type DraftState = 'drafting' | 'ready' | 'simulating' | 'playing' | 'done';
+
+export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>({});
   const [filledIds, setFilledIds] = useState<Set<string>>(new Set());
   const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set());
@@ -27,13 +30,19 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
-  // For multi-position: store player being placed and their open groups
   const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
+  const [draftState, setDraftState] = useState<DraftState>('drafting');
+  const [result, setResult] = useState<SeasonResult | null>(null);
+  const [played, setPlayed] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
   const filledLabels = Object.keys(filledSlots);
+  const allFilled = filledCount >= totalSlots;
 
   const xi = {
     name: 'Your XI',
@@ -43,6 +52,10 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
     goalsFor: 0, goalsAgainst: 0, wins: 0, draws: 0, losses: 0, points: 0,
   };
   if (filledCount > 0) computeTeamRatings(xi);
+
+  const slotDefs = formations[config.formation];
+
+  // --- Draft logic ---
 
   const handleSpin = useCallback(() => {
     if (spinning) return;
@@ -80,16 +93,14 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
 
     if (config.draftMode === 'position-first') {
       if (!selectedSlot) return;
-      const slot = formations[config.formation].find((s) => s.label === selectedSlot);
+      const slot = slotDefs.find((s) => s.label === selectedSlot);
       if (!slot) return;
       addPlayer(player, slot.position);
       return;
     }
 
-    // Squad-first: check if player fits multiple open groups
     const groups = getPlayerPosGroups(player);
     const openGroups = groups.filter((g) => {
-      const slotDefs = formations[config.formation];
       const total = slotDefs.filter((s) => s.position === g).length;
       const filled = filledLabels.filter((l) => slotDefs.find((s) => s.label === l)?.position === g).length;
       return filled < total;
@@ -102,7 +113,6 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
       return;
     }
 
-    // Multiple groups open — show chooser
     setPendingPlayer(player);
     setPendingGroups(openGroups);
   }
@@ -127,64 +137,302 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
     setSelectedSlot(null);
     setPendingPlayer(null);
     setPendingGroups([]);
-
-    if (Object.keys(newFilled).length >= totalSlots) {
-      onComplete(newFilled);
-    }
   }
+
+  // When all slots filled → transition to ready
+  useEffect(() => {
+    if (allFilled && draftState === 'drafting') {
+      setDraftState('ready');
+    }
+  }, [allFilled, draftState]);
+
+  // --- Simulate ---
+
+  function handleSimulate() {
+    const teamXI = { ...xi, slots: { ...filledSlots } };
+    const simResult = simulateSeason(teamXI, config.formation);
+    setResult(simResult);
+    setDraftState('simulating');
+    setTimeout(() => setDraftState('playing'), 600);
+  }
+
+  // --- Results playback ---
+
+  const userMatches = result ? extractUserMatches(result.matches) : [];
+  const totalMatches = userMatches.length;
+  const u = result?.userTeam;
+  const gd = u ? u.goalsFor - u.goalsAgainst : 0;
+
+  const advance = useCallback(() => {
+    const next = played + 1;
+    setPlayed(next);
+    if (next >= totalMatches) {
+      setDraftState('done');
+    }
+    setTimeout(() => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
+    }, 50);
+  }, [played, totalMatches]);
+
+  useEffect(() => {
+    if (draftState !== 'playing') return;
+    advance();
+  }, []);
+
+  useEffect(() => {
+    if (draftState !== 'playing') return;
+    if (!autoPlay || played >= totalMatches) return;
+    timerRef.current = setTimeout(advance, 700);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [played, autoPlay, draftState, advance, totalMatches]);
+
+  // --- Derived ---
 
   const eligiblePlayers = currentSquad
     ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
     : [];
 
-  const canSpin = !spinning && !pendingPlayer && (config.draftMode !== 'position-first' || selectedSlot !== null);
+  const canSpin = !spinning && !pendingPlayer && !allFilled
+    && (config.draftMode !== 'position-first' || selectedSlot !== null);
 
   const showOverlay = currentSquad && !spinning;
 
+  const currentStep = draftState === 'drafting' ? 1
+    : draftState === 'ready' ? 1
+    : draftState === 'simulating' ? 2
+    : draftState === 'playing' ? 2
+    : 3;
+
+  // --- Render ---
+
+  if (draftState === 'simulating') {
+    return (
+      <div className={styles.container}>
+        <StepIndicator current={2} total={4} labels={stepLabels} />
+        <div className={styles.center}>
+          <div className={styles.spinner} />
+          <p>Simulerar sasongen...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
-      <div className={styles.top}>
-        <StepIndicator current={1} total={4} labels={stepLabels} />
-        <div className={styles.progress}>{filledCount}/{totalSlots}</div>
-      </div>
+      <StepIndicator current={currentStep} total={4} labels={stepLabels} />
 
       <div className={styles.main}>
         <div className={styles.left}>
-          <div className={styles.spinRow}>
-            <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
-              {spinning ? 'Snurrar...' : 'Snurra fram spelare'}
-            </button>
-            {config.draftMode === 'position-first' && !selectedSlot && (
-              <span className={styles.hint}>Klicka pa en tom position forst</span>
-            )}
-          </div>
-
-          <div className={styles.slotList}>
-            {formations[config.formation].map((slot) => {
-              const player = filledSlots[slot.label];
-              const isSelected = selectedSlot === slot.label;
-              return (
-                <PlayerSlot
-                  key={slot.label}
-                  positionLabel={slot.label}
-                  player={player ?? null}
-                  active={isSelected}
-                  onClick={config.draftMode === 'position-first' && !player
-                    ? () => handleSlotClick(slot.label)
-                    : undefined}
-                />
-              );
-            })}
-          </div>
+          <OverallStrip
+            overall={xi.overall}
+            attack={xi.attack}
+            midfield={xi.midfield}
+            defence={xi.defence}
+          />
+          <FormationView
+            formation={config.formation}
+            slots={filledSlots}
+            tall
+            interactive={draftState === 'drafting'}
+            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
+            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
+          />
         </div>
 
         <div className={styles.right}>
-          <FormationView formation={config.formation} slots={filledSlots} />
-          {filledCount > 0 && (
-            <OverallStrip overall={xi.overall} attack={xi.attack} midfield={xi.midfield} defence={xi.defence} />
+          {draftState === 'drafting' && (
+            <>
+              <div className={styles.rerollRow}>
+                <span className={styles.rerollLabel}>Omkast</span>
+                <div className={styles.rerollDots}>
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`${styles.rerollDot} ${i < rerollsLeft ? styles.rerollActive : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.progress}>
+                <span className={styles.progressLabel}>Spelare</span>
+                <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+              </div>
+
+              <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+                {spinning ? 'Snurrar...' : 'Snurra fram spelare'}
+              </button>
+
+              {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
+                <span className={styles.hint}>Klicka pa en position pa planen</span>
+              )}
+            </>
+          )}
+
+          {draftState === 'ready' && (
+            <>
+              <div className={styles.slotList}>
+                {slotDefs.map((slot) => (
+                  <PlayerSlot
+                    key={slot.label}
+                    positionLabel={slot.label}
+                    player={filledSlots[slot.label] ?? null}
+                    muted
+                  />
+                ))}
+              </div>
+              <button className={styles.simBtn} onClick={handleSimulate}>
+                Simulera sasong
+              </button>
+            </>
+          )}
+
+          {(draftState === 'playing' || draftState === 'done') && (
+            <button className={styles.autoBtn} onClick={() => setAutoPlay(!autoPlay)}>
+              {autoPlay ? 'Pausa' : 'Auto'}
+            </button>
           )}
         </div>
       </div>
+
+      {/* Results section — Text-TV styled */}
+      {(draftState === 'playing' || draftState === 'done') && result && (
+        <TextTVPanel
+          title="DINA MATCHER"
+          meta={`${played} SPELADE`}
+          scrollable
+          maxHeight={draftState === 'done' ? undefined : "360px"}
+        >
+          <div ref={listRef} className={styles.matchList}>
+            {userMatches.slice(0, played).map((m, i) => {
+              const isHome = m.isUserHome;
+              const userScore = isHome ? m.homeGoals : m.awayGoals;
+              const oppScore = isHome ? m.awayGoals : m.homeGoals;
+              const oppName = isHome ? m.awayTeam : m.homeTeam;
+              const resultClass = userScore > oppScore ? styles.win
+                : userScore === oppScore ? styles.draw : styles.loss;
+
+              const goalText = m.goals
+                .sort((a, b) => a.minute - b.minute)
+                .map((g) => `${g.scorer} ${g.minute}'`)
+                .join(', ');
+
+              return (
+                <div key={i} className={styles.matchRow}>
+                  <span className={styles.matchInfo}>
+                    <span className={styles.round}>{i + 1}</span>
+                    <span className={`${styles.teamName} ${isHome ? styles.youTeam : ''}`}>
+                      {isHome ? 'Ditt lag' : oppName}
+                    </span>
+                    <span className={`${styles.score} ${resultClass}`}>
+                      {userScore}-{oppScore}
+                    </span>
+                    <span className={`${styles.teamName} ${!isHome ? styles.youTeam : ''}`}>
+                      {!isHome ? 'Ditt lag' : oppName}
+                    </span>
+                  </span>
+                  <span className={styles.goalScorers}>{goalText}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {draftState === 'done' && u && (
+            <>
+              <div className={styles.finalSection}>
+                <div className={styles.sectionLabel}>SLUTTABELL</div>
+                <div className={styles.finalHeader}>
+                  <div className={styles.bigRecord}>
+                    {u.wins}W - {u.draws}D - {u.losses}L
+                  </div>
+                  <div className={styles.ptsLine}>
+                    {u.points} POANG  GD {gd >= 0 ? `+${gd}` : gd}
+                  </div>
+                  <div className={styles.posLine}>
+                    PLATS {result.finalPosition}/{result.finalTable.length}
+                  </div>
+                  {u.losses === 0 && (
+                    <div className={styles.undefeated}>30-0  OBESEGRADE!</div>
+                  )}
+                </div>
+                <table className={styles.ttvTable}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: 10 }}>#</th>
+                      <th>Lag</th>
+                      <th>S</th>
+                      <th>V</th>
+                      <th>O</th>
+                      <th>F</th>
+                      <th>+/-</th>
+                      <th>P</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.finalTable.map((t, i) => {
+                      const tGd = (t.goalsFor ?? 0) - (t.goalsAgainst ?? 0);
+                      const isUser = t.name === 'Your XI';
+                      const totalM = (t.wins ?? 0) + (t.draws ?? 0) + (t.losses ?? 0);
+                      return (
+                        <tr key={t.name} className={isUser ? styles.you : ''}>
+                          <td className={styles.rank}>{i + 1}</td>
+                          <td>{isUser ? 'DITT LAG' : t.name}</td>
+                          <td>{totalM}</td>
+                          <td>{t.wins ?? 0}</td>
+                          <td>{t.draws ?? 0}</td>
+                          <td>{t.losses ?? 0}</td>
+                          <td>{tGd >= 0 ? `+${tGd}` : `${tGd}`}</td>
+                          <td className={styles.bold}>{t.points ?? 0}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.awardsSection}>
+                <div className={styles.sectionLabel}>UTMARKELSER</div>
+                <div className={styles.awards}>
+                  {result.goldenBoot && (
+                    <div className={styles.award}>
+                      <span className={styles.awardIcon}>G</span>
+                      <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mal</span>
+                    </div>
+                  )}
+                  {result.playmaker && (
+                    <div className={styles.award}>
+                      <span className={styles.awardIcon}>A</span>
+                      <span>{result.playmaker.playerName}  {result.playmaker.assists} assists</span>
+                    </div>
+                  )}
+                  {result.goldenGlove && (
+                    <div className={styles.award}>
+                      <span className={styles.awardIcon}>C</span>
+                      <span>{result.goldenGlove.playerName}  {result.goldenGlove.cleanSheets} hallna nollor</span>
+                    </div>
+                  )}
+                  {result.playerOfSeason && (
+                    <div className={styles.award}>
+                      <span className={styles.awardIcon}>P</span>
+                      <span>{result.playerOfSeason.playerName}  {result.playerOfSeason.goals}G {result.playerOfSeason.assists}A</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.restartWrap}>
+                <button className={styles.restartBtn} onClick={onRestart}>
+                  Spela igen
+                </button>
+              </div>
+            </>
+          )}
+        </TextTVPanel>
+      )}
 
       {/* Squad overlay */}
       {showOverlay && (
@@ -195,7 +443,6 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
               <span className={styles.squadSeason}>{currentSquad.season}</span>
             </div>
 
-            {/* Reroll inside overlay */}
             <div className={styles.overlayReroll}>
               <button className={styles.rerollBtn} onClick={handleReroll} disabled={rerollsLeft <= 0}>
                 Reroll ({rerollsLeft} kvar)
@@ -205,7 +452,6 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
               </button>
             </div>
 
-            {/* Position chooser for multi-position players */}
             {pendingPlayer ? (
               <div className={styles.posChooser}>
                 <p className={styles.posChooserText}>

@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GameConfig, GamePhase, PlayerCard, SeasonResult, Squad } from '../../types';
-import { simulateSeason } from '../../engine/simulationEngine';
+import type { GameConfig, GamePhase, Squad } from '../../types';
 import Navbar from '../Navbar/Navbar';
 import GameSetup from '../GameSetup/GameSetup';
 import DraftPhase from '../DraftPhase/DraftPhase';
-import MatchReplay from '../MatchReplay/MatchReplay';
 import styles from './Game.module.scss';
 
 export default function Game() {
   const [phase, setPhase] = useState<GamePhase>('setup');
   const [config, setConfig] = useState<GameConfig | null>(null);
-  const [slots, setSlots] = useState<Record<string, PlayerCard>>({});
-  const [result, setResult] = useState<SeasonResult | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,26 +31,11 @@ export default function Game() {
 
   const handleStart = useCallback((c: GameConfig) => {
     setConfig(c);
-    setSlots({});
-    setResult(null);
     setPhase('draft');
   }, []);
 
-  const handleDraftComplete = useCallback((filled: Record<string, PlayerCard>) => {
-    if (!config) return;
-    setSlots(filled);
-    setPhase('simulating');
-
-    const xi = buildTeamXI(filled, config.formation);
-    const simResult = simulateSeason(xi, config.formation);
-    setResult(simResult);
-    setPhase('match-replay');
-  }, [config]);
-
   const handleRestart = useCallback(() => {
     setConfig(null);
-    setSlots({});
-    setResult(null);
     setPhase('setup');
   }, []);
 
@@ -93,55 +74,13 @@ export default function Game() {
   return (
     <div className={styles.wrapper}>
       <Navbar phase={phase} modeLabel={modeLabel} />
-
-      {phase === 'simulating' && (
-        <div className={styles.center}>
-          <div className={styles.spinner} />
-          <p>Simulerar sasongen...</p>
-        </div>
-      )}
-
       {phase === 'draft' && (
         <DraftPhase
           config={config}
           squads={squads}
-          onComplete={handleDraftComplete}
-        />
-      )}
-
-      {phase === 'match-replay' && result && (
-        <MatchReplay
-          result={result}
-          slots={slots}
-          formation={config.formation}
           onRestart={handleRestart}
         />
       )}
     </div>
   );
-}
-
-function buildTeamXI(slots: Record<string, PlayerCard>, formation: '4-3-3' | '4-4-2' | '3-5-2'): {
-  name: string;
-  slots: Record<string, PlayerCard>;
-  formation: '4-3-3' | '4-4-2' | '3-5-2';
-  attack: number;
-  midfield: number;
-  defence: number;
-  gkRating: number;
-  overall: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  wins: number;
-  draws: number;
-  losses: number;
-  points: number;
-} {
-  return {
-    name: 'Your XI',
-    slots,
-    formation,
-    attack: 0, midfield: 0, defence: 0, gkRating: 0, overall: 0,
-    goalsFor: 0, goalsAgainst: 0, wins: 0, draws: 0, losses: 0, points: 0,
-  };
 }

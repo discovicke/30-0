@@ -7,13 +7,16 @@ interface Props {
   slots: Record<string, PlayerCard>;
   compact?: boolean;
   tall?: boolean;
+  interactive?: boolean;
+  selectedSlot?: string | null;
+  onSlotClick?: (label: string) => void;
 }
 
-export default function FormationView({ formation, slots, compact, tall }: Props) {
+export default function FormationView({ formation, slots, compact, tall, interactive, selectedSlot, onSlotClick }: Props) {
   const slotDefs = formations[formation];
 
   return (
-    <div className={`${styles.pitch} ${compact ? styles.compact : ''} ${tall ? styles.tall : ''}`}>
+    <div className={`${styles.pitch} ${compact ? styles.compact : ''} ${tall ? styles.tall : ''} ${interactive ? styles.interactive : ''}`}>
       <div className={styles.field}>
         {renderRow(slotDefs.filter((s) => s.position === 'FW'), 0)}
         {renderRow(slotDefs.filter((s) => s.position === 'MF'), 1)}
@@ -30,10 +33,15 @@ export default function FormationView({ formation, slots, compact, tall }: Props
         {rowSlots.map((slot) => {
           const player = slots[slot.label];
           const filled = !!player;
+          const isSel = selectedSlot === slot.label;
           return (
-            <div key={slot.label} className={styles.pslot}>
-              <div className={`${styles.dot} ${filled ? styles.dotFilled : ''}`}>
-                <span>{slot.label}</span>
+            <div
+              key={slot.label}
+              className={`${styles.pslot} ${interactive && !filled ? styles.clickable : ''}`}
+              onClick={interactive && !filled && onSlotClick ? () => onSlotClick(slot.label) : undefined}
+            >
+              <div className={`${styles.dot} ${filled ? styles.dotFilled : ''} ${isSel ? styles.dotSelected : ''}`}>
+                <span>{filled ? slot.label : '+'}</span>
               </div>
               {player ? (
                 <>
