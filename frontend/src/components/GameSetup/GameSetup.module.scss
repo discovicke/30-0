@@ -1,0 +1,176 @@
+@use '../../styles/variables' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 1rem 2rem;
+  max-width: 460px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.header {
+  text-align: center;
+}
+
+.title {
+  font-family: $font-mono;
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: $color-primary;
+  line-height: 1;
+}
+
+.subtitle {
+  color: $color-text-muted;
+  font-size: 0.9375rem;
+  margin-top: 0.5rem;
+  font-weight: 400;
+}
+
+.card {
+  width: 100%;
+  background: $color-surface;
+  border: 1px solid rgba($color-text-muted, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.sectionTitle {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-text-muted;
+}
+
+.label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: $color-text-muted;
+
+  select {
+    padding: 0.5rem 0.75rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba($color-text-muted, 0.1);
+    border-radius: 8px;
+    color: $color-text;
+    font-size: 0.8125rem;
+    transition: border-color 0.15s;
+
+    &:focus {
+      outline: none;
+      border-color: rgba($color-primary, 0.4);
+    }
+
+    option {
+      background: $color-surface;
+    }
+  }
+}
+
+.difficultyRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.difficultyBtn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba($color-text-muted, 0.08);
+  border-radius: 8px;
+  color: $color-text-muted;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: rgba($color-primary, 0.3);
+    color: $color-text;
+  }
+
+  &.active {
+    background: $color-primary;
+    border-color: $color-primary;
+    color: white;
+  }
+}
+
+.startBtn {
+  padding: 0.75rem 2rem;
+  background: $color-primary;
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.15s;
+  align-self: center;
+  margin-top: 0.5rem;
+  letter-spacing: 0.02em;
+
+  &:hover {
+    background: $color-primary-hover;
+    transform: translateY(-1px);
+  }
+}
+
+.rules {
+  width: 100%;
+  background: $color-surface;
+  border: 1px solid rgba($color-text-muted, 0.08);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+
+  h3 {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $color-text-muted;
+    margin-bottom: 0.5rem;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+
+    li {
+      font-size: 0.8125rem;
+      color: $color-text;
+      padding-left: 1rem;
+      position: relative;
+
+      &::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: $color-primary;
+      }
+    }
+  }
+}
+
+.modeHint {
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: $color-text-muted;
+  padding: 0.5rem 0.75rem;
+  background: rgba($color-primary, 0.06);
+  border-radius: 8px;
+  line-height: 1.4;
+}

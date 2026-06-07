@@ -1,0 +1,219 @@
+@use '../../styles/variables' as *;
+
+.pitch {
+  --pitch-w: 100%;
+  --pitch-h: 480px;
+  --pitch-compact-h: 320px;
+
+  position: relative;
+  width: var(--pitch-w);
+  min-height: var(--pitch-h);
+  background: linear-gradient(180deg, #166534 0%, #14532d 40%, #0f3d24 100%);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &.compact {
+    min-height: var(--pitch-compact-h);
+
+    .row {
+      margin-bottom: -2px;
+    }
+
+    .slotsRow {
+      gap: 5px;
+    }
+
+    .slot {
+      width: 52px;
+      min-height: 38px;
+      padding: 2px 3px;
+    }
+
+    .slotLabel {
+      font-size: 0.5rem;
+    }
+
+    .playerName {
+      font-size: 0.5rem;
+      max-width: 48px;
+    }
+
+    .playerOvr {
+      font-size: 0.5rem;
+    }
+
+    .emptySlot {
+      font-size: 0.5rem;
+    }
+  }
+}
+
+/* Field markings */
+.pitch::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 36px,
+      rgba(255, 255, 255, 0.03) 36px,
+      rgba(255, 255, 255, 0.03) 37px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 36px,
+      rgba(255, 255, 255, 0.03) 36px,
+      rgba(255, 255, 255, 0.03) 37px
+    );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Center circle */
+.topCircle {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Goal line at bottom */
+.goalLine {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.field {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  flex: 1;
+  padding: 18px 16px;
+}
+
+/* Row connector lines */
+.rowConnector {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.slotsRow {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 64px;
+  min-height: 48px;
+  padding: 3px 4px;
+  border-radius: 10px;
+  border: 1.5px solid;
+  background: rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  &.empty {
+    border-color: rgba(255, 255, 255, 0.12);
+    color: $color-text-muted;
+
+    &:hover:not(:disabled) {
+      border-color: rgba($color-primary, 0.5);
+      background: rgba($color-primary, 0.08);
+    }
+  }
+
+  &.filled {
+    border-color: rgba($color-primary, 0.25);
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  &.highlighted {
+    border-color: $color-warning;
+    box-shadow: 0 0 12px rgba($color-warning, 0.3);
+    background: rgba($color-warning, 0.12);
+  }
+}
+
+.slotLabel {
+  font-family: $font-mono;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.4;
+  line-height: 1;
+}
+
+.playerInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.playerName {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: $color-text;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.playerOvr {
+  font-family: $font-mono;
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: $color-primary;
+  line-height: 1;
+}
+
+.emptySlot {
+  font-size: 0.625rem;
+  opacity: 0.25;
+  line-height: 1;
+}

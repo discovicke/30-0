@@ -1,3 +1,5 @@
+// ── Data Types (from C# models) ──
+
 export interface PlayerCard {
   name: string;
   season: number;
@@ -22,84 +24,102 @@ export interface Squad {
   players: SquadPlayer[];
 }
 
+// ── Formation ──
+
 export interface FormationSlot {
   label: string;
   position: string;
   specificPositions: string[];
 }
 
+export type FormationKey = '4-3-3' | '4-4-2' | '3-5-2';
+
+// ── Team ──
+
 export interface TeamXI {
   name: string;
   slots: Record<string, PlayerCard>;
-  formation: string;
+  formation: FormationKey;
   attack: number;
   midfield: number;
   defence: number;
   gkRating: number;
   overall: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  points: number;
 }
 
 export interface AITeam {
   name: string;
   strength: number;
-  tier: string;
+  tier?: string;
+  goalsFor?: number;
+  goalsAgainst?: number;
+  wins?: number;
+  draws?: number;
+  losses?: number;
+  points?: number;
 }
 
-export interface SeasonStats {
-  wins: number;
-  draws: number;
-  losses: number;
-  points: number;
-  goalsFor: number;
-  goalsAgainst: number;
-  gd: number;
+// ── Match ──
+
+export interface GoalEvent {
+  minute: number;
+  scorer: string;
+  assistant: string | null;
+  isPenalty: boolean;
+  isOwnGoal: boolean;
 }
 
-export interface DraftResult {
-  min: number;
-  p10: number;
-  p25: number;
-  median: number;
-  avg: number;
-  p75: number;
-  p90: number;
-  p95: number;
-  p99: number;
-  max: number;
-  p86: number;
-  p87: number;
-  p88: number;
-  p89: number;
-  thresholds: { threshold: number; pct: number }[];
+export interface MatchResult {
+  homeTeam: string;
+  awayTeam: string;
+  isUserHome: boolean;
+  homeGoals: number;
+  awayGoals: number;
+  goals: GoalEvent[];
 }
 
-export interface BatchResult {
-  ovr: number;
-  totalSims: number;
-  undefeated: number;
-  undefeatedPct: number;
-  bestWins: number;
-  bestDraws: number;
-  bestLosses: number;
-  bestPoints: number;
-  bestGd: number;
-  leastLossWins: number;
-  leastLossDraws: number;
-  leastLossLosses: number;
-  leastLossPoints: number;
+// ── Season ──
+
+export interface SeasonAward {
+  playerName: string;
+  goals?: number;
+  assists?: number;
+  cleanSheets?: number;
 }
 
-export interface DreamTeamResult {
-  team: TeamXI;
-  season: SeasonStats;
-  position: number;
+export interface SeasonResult {
+  userTeam: TeamXI;
+  aiTeams: AITeam[];
+  matches: MatchResult[];
+  goalScorers: Record<string, number>;
+  assists: Record<string, number>;
+  cleanSheets: Record<string, number>;
+  finalPosition: number;
+  expectedPoints: number;
   expectedPosition: number;
+  finalTable: AITeam[];
+  goldenBoot: SeasonAward | null;
+  playmaker: SeasonAward | null;
+  goldenGlove: SeasonAward | null;
+  playerOfSeason: SeasonAward | null;
 }
 
-export type FormationKey = '4-3-3' | '4-4-2' | '3-5-2';
-export type DraftMode = 'season' | 'peak';
+// ── Game State ──
 
-export interface Tab {
-  id: string;
-  label: string;
+export type DraftMode = 'squad-first' | 'position-first';
+export type RatingMode = 'season' | 'peak';
+export type Difficulty = 'easy' | 'normal' | 'hard';
+export type GamePhase = 'setup' | 'draft' | 'simulating' | 'results';
+
+export interface GameConfig {
+  draftMode: DraftMode;
+  ratingMode: RatingMode;
+  difficulty: Difficulty;
+  formation: FormationKey;
 }

@@ -17,7 +17,7 @@ body {
   background: $color-bg;
   color: $color-text;
   min-height: 100vh;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 #root {
@@ -29,6 +29,11 @@ body {
 a {
   color: $color-primary;
   text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $color-primary-hover;
+  }
 }
 
 button {
@@ -43,15 +48,24 @@ input, select {
   font-size: 0.875rem;
 }
 
+::selection {
+  background: rgba($color-primary, 0.25);
+  color: $color-text;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: $color-surface;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: $color-border;
+  background: rgba($color-text-muted, 0.15);
   border-radius: 3px;
+
+  &:hover {
+    background: rgba($color-text-muted, 0.25);
+  }
 }
