@@ -14,6 +14,23 @@ public class PlayerCard
     public string Id { get; set; } = "";
 }
 
+public class Squad
+{
+    public string Team { get; set; } = "";
+    public int Season { get; set; }
+    public List<SquadPlayer> Players { get; set; } = [];
+}
+
+public class SquadPlayer
+{
+    public string Name { get; set; } = "";
+    public int Season { get; set; }
+    public string Team { get; set; } = "";
+    public double Ovr { get; set; }
+    public List<string> Positions { get; set; } = [];
+    public string Id { get; set; } = "";
+}
+
 public class FormationSlot
 {
     public string Label { get; set; } = "";

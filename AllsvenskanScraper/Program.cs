@@ -81,12 +81,19 @@ class Program
                 var targetOvr = cleanArgs.Length > 3 ? int.Parse(cleanArgs[3]) : 0;
                 RunBatchSimulate(batchFormation, nSims, targetOvr);
                 break;
+            case "draft":
+                var draftFormation = cleanArgs.Length > 1 ? cleanArgs[1] : "4-3-3";
+                var nDraftSims = cleanArgs.Length > 2 ? int.Parse(cleanArgs[2]) : 10000;
+                var rerollMode = cleanArgs.Length > 3 ? int.Parse(cleanArgs[3]) : 0;
+                RunDraftSimulate(draftFormation, nDraftSims, rerollMode);
+                break;
             default:
                 Console.WriteLine("Usage:");
                 Console.WriteLine("  dotnet run -- scrape [startYear] [endYear] [--headed] [--debug] [--local]");
                 Console.WriteLine("  dotnet run -- compute");
                 Console.WriteLine("  dotnet run -- simulate [formation]");
                 Console.WriteLine("  dotnet run -- batch [formation] [n]");
+                Console.WriteLine("  dotnet run -- draft [formation] [n]");
                 Console.WriteLine("  dotnet run -- all [--headed] [--debug] [--local]");
                 Console.WriteLine();
                 Console.WriteLine("Examples:");
@@ -94,6 +101,7 @@ class Program
                 Console.WriteLine("  dotnet run -- scrape 2025 2025 --local  # läs från data/pages/2025/");
                 Console.WriteLine("  dotnet run -- simulate 4-3-3            # testa säsongssimulation");
                 Console.WriteLine("  dotnet run -- batch 4-3-3 100          # 100 simuleringar");
+                Console.WriteLine("  dotnet run -- draft 4-3-3 10000        # 10k drafts");
                 Console.WriteLine("  dotnet run -- all --local               # alla år lokalt");
                 break;
         }
@@ -537,6 +545,159 @@ class Program
         Console.WriteLine($"OVR {effectiveOvr:F1} | {nSims} sims | Obesegrade: {undefeated}/{nSims} ({100.0 * undefeated / nSims:F3}%)");
         Console.WriteLine($"  Bästa  : {bestResult.UserTeam.Wins}-{bestResult.UserTeam.Draws}-{bestResult.UserTeam.Losses} | {bestResult.UserTeam.Points}p | +{bestResult.UserTeam.GoalsFor - bestResult.UserTeam.GoalsAgainst}GD");
         Console.WriteLine($"  Minst förluster: {worstLosses.UserTeam.Wins}-{worstLosses.UserTeam.Draws}-{worstLosses.UserTeam.Losses} | {worstLosses.UserTeam.Points}p");
+        Console.WriteLine();
+    }
+
+    static PlayerCard? SpinSlot(FormationSlot slot, List<Squad> squads, HashSet<string> usedIds, bool allowReroll, int rerollThreshold)
+    {
+        var rng = Random.Shared;
+
+        PlayerCard? PickFromSquad()
+        {
+            var squad = squads[rng.Next(squads.Count)];
+            var matches = squad.Players
+                .Where(p => !usedIds.Contains(p.Id))
+                .Where(p => p.Positions.Any(sp => slot.SpecificPositions.Contains(sp)))
+                .ToList();
+            if (matches.Count == 0) return null;
+            var pick = matches.OrderByDescending(p => p.Ovr).First();
+            return new PlayerCard
+            {
+                Name = pick.Name, Season = pick.Season, Team = pick.Team,
+                Ovr = pick.Ovr, Positions = new List<string>(pick.Positions), Id = pick.Id
+            };
+        }
+
+        var first = PickFromSquad();
+        if (first == null) return null;
+        if (allowReroll && first.Ovr < rerollThreshold)
+        {
+            var second = PickFromSquad();
+            if (second != null) return second;
+        }
+        return first;
+    }
+
+    static void RunDraftSimulate(string formation, int nSims, int rerollMode = 0)
+    {
+        var dataDir = GetDataDir();
+        var squadsPath = Path.Combine(dataDir, "game", "squads.json");
+        if (!File.Exists(squadsPath)) { Console.Error.WriteLine("No squads database."); return; }
+
+        var squads = JsonSerializer.Deserialize<List<Squad>>(File.ReadAllText(squadsPath), new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? [];
+        if (squads.Count == 0) { Console.Error.WriteLine("No squads."); return; }
+        if (!SimulationEngine.Formations.ContainsKey(formation)) { Console.Error.WriteLine($"Unknown formation '{formation}'."); return; }
+
+        var slots = SimulationEngine.Formations[formation];
+        var rng = Random.Shared;
+        var ovrs = new List<double>(nSims);
+
+        var modeLabel = rerollMode switch
+        {
+            1 => "1 auto-reroll per slot (om <68 OVR)",
+            3 => "3 strategiska rerolls totalt",
+            _ => "inga rerolls"
+        };
+
+        for (var sim = 0; sim < nSims; sim++)
+        {
+            var xi = new TeamXI { Formation = formation };
+            var usedIds = new HashSet<string>();
+
+            if (rerollMode == 1)
+            {
+                // 1 auto-reroll per slot if best < 68
+                foreach (var slot in slots)
+                {
+                    var pick = SpinSlot(slot, squads, usedIds, true, 68);
+                    if (pick != null)
+                    {
+                        xi.Slots[slot.Label] = pick;
+                        usedIds.Add(pick.Id);
+                    }
+                }
+            }
+            else if (rerollMode == 3)
+            {
+                // Baseline draft first
+                foreach (var slot in slots)
+                {
+                    var pick = SpinSlot(slot, squads, usedIds, false, 0);
+                    if (pick != null)
+                    {
+                        xi.Slots[slot.Label] = pick;
+                        usedIds.Add(pick.Id);
+                    }
+                }
+
+                // Reroll the 3 worst slots (by player OVR)
+                for (var r = 0; r < 3; r++)
+                {
+                    var worstSlot = slots
+                        .Where(s => xi.Slots.ContainsKey(s.Label))
+                        .OrderBy(s => xi.Slots[s.Label].Ovr)
+                        .FirstOrDefault();
+                    if (worstSlot == null) break;
+
+                    var oldId = xi.Slots[worstSlot.Label].Id;
+                    usedIds.Remove(oldId);
+
+                    var newPick = SpinSlot(worstSlot, squads, usedIds, false, 0);
+                    if (newPick != null)
+                    {
+                        usedIds.Add(newPick.Id);
+                        xi.Slots[worstSlot.Label] = newPick;
+                    }
+                    else
+                    {
+                        usedIds.Add(oldId);
+                    }
+                }
+            }
+            else
+            {
+                // Baseline: 1 spin per slot, pick best
+                foreach (var slot in slots)
+                {
+                    var pick = SpinSlot(slot, squads, usedIds, false, 0);
+                    if (pick != null)
+                    {
+                        xi.Slots[slot.Label] = pick;
+                        usedIds.Add(pick.Id);
+                    }
+                }
+            }
+
+            SimulationEngine.ComputeTeamRatings(xi);
+            ovrs.Add(xi.Overall);
+        }
+
+        ovrs.Sort();
+        var min = ovrs[0];
+        var max = ovrs[^1];
+        var avg = ovrs.Average();
+        var median = ovrs[nSims / 2];
+        var p10 = ovrs[(int)(nSims * 0.1)];
+        var p25 = ovrs[(int)(nSims * 0.25)];
+        var p75 = ovrs[(int)(nSims * 0.75)];
+        var p90 = ovrs[(int)(nSims * 0.9)];
+        var p95 = ovrs[(int)(nSims * 0.95)];
+        var p99 = ovrs[(int)(nSims * 0.99)];
+
+        var p86 = ovrs.Count(o => o >= 86);
+        var p87 = ovrs.Count(o => o >= 87);
+        var p88 = ovrs.Count(o => o >= 88);
+        var p89 = ovrs.Count(o => o >= 89);
+
+        Console.WriteLine($"\n=== DRAFT: {nSims}x {formation} ({modeLabel}) ===\n");
+        Console.WriteLine($"  Min : {min:F1}   P10 : {p10:F1}   P25 : {p25:F1}");
+        Console.WriteLine($"  Medel: {avg:F1}  Median: {median:F1}");
+        Console.WriteLine($"  P75 : {p75:F1}   P90 : {p90:F1}   P95 : {p95:F1}   P99 : {p99:F1}   Max : {max:F1}");
+        Console.WriteLine($"\n  Sannolikhet att nå OVR:");
+        Console.WriteLine($"  ≥86: {100.0 * p86 / nSims:F2}%");
+        Console.WriteLine($"  ≥87: {100.0 * p87 / nSims:F2}%");
+        Console.WriteLine($"  ≥88: {100.0 * p88 / nSims:F2}%");
+        Console.WriteLine($"  ≥89: {100.0 * p89 / nSims:F2}%");
         Console.WriteLine();
     }
 
