@@ -1,18 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult } from '../../types';
-import { formations, simulateSeason, computeTeamRatings, extractUserMatches } from '../../engine/simulationEngine';
+import { formations, simulateSeason, computeTeamRatings } from '../../engine/simulationEngine';
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
-  getSwedishLabel, sortSlotsRightToLeft,
+  computePreSeasonOdds,
 } from '../../engine/draftEngine';
 
 const seasons = [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
 import FormationView from '../FormationView/FormationView';
-import PlayerSlot from '../PlayerSlot/PlayerSlot';
 import OverallStrip from '../OverallStrip/OverallStrip';
-import TextTVPanel from '../TextTVPanel/TextTVPanel';
 import StepIndicator from '../StepIndicator/StepIndicator';
+import TextTVBrowser from '../TextTVBrowser/TextTVBrowser';
 import styles from './DraftPhase.module.scss';
 
 interface Props {
@@ -21,9 +20,9 @@ interface Props {
   onRestart: () => void;
 }
 
-const stepLabels = ['Start', 'Draft', 'Spela', 'Resultat'];
+const stepLabels = ['Start', 'Draft', 'Text-TV', 'Klar'];
 
-type DraftState = 'drafting' | 'ready' | 'simulating' | 'playing' | 'done';
+type DraftState = 'drafting' | 'ready' | 'simulating';
 
 export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>({});
@@ -42,10 +41,6 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
   const [draftState, setDraftState] = useState<DraftState>('drafting');
   const [result, setResult] = useState<SeasonResult | null>(null);
-  const [played, setPlayed] = useState(0);
-  const [autoPlay, setAutoPlay] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
@@ -63,7 +58,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
 
   const slotDefs = formations[config.formation];
 
-  // --- Draft logic ---
+  // --- Draft logic (slot machine) ---
 
   const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -80,7 +75,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     const teamSteps = 14;
     const seasonSteps = 22;
 
-    function rollTeam(step: number) {
+    function rollTeamStep(step: number) {
       if (!squad || step >= teamSteps) {
         if (squad) {
           setRollTeam(squad.team);
@@ -92,10 +87,10 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
       setRollTeam(rs?.team ?? '');
       setRollTick((t) => t + 1);
       const p = step / teamSteps;
-      rollTimerRef.current = setTimeout(() => rollTeam(step + 1), 60 + p * p * 200);
+      rollTimerRef.current = setTimeout(() => rollTeamStep(step + 1), 60 + p * p * 200);
     }
 
-    function rollSeason(step: number) {
+    function rollSeasonStep(step: number) {
       if (!squad || step >= seasonSteps) {
         if (squad) {
           setRollSeason(String(squad.season));
@@ -110,12 +105,11 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
       setRollSeason(String(seasons[Math.floor(Math.random() * seasons.length)]));
       setRollTick((t) => t + 1);
       const p = step / seasonSteps;
-      rollTimerRef.current = setTimeout(() => rollSeason(step + 1), 60 + p * p * 260);
+      rollTimerRef.current = setTimeout(() => rollSeasonStep(step + 1), 60 + p * p * 260);
     }
 
-    // Start both out of sync (season starts 90ms late so they stay offset)
-    rollTeam(0);
-    setTimeout(() => rollSeason(0), 90);
+    rollTeamStep(0);
+    setTimeout(() => rollSeasonStep(0), 90);
   }, [spinning, squads, usedSquadKeys]);
 
   const handleReroll = useCallback(() => {
@@ -151,12 +145,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     });
 
     if (openGroups.length === 0) return;
-
-    if (openGroups.length === 1) {
-      addPlayer(player, openGroups[0]);
-      return;
-    }
-
+    if (openGroups.length === 1) { addPlayer(player, openGroups[0]); return; }
     setPendingPlayer(player);
     setPendingGroups(openGroups);
   }
@@ -166,16 +155,11 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     if (!targetSlot || filledSlots[targetSlot]) return;
 
     const card: PlayerCard = {
-      name: player.name,
-      season: player.season,
-      team: player.team,
-      ovr: player.ovr,
-      positions: [...player.positions],
-      id: player.id,
+      name: player.name, season: player.season, team: player.team,
+      ovr: player.ovr, positions: [...player.positions], id: player.id,
     };
 
-    const newFilled = { ...filledSlots, [targetSlot]: card };
-    setFilledSlots(newFilled);
+    setFilledSlots({ ...filledSlots, [targetSlot]: card });
     setFilledIds(new Set([...filledIds, player.id]));
     setCurrentSquad(null);
     setSelectedSlot(null);
@@ -183,62 +167,26 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     setPendingGroups([]);
   }
 
-  // When all slots filled → transition to ready
+  // Auto-transition drafting → ready
   useEffect(() => {
-    if (allFilled && draftState === 'drafting') {
-      setDraftState('ready');
-    }
+    if (allFilled && draftState === 'drafting') setDraftState('ready');
   }, [allFilled, draftState]);
 
-  // --- Simulate ---
+  // --- Simulate (triggered from TextTVBrowser) ---
 
   function handleSimulate() {
-    const teamXI = { ...xi, slots: { ...filledSlots } };
-    const simResult = simulateSeason(teamXI, config.formation);
-    setResult(simResult);
     setDraftState('simulating');
-    setTimeout(() => setDraftState('playing'), 600);
+    setTimeout(() => {
+      const teamXI = { ...xi, slots: { ...filledSlots } };
+      const simResult = simulateSeason(teamXI, config.formation);
+      setResult(simResult);
+      setDraftState('ready');
+    }, 1200);
   }
 
-  // --- Results playback ---
-
-  const userMatches = result ? extractUserMatches(result.matches) : [];
-  const totalMatches = userMatches.length;
-  const u = result?.userTeam;
-  const gd = u ? u.goalsFor - u.goalsAgainst : 0;
-
-  const advance = useCallback(() => {
-    const next = played + 1;
-    setPlayed(next);
-    if (next >= totalMatches) {
-      setDraftState('done');
-    }
-    setTimeout(() => {
-      if (listRef.current) {
-        listRef.current.scrollTop = listRef.current.scrollHeight;
-      }
-    }, 50);
-  }, [played, totalMatches]);
-
+  // Cleanup
   useEffect(() => {
-    if (draftState !== 'playing') return;
-    advance();
-  }, []);
-
-  useEffect(() => {
-    if (draftState !== 'playing') return;
-    if (!autoPlay || played >= totalMatches) return;
-    timerRef.current = setTimeout(advance, 700);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [played, autoPlay, draftState, advance, totalMatches]);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
-    };
+    return () => { if (rollTimerRef.current) clearTimeout(rollTimerRef.current); };
   }, []);
 
   // --- Derived ---
@@ -252,11 +200,11 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
 
   const showOverlay = currentSquad && !spinning;
 
+  const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall) : null;
+
   const currentStep = draftState === 'drafting' ? 1
-    : draftState === 'ready' ? 1
     : draftState === 'simulating' ? 2
-    : draftState === 'playing' ? 2
-    : 3;
+    : result ? 3 : 2;
 
   // --- Render ---
 
@@ -342,166 +290,19 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
             </>
           )}
 
-          {draftState === 'ready' && (
-            <>
-              <div className={styles.slotList}>
-                {sortSlotsRightToLeft(slotDefs).map((slot) => (
-                  <PlayerSlot
-                    key={slot.label}
-                    positionLabel={getSwedishLabel(slot.label)}
-                    player={filledSlots[slot.label] ?? null}
-                    positionGroup={slot.position}
-                  />
-                ))}
-              </div>
-              <button className={styles.simBtn} onClick={handleSimulate}>
-                Simulera sasong
-              </button>
-            </>
-          )}
-
-          {(draftState === 'playing' || draftState === 'done') && (
-            <button className={styles.autoBtn} onClick={() => setAutoPlay(!autoPlay)}>
-              {autoPlay ? 'Pausa' : 'Auto'}
-            </button>
+          {draftState === 'ready' && odds && (
+            <TextTVBrowser
+              xi={xi}
+              formation={config.formation}
+              config={config}
+              odds={odds}
+              result={result}
+              onSimulate={handleSimulate}
+              onRestart={onRestart}
+            />
           )}
         </div>
       </div>
-
-      {/* Results section — Text-TV styled */}
-      {(draftState === 'playing' || draftState === 'done') && result && (
-        <TextTVPanel
-          title="DINA MATCHER"
-          meta={`${played} SPELADE`}
-          scrollable
-          maxHeight={draftState === 'done' ? undefined : "360px"}
-        >
-          <div ref={listRef} className={styles.matchList}>
-            {userMatches.slice(0, played).map((m, i) => {
-              const isHome = m.isUserHome;
-              const userScore = isHome ? m.homeGoals : m.awayGoals;
-              const oppScore = isHome ? m.awayGoals : m.homeGoals;
-              const oppName = isHome ? m.awayTeam : m.homeTeam;
-              const resultClass = userScore > oppScore ? styles.win
-                : userScore === oppScore ? styles.draw : styles.loss;
-
-              const goalText = m.goals
-                .sort((a, b) => a.minute - b.minute)
-                .map((g) => `${g.scorer} ${g.minute}'`)
-                .join(', ');
-
-              return (
-                <div key={i} className={styles.matchRow}>
-                  <span className={styles.matchInfo}>
-                    <span className={styles.round}>{i + 1}</span>
-                    <span className={`${styles.teamName} ${isHome ? styles.youTeam : ''}`}>
-                      {isHome ? 'Ditt lag' : oppName}
-                    </span>
-                    <span className={`${styles.score} ${resultClass}`}>
-                      {userScore}-{oppScore}
-                    </span>
-                    <span className={`${styles.teamName} ${!isHome ? styles.youTeam : ''}`}>
-                      {!isHome ? 'Ditt lag' : oppName}
-                    </span>
-                  </span>
-                  <span className={styles.goalScorers}>{goalText}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {draftState === 'done' && u && (
-            <>
-              <div className={styles.finalSection}>
-                <div className={styles.sectionLabel}>SLUTTABELL</div>
-                <div className={styles.finalHeader}>
-                  <div className={styles.bigRecord}>
-                    {u.wins}W - {u.draws}D - {u.losses}L
-                  </div>
-                  <div className={styles.ptsLine}>
-                    {u.points} POANG  GD {gd >= 0 ? `+${gd}` : gd}
-                  </div>
-                  <div className={styles.posLine}>
-                    PLATS {result.finalPosition}/{result.finalTable.length}
-                  </div>
-                  {u.losses === 0 && (
-                    <div className={styles.undefeated}>30-0  OBESEGRADE!</div>
-                  )}
-                </div>
-                <table className={styles.ttvTable}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: 10 }}>#</th>
-                      <th>Lag</th>
-                      <th>S</th>
-                      <th>V</th>
-                      <th>O</th>
-                      <th>F</th>
-                      <th>+/-</th>
-                      <th>P</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.finalTable.map((t, i) => {
-                      const tGd = (t.goalsFor ?? 0) - (t.goalsAgainst ?? 0);
-                      const isUser = t.name === 'Your XI';
-                      const totalM = (t.wins ?? 0) + (t.draws ?? 0) + (t.losses ?? 0);
-                      return (
-                        <tr key={t.name} className={isUser ? styles.you : ''}>
-                          <td className={styles.rank}>{i + 1}</td>
-                          <td>{isUser ? 'DITT LAG' : t.name}</td>
-                          <td>{totalM}</td>
-                          <td>{t.wins ?? 0}</td>
-                          <td>{t.draws ?? 0}</td>
-                          <td>{t.losses ?? 0}</td>
-                          <td>{tGd >= 0 ? `+${tGd}` : `${tGd}`}</td>
-                          <td className={styles.bold}>{t.points ?? 0}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className={styles.awardsSection}>
-                <div className={styles.sectionLabel}>UTMARKELSER</div>
-                <div className={styles.awards}>
-                  {result.goldenBoot && (
-                    <div className={styles.award}>
-                      <span className={styles.awardIcon}>G</span>
-                      <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mal</span>
-                    </div>
-                  )}
-                  {result.playmaker && (
-                    <div className={styles.award}>
-                      <span className={styles.awardIcon}>A</span>
-                      <span>{result.playmaker.playerName}  {result.playmaker.assists} assists</span>
-                    </div>
-                  )}
-                  {result.goldenGlove && (
-                    <div className={styles.award}>
-                      <span className={styles.awardIcon}>C</span>
-                      <span>{result.goldenGlove.playerName}  {result.goldenGlove.cleanSheets} hallna nollor</span>
-                    </div>
-                  )}
-                  {result.playerOfSeason && (
-                    <div className={styles.award}>
-                      <span className={styles.awardIcon}>P</span>
-                      <span>{result.playerOfSeason.playerName}  {result.playerOfSeason.goals}G {result.playerOfSeason.assists}A</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className={styles.restartWrap}>
-                <button className={styles.restartBtn} onClick={onRestart}>
-                  Spela igen
-                </button>
-              </div>
-            </>
-          )}
-        </TextTVPanel>
-      )}
 
       {/* Squad overlay */}
       {showOverlay && (

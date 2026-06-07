@@ -9,13 +9,6 @@
   position: relative;
 }
 
-.top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-}
-
 .progress {
   display: flex;
   align-items: center;
@@ -41,7 +34,7 @@
   grid-template-columns: 400px 1fr;
   gap: 12px;
   flex: 1;
-  align-items: start;
+  align-items: stretch;
 }
 
 .left {
@@ -53,8 +46,10 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 6px 20px 0;
+  padding: 6px 0 0;
   align-items: center;
+  min-height: 0;
+  overflow: hidden;
 }
 
 // ── Reroll dots ──
@@ -109,13 +104,6 @@
     opacity: 0.35;
     cursor: not-allowed;
   }
-}
-
-.slotList {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
 }
 
 .hint {
@@ -185,40 +173,6 @@
   flex-shrink: 0;
 }
 
-// ── Simulate button ──
-
-.simBtn {
-  padding: 12px 18px;
-  background: $active-green;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: $radius-sm;
-  text-align: center;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 0.85;
-  }
-}
-
-// ── Auto button (during playback) ──
-
-.autoBtn {
-  padding: 8px 14px;
-  background: transparent;
-  border: 0.5px solid $sand-border;
-  border-radius: $radius-sm;
-  color: $ink-muted;
-  font-size: 12px;
-  text-align: center;
-
-  &:hover {
-    border-color: $ink;
-    color: $ink;
-  }
-}
-
 // ── Spinner / center ──
 
 .center {
@@ -246,249 +200,6 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
-}
-
-// ── Results section ──
-
-.resultsSection {
-  padding: 12px 0;
-  border-top: 1px solid $sand-border;
-  margin-top: 4px;
-}
-
-.matchList {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.matchRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: $font-mono;
-  font-size: 11px;
-  padding: 4px 0;
-  border-bottom: 0.5px solid rgba($ttv-border, 0.5);
-  color: $ttv-body;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.matchInfo {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
-}
-
-.round {
-  color: $ttv-meta;
-  width: 18px;
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.teamName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: $ttv-body;
-  flex-shrink: 1;
-  min-width: 0;
-}
-
-.score {
-  width: 30px;
-  text-align: center;
-  font-weight: 600;
-  color: $ttv-body;
-  flex-shrink: 0;
-
-  &.win { color: $ttv-win; }
-  &.loss { color: $ttv-loss; }
-  &.draw { color: $ttv-draw; }
-}
-
-.youTeam {
-  color: $ttv-title;
-}
-
-.goalScorers {
-  color: $ttv-meta;
-  font-size: 9px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 200px;
-  text-align: right;
-  flex-shrink: 0;
-  margin-left: auto;
-  padding-left: 16px;
-}
-
-// ── Final table ──
-
-.sectionLabel {
-  font-family: $font-mono;
-  font-size: 11px;
-  font-weight: 600;
-  color: $ttv-title;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 10px 0 4px;
-  border-bottom: 1px solid $ttv-border;
-  margin-bottom: 8px;
-}
-
-.finalSection {
-  padding: 14px 0 6px;
-  margin-top: 16px;
-  border-top: 2px solid $ttv-border;
-}
-
-.finalHeader {
-  padding: 4px 0 10px;
-  text-align: center;
-}
-
-.bigRecord {
-  font-family: $font-mono;
-  font-size: 18px;
-  color: $ttv-body;
-  font-weight: 700;
-}
-
-.ptsLine {
-  font-family: $font-mono;
-  font-size: 13px;
-  color: $ttv-meta;
-  margin-top: 4px;
-}
-
-.posLine {
-  font-family: $font-mono;
-  font-size: 12px;
-  color: $ttv-meta;
-  margin-top: 6px;
-}
-
-.undefeated {
-  font-family: $font-mono;
-  font-size: 15px;
-  color: $active-green;
-  margin-top: 8px;
-  font-weight: 700;
-}
-
-.ttvTable {
-  width: 100%;
-  font-family: $font-mono;
-  font-size: 11px;
-  border-collapse: collapse;
-
-  th {
-    color: $ttv-meta;
-    font-weight: 400;
-    padding: 2px 4px;
-    text-align: left;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border-bottom: 0.5px solid $ttv-border;
-  }
-
-  th:not(:first-child):not(:nth-child(2)) {
-    text-align: right;
-  }
-
-  td {
-    color: $ttv-body;
-    padding: 3px 4px;
-  }
-
-  td:not(:first-child):not(:nth-child(2)) {
-    text-align: right;
-  }
-
-  tr.you td {
-    color: $badge-yellow;
-    font-weight: 600;
-  }
-}
-
-.rank {
-  color: $ttv-meta !important;
-}
-
-.bold {
-  font-weight: 700;
-}
-
-// ── Awards ──
-
-.awardsSection {
-  padding: 14px 0 6px;
-  margin-top: 16px;
-  border-top: 2px solid $ttv-border;
-}
-
-.awards {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 4px 0;
-}
-
-.award {
-  font-family: $font-mono;
-  font-size: 11px;
-  color: $ttv-body;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 6px;
-  border-bottom: 0.5px solid rgba($ttv-border, 0.5);
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.awardIcon {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba($badge-yellow, 0.15);
-  color: $badge-yellow;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-// ── Restart button ──
-
-.restartBtn {
-  padding: 10px 24px;
-  background: $active-green;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: $radius-sm;
-  margin-top: 12px;
-  align-self: center;
-
-  &:hover {
-    opacity: 0.85;
-  }
 }
 
 // ── Squad overlay ──

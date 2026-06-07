@@ -133,6 +133,30 @@ export function autoAssignSlot(
   return openSlots[0].label;
 }
 
+export interface PreSeasonOdds {
+  projectedPosition: number;
+  projectedPoints: number;
+  winLeague: number;
+  top4: number;
+  top6: number;
+  top10: number;
+  relegation: number;
+}
+
+export function computePreSeasonOdds(overall: number): PreSeasonOdds {
+  const strength = Math.max(0, Math.min(1, (overall - 55) / 38));
+
+  return {
+    projectedPosition: Math.max(1, Math.round(16 - strength * 14)),
+    projectedPoints: Math.round(28 + strength * 37),
+    winLeague: Math.round(Math.pow(strength, 1.8) * 60 * 10) / 10,
+    top4: Math.round(Math.min(99.9, Math.pow(strength, 0.7) * 99.9) * 10) / 10,
+    top6: Math.round(Math.min(99.9, Math.pow(strength, 0.5) * 99.9) * 10) / 10,
+    top10: Math.round(Math.min(99.9, (30 + strength * 70)) * 10) / 10,
+    relegation: Math.round(Math.pow(1 - strength, 2.5) * 80 * 10) / 10,
+  };
+}
+
 export function getOpenGroupsForPlayer(
   player: SquadPlayer,
   formation: FormationKey,

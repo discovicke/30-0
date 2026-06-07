@@ -60,11 +60,12 @@
 
     .field {
       flex: 1;
-      justify-content: space-between;
+      justify-content: space-evenly;
+      gap: 0;
     }
 
     .row {
-      gap: 16px;
+      gap: 0;
     }
 
     .dot {
@@ -75,6 +76,11 @@
     .dot span {
       font-size: 11px;
       font-weight: 700;
+    }
+
+    .dotFilled span {
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .pname {
@@ -98,8 +104,8 @@
 
 .row {
   display: flex;
-  justify-content: center;
-  gap: 5px;
+  justify-content: space-evenly;
+  gap: 0;
 }
 
 .pslot {
@@ -155,10 +161,10 @@
     border-width: 2px;
   }
 
-  &.dotGK { background: #4FC3F7; border-color: #4FC3F7; border-width: 2px; }
-  &.dotDF { background: #66BB6A; border-color: #66BB6A; border-width: 2px; }
-  &.dotMF { background: #FFA726; border-color: #FFA726; border-width: 2px; }
-  &.dotFW { background: #EF5350; border-color: #EF5350; border-width: 2px; }
+  &.dotGK { background: #4FC3F7; border-color: rgba(255,255,255,0.8); border-width: 2px; }
+  &.dotDF { background: #66BB6A; border-color: rgba(255,255,255,0.8); border-width: 2px; }
+  &.dotMF { background: #FFA726; border-color: rgba(255,255,255,0.8); border-width: 2px; }
+  &.dotFW { background: #EF5350; border-color: rgba(255,255,255,0.8); border-width: 2px; }
 }
 
 .pname {
