@@ -34,7 +34,7 @@ export function getPlayerPosGroups(player: SquadPlayer): string[] {
 }
 
 export function getPositionLabel(posGroup: string): string {
-  const map: Record<string, string> = { GK: 'MV', DF: 'F', MF: 'MF', FW: 'A' };
+  const map: Record<string, string> = { GK: 'MÅL', DF: 'FÖR', MF: 'MID', FW: 'ANF' };
   return map[posGroup] ?? posGroup;
 }
 

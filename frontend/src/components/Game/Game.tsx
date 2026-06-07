@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GameConfig, GamePhase, PlayerCard, SeasonResult, Squad, MatchResult } from '../../types';
-import { simulateSeason, extractUserMatches } from '../../engine/simulationEngine';
+import type { GameConfig, GamePhase, PlayerCard, SeasonResult, Squad } from '../../types';
+import { simulateSeason } from '../../engine/simulationEngine';
 import Navbar from '../Navbar/Navbar';
 import GameSetup from '../GameSetup/GameSetup';
 import DraftPhase from '../DraftPhase/DraftPhase';
 import MatchReplay from '../MatchReplay/MatchReplay';
-import SeasonResults from '../SeasonResults/SeasonResults';
 import styles from './Game.module.scss';
 
 export default function Game() {
@@ -14,7 +13,6 @@ export default function Game() {
   const [slots, setSlots] = useState<Record<string, PlayerCard>>({});
   const [result, setResult] = useState<SeasonResult | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
-  const [userMatches, setUserMatches] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -39,7 +37,6 @@ export default function Game() {
     setConfig(c);
     setSlots({});
     setResult(null);
-    setUserMatches([]);
     setPhase('draft');
   }, []);
 
@@ -51,19 +48,13 @@ export default function Game() {
     const xi = buildTeamXI(filled, config.formation);
     const simResult = simulateSeason(xi, config.formation);
     setResult(simResult);
-    setUserMatches(extractUserMatches(simResult.matches));
     setPhase('match-replay');
   }, [config]);
-
-  const handleReplayComplete = useCallback(() => {
-    setPhase('results');
-  }, []);
 
   const handleRestart = useCallback(() => {
     setConfig(null);
     setSlots({});
     setResult(null);
-    setUserMatches([]);
     setPhase('setup');
   }, []);
 
@@ -120,18 +111,9 @@ export default function Game() {
 
       {phase === 'match-replay' && result && (
         <MatchReplay
-          userMatches={userMatches}
-          aiTeams={result.aiTeams}
-          result={{ userTeam: result.userTeam }}
+          result={result}
           slots={slots}
           formation={config.formation}
-          onComplete={handleReplayComplete}
-        />
-      )}
-
-      {phase === 'results' && result && (
-        <SeasonResults
-          result={result}
           onRestart={handleRestart}
         />
       )}

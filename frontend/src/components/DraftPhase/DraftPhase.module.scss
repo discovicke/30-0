@@ -168,13 +168,18 @@
 .playerPos {
   font-size: 8px;
   font-weight: 600;
-  color: $ink-muted;
-  background: $sand-surface;
   padding: 1px 5px;
   border-radius: 3px;
   min-width: 24px;
   text-align: center;
   text-transform: uppercase;
+  color: #fff;
+  background: $ink-muted;
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
 }
 
 .playerName {
@@ -258,4 +263,9 @@
   &:hover {
     opacity: 0.85;
   }
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
 }

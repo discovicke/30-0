@@ -215,7 +215,7 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
                   {pendingGroups.map((g) => (
                     <button
                       key={g}
-                      className={styles.posChooserBtn}
+                      className={`${styles.posChooserBtn} ${styles[`pos${g}`] || ''}`}
                       onClick={() => addPlayer(pendingPlayer, g)}
                     >
                       {getPositionLabel(g)}
@@ -232,9 +232,11 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
                     onClick={() => p.available && handlePickPlayer(p)}
                     disabled={!p.available}
                   >
-                    <span className={styles.playerPos}>
-                      {p.openGroups.map(getPositionLabel).join('/')}
-                    </span>
+                    {p.openGroups.map((g) => (
+                      <span key={g} className={`${styles.playerPos} ${styles[`pos${g}`] || ''}`}>
+                        {getPositionLabel(g)}
+                      </span>
+                    ))}
                     <span className={styles.playerName}>{p.name}</span>
                     <span className={styles.playerOvr}>{Math.round(p.ovr)}</span>
                   </button>
