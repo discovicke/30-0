@@ -4,7 +4,10 @@ import { formations, simulateSeason, computeTeamRatings, extractUserMatches } fr
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
+  getSwedishLabel, sortSlotsRightToLeft,
 } from '../../engine/draftEngine';
+
+const seasons = [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
 import FormationView from '../FormationView/FormationView';
 import PlayerSlot from '../PlayerSlot/PlayerSlot';
 import OverallStrip from '../OverallStrip/OverallStrip';
@@ -30,6 +33,11 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
+  const [rolling, setRolling] = useState(false);
+  const [rollTeam, setRollTeam] = useState('');
+  const [rollSeason, setRollSeason] = useState('');
+  const [rollTick, setRollTick] = useState(0);
+  const [teamLocked, setTeamLocked] = useState(false);
   const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
   const [draftState, setDraftState] = useState<DraftState>('drafting');
@@ -57,21 +65,57 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
 
   // --- Draft logic ---
 
+  const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleSpin = useCallback(() => {
     if (spinning) return;
     setSpinning(true);
+    setRolling(true);
+    setTeamLocked(false);
     setCurrentSquad(null);
     setPendingPlayer(null);
     setPendingGroups([]);
 
-    setTimeout(() => {
-      const squad = pickRandomSquad(squads, usedSquadKeys);
-      if (squad) {
-        setCurrentSquad(squad);
-        setUsedSquadKeys(new Set([...usedSquadKeys, `${squad.team}|${squad.season}`]));
+    const squad = pickRandomSquad(squads, usedSquadKeys);
+    const teamSteps = 14;
+    const seasonSteps = 22;
+
+    function rollTeam(step: number) {
+      if (!squad || step >= teamSteps) {
+        if (squad) {
+          setRollTeam(squad.team);
+          setTeamLocked(true);
+        }
+        return;
       }
-      setSpinning(false);
-    }, 400);
+      const rs = squads[Math.floor(Math.random() * squads.length)];
+      setRollTeam(rs?.team ?? '');
+      setRollTick((t) => t + 1);
+      const p = step / teamSteps;
+      rollTimerRef.current = setTimeout(() => rollTeam(step + 1), 60 + p * p * 200);
+    }
+
+    function rollSeason(step: number) {
+      if (!squad || step >= seasonSteps) {
+        if (squad) {
+          setRollSeason(String(squad.season));
+          setRollTick((t) => t + 1);
+          setRolling(false);
+          setCurrentSquad(squad);
+          setUsedSquadKeys(new Set([...usedSquadKeys, `${squad.team}|${squad.season}`]));
+        }
+        setSpinning(false);
+        return;
+      }
+      setRollSeason(String(seasons[Math.floor(Math.random() * seasons.length)]));
+      setRollTick((t) => t + 1);
+      const p = step / seasonSteps;
+      rollTimerRef.current = setTimeout(() => rollSeason(step + 1), 60 + p * p * 260);
+    }
+
+    // Start both out of sync (season starts 90ms late so they stay offset)
+    rollTeam(0);
+    setTimeout(() => rollSeason(0), 90);
   }, [spinning, squads, usedSquadKeys]);
 
   const handleReroll = useCallback(() => {
@@ -190,6 +234,13 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     };
   }, [played, autoPlay, draftState, advance, totalMatches]);
 
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
+    };
+  }, []);
+
   // --- Derived ---
 
   const eligiblePlayers = currentSquad
@@ -263,8 +314,26 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
                 <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
               </div>
 
+              <div className={styles.slotMachine}>
+                <div className={styles.slotReel}>
+                  <div className={styles.reelClip}>
+                    <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
+                      {rolling ? rollTeam : (currentSquad?.team ?? '---')}
+                    </span>
+                  </div>
+                </div>
+                <span className={styles.slotX}>X</span>
+                <div className={styles.slotReel}>
+                  <div className={styles.reelClip}>
+                    <span key={rollTick + 1000} className={styles.slotText}>
+                      {rolling ? rollSeason : (currentSquad ? String(currentSquad.season) : '--')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
-                {spinning ? 'Snurrar...' : 'Snurra fram spelare'}
+                Snurra fram spelare
               </button>
 
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
@@ -276,12 +345,12 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
           {draftState === 'ready' && (
             <>
               <div className={styles.slotList}>
-                {slotDefs.map((slot) => (
+                {sortSlotsRightToLeft(slotDefs).map((slot) => (
                   <PlayerSlot
                     key={slot.label}
-                    positionLabel={slot.label}
+                    positionLabel={getSwedishLabel(slot.label)}
                     player={filledSlots[slot.label] ?? null}
-                    muted
+                    positionGroup={slot.position}
                   />
                 ))}
               </div>

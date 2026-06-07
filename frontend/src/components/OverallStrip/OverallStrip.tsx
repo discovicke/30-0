@@ -15,11 +15,11 @@ export default function OverallStrip({ overall, attack, midfield, defence }: Pro
         <span className={styles.mainValue}>{Math.round(overall)}</span>
       </div>
       <div className={styles.subRow}>
-        <span className={styles.subLabel}>Attack</span>
+        <span className={styles.subLabel}>Anfall</span>
         <span className={styles.subValue}>{Math.round(attack)}</span>
       </div>
       <div className={styles.subRow}>
-        <span className={styles.subLabel}>Mitt</span>
+        <span className={styles.subLabel}>Mittfalt</span>
         <span className={styles.subValue}>{Math.round(midfield)}</span>
       </div>
       <div className={styles.subRow}>

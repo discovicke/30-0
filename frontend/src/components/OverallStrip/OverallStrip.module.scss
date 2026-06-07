@@ -2,7 +2,10 @@
 
 .strip {
   width: 100%;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  border: 1px solid $sand-border;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .mainRow {
@@ -10,20 +13,18 @@
   align-items: baseline;
   justify-content: space-between;
   background: $ink;
-  border-radius: 5px;
-  padding: 8px 14px;
-  margin-bottom: 6px;
+  padding: 10px 16px;
 }
 
 .mainLabel {
-  font-size: 11px;
-  color: $chrome-muted;
+  font-size: 13px;
+  color: $badge-yellow;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .mainValue {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
   color: $badge-yellow;
 }
@@ -32,13 +33,12 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  background: $sand-surface;
-  border-radius: 5px;
-  padding: 6px 14px;
-  margin-bottom: 4px;
+  background: $sand-white;
+  padding: 8px 16px;
+  border-top: 0.5px solid $sand-border;
 
   &:last-child {
-    margin-bottom: 0;
+    border-radius: 0 0 6px 6px;
   }
 }
 
@@ -51,7 +51,7 @@
 
 .subValue {
   font-family: $font-mono;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: $ink;
 }

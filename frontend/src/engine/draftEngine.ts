@@ -1,4 +1,4 @@
-import type { Squad, SquadPlayer, FormationKey } from '../types';
+import type { Squad, SquadPlayer, FormationKey, FormationSlot } from '../types';
 import { formations } from './simulationEngine';
 
 export function getRerollCount(difficulty: 'easy' | 'normal' | 'hard'): number {
@@ -36,6 +36,29 @@ export function getPlayerPosGroups(player: SquadPlayer): string[] {
 export function getPositionLabel(posGroup: string): string {
   const map: Record<string, string> = { GK: 'MÅL', DF: 'FÖR', MF: 'MID', FW: 'ANF' };
   return map[posGroup] ?? posGroup;
+}
+
+const swedishSlotLabels: Record<string, string> = {
+  GK: 'MV', LB: 'VB', CB1: 'MB', CB2: 'MB', RB: 'HB',
+  CM1: 'CM', CM2: 'CM', CM3: 'CM',
+  LM: 'VM', RM: 'HM',
+  LW: 'VY', RW: 'HY', ST: 'ANF',
+  ST1: 'ANF', ST2: 'ANF',
+  CB3: 'MB',
+};
+
+export function getSwedishLabel(label: string): string {
+  return swedishSlotLabels[label] ?? label;
+}
+
+export function sortSlotsRightToLeft(slots: FormationSlot[]): FormationSlot[] {
+  const groupOrder = ['GK', 'DF', 'MF', 'FW'];
+  const result: FormationSlot[] = [];
+  for (const group of groupOrder) {
+    const groupSlots = slots.filter((s) => s.position === group);
+    result.push(...groupSlots.reverse());
+  }
+  return result;
 }
 
 export interface EligiblePlayer extends SquadPlayer {

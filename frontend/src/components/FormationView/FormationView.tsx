@@ -1,5 +1,6 @@
 import type { FormationKey, PlayerCard, FormationSlot } from '../../types';
 import { formations } from '../../engine/simulationEngine';
+import { getSwedishLabel } from '../../engine/draftEngine';
 import styles from './FormationView.module.scss';
 
 interface Props {
@@ -34,14 +35,15 @@ export default function FormationView({ formation, slots, compact, tall, interac
           const player = slots[slot.label];
           const filled = !!player;
           const isSel = selectedSlot === slot.label;
+          const dotColor = filled ? (styles[`dot${slot.position}` as keyof typeof styles] || '') : '';
           return (
             <div
               key={slot.label}
               className={`${styles.pslot} ${interactive && !filled ? styles.clickable : ''}`}
               onClick={interactive && !filled && onSlotClick ? () => onSlotClick(slot.label) : undefined}
             >
-              <div className={`${styles.dot} ${filled ? styles.dotFilled : ''} ${isSel ? styles.dotSelected : ''}`}>
-                <span>{filled ? slot.label : '+'}</span>
+              <div className={`${styles.dot} ${filled ? styles.dotFilled : ''} ${dotColor} ${isSel ? styles.dotSelected : ''}`}>
+                <span>{filled ? getSwedishLabel(slot.label) : '+'}</span>
               </div>
               {player ? (
                 <>

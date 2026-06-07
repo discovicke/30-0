@@ -7,12 +7,14 @@ interface Props {
   available?: boolean;
   active?: boolean;
   muted?: boolean;
+  positionGroup?: string;
   onClick?: () => void;
 }
 
-export default function PlayerSlot({ positionLabel, player, active, muted, onClick }: Props) {
+export default function PlayerSlot({ positionLabel, player, active, muted, positionGroup, onClick }: Props) {
   const filled = !!player;
   const clickable = !!onClick && !muted;
+  const posColor = positionGroup ? (styles[`pos${positionGroup}` as keyof typeof styles] || '') : '';
 
   return (
     <button
@@ -25,7 +27,7 @@ export default function PlayerSlot({ positionLabel, player, active, muted, onCli
       onClick={clickable ? onClick : undefined}
       disabled={!clickable}
     >
-      <span className={`${styles.posBadge} ${filled ? styles.posFilled : ''}`}>
+      <span className={`${styles.posBadge} ${filled ? styles.posFilled : ''} ${filled && posColor ? posColor : ''}`}>
         {positionLabel}
       </span>
       <div className={styles.info}>

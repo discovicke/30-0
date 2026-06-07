@@ -49,6 +49,11 @@
     background: $ink;
     color: $chrome-text;
   }
+
+  &.posGK { background: #4FC3F7; color: #fff; }
+  &.posDF { background: #66BB6A; color: #fff; }
+  &.posMF { background: #FFA726; color: #fff; }
+  &.posFW { background: #EF5350; color: #fff; }
 }
 
 .info {

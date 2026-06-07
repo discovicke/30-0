@@ -111,10 +111,78 @@
   }
 }
 
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
 .hint {
   font-size: 10px;
   color: $ink-ghost;
   text-align: center;
+}
+
+// ── Slot machine ──
+
+.slotMachine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 12px;
+}
+
+.slotReel {
+  background: $sand-surface;
+  border: 1px solid $ink;
+  border-radius: $radius-sm;
+  width: 160px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.reelClip {
+  overflow: hidden;
+  height: 22px;
+  line-height: 22px;
+}
+
+.slotText {
+  display: block;
+  font-family: $font-mono;
+  font-size: 16px;
+  font-weight: 700;
+  color: $ink;
+  white-space: nowrap;
+  text-align: center;
+  animation: slideUp 0.1s ease-out;
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slotStatic {
+  animation: none;
+}
+
+.slotX {
+  font-size: 20px;
+  font-weight: 700;
+  color: $ink-muted;
+  flex-shrink: 0;
 }
 
 // ── Simulate button ──

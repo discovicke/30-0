@@ -73,7 +73,8 @@
     }
 
     .dot span {
-      font-size: 10px;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     .pname {
@@ -151,7 +152,13 @@
   &.dotFilled {
     background: $pitch-player;
     border-color: $pitch-border-filled;
+    border-width: 2px;
   }
+
+  &.dotGK { background: #4FC3F7; border-color: #4FC3F7; border-width: 2px; }
+  &.dotDF { background: #66BB6A; border-color: #66BB6A; border-width: 2px; }
+  &.dotMF { background: #FFA726; border-color: #FFA726; border-width: 2px; }
+  &.dotFW { background: #EF5350; border-color: #EF5350; border-width: 2px; }
 }
 
 .pname {
