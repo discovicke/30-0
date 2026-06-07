@@ -207,3 +207,55 @@
     color: $ink;
   }
 }
+
+.overlayReroll {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 0.5px solid $sand-border;
+}
+
+.spinBtnSm {
+  padding: 5px 12px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.posChooser {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.posChooserText {
+  font-size: 12px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.posChooserBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.posChooserBtn {
+  padding: 8px 20px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: $radius-sm;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}

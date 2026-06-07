@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react';
 import type { Squad, SquadPlayer, GameConfig, PlayerCard } from '../../types';
 import { formations, computeTeamRatings } from '../../engine/simulationEngine';
 import {
-  pickRandomSquad, getEligiblePlayers, getPlayerPosGroup,
-  autoAssignSlot, getRerollCount,
+  pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
+  getPositionLabel, autoAssignSlot, getRerollCount,
 } from '../../engine/draftEngine';
 import PlayerSlot from '../PlayerSlot/PlayerSlot';
 import FormationView from '../FormationView/FormationView';
@@ -27,12 +27,14 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [spinning, setSpinning] = useState(false);
+  // For multi-position: store player being placed and their open groups
+  const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
+  const [pendingGroups, setPendingGroups] = useState<string[]>([]);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
   const filledLabels = Object.keys(filledSlots);
 
-  // Compute team ratings from current filled slots for OverallStrip
   const xi = {
     name: 'Your XI',
     slots: filledSlots,
@@ -42,17 +44,12 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
   };
   if (filledCount > 0) computeTeamRatings(xi);
 
-  // Build filled position groups set
-  const filledPosGroups = new Set<string>();
-  for (const label of filledLabels) {
-    const s = formations[config.formation].find((f) => f.label === label);
-    if (s) filledPosGroups.add(s.position);
-  }
-
   const handleSpin = useCallback(() => {
     if (spinning) return;
     setSpinning(true);
     setCurrentSquad(null);
+    setPendingPlayer(null);
+    setPendingGroups([]);
 
     setTimeout(() => {
       const squad = pickRandomSquad(squads, usedSquadKeys);
@@ -75,15 +72,43 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
     if (filledSlots[slotLabel]) return;
     setSelectedSlot(slotLabel);
     setCurrentSquad(null);
+    setPendingPlayer(null);
   }
 
   function handlePickPlayer(player: SquadPlayer) {
     if (!currentSquad) return;
 
-    const targetSlot = config.draftMode === 'position-first'
-      ? selectedSlot
-      : autoAssignSlot(player, config.formation, filledLabels);
+    if (config.draftMode === 'position-first') {
+      if (!selectedSlot) return;
+      const slot = formations[config.formation].find((s) => s.label === selectedSlot);
+      if (!slot) return;
+      addPlayer(player, slot.position);
+      return;
+    }
 
+    // Squad-first: check if player fits multiple open groups
+    const groups = getPlayerPosGroups(player);
+    const openGroups = groups.filter((g) => {
+      const slotDefs = formations[config.formation];
+      const total = slotDefs.filter((s) => s.position === g).length;
+      const filled = filledLabels.filter((l) => slotDefs.find((s) => s.label === l)?.position === g).length;
+      return filled < total;
+    });
+
+    if (openGroups.length === 0) return;
+
+    if (openGroups.length === 1) {
+      addPlayer(player, openGroups[0]);
+      return;
+    }
+
+    // Multiple groups open — show chooser
+    setPendingPlayer(player);
+    setPendingGroups(openGroups);
+  }
+
+  function addPlayer(player: SquadPlayer, targetGroup: string) {
+    const targetSlot = autoAssignSlot(player, config.formation, filledLabels, targetGroup);
     if (!targetSlot || filledSlots[targetSlot]) return;
 
     const card: PlayerCard = {
@@ -100,6 +125,8 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
     setFilledIds(new Set([...filledIds, player.id]));
     setCurrentSquad(null);
     setSelectedSlot(null);
+    setPendingPlayer(null);
+    setPendingGroups([]);
 
     if (Object.keys(newFilled).length >= totalSlots) {
       onComplete(newFilled);
@@ -107,13 +134,12 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
   }
 
   const eligiblePlayers = currentSquad
-    ? getEligiblePlayers(
-        currentSquad, filledIds, filledPosGroups,
-        selectedSlot, config.formation, filledLabels
-      )
+    ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
     : [];
 
-  const canSpin = !spinning && (config.draftMode !== 'position-first' || selectedSlot !== null);
+  const canSpin = !spinning && !pendingPlayer && (config.draftMode !== 'position-first' || selectedSlot !== null);
+
+  const showOverlay = currentSquad && !spinning;
 
   return (
     <div className={styles.container}>
@@ -128,11 +154,6 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
             <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
               {spinning ? 'Snurrar...' : 'Snurra fram spelare'}
             </button>
-            {rerollsLeft > 0 && (
-              <button className={styles.rerollBtn} onClick={handleReroll}>
-                Reroll ({rerollsLeft})
-              </button>
-            )}
             {config.draftMode === 'position-first' && !selectedSlot && (
               <span className={styles.hint}>Klicka pa en tom position forst</span>
             )}
@@ -165,28 +186,63 @@ export default function DraftPhase({ config, squads, onComplete }: Props) {
         </div>
       </div>
 
-      {currentSquad && !spinning && (
+      {/* Squad overlay */}
+      {showOverlay && (
         <div className={styles.squadOverlay}>
           <div className={styles.squadCard}>
             <div className={styles.squadHeader}>
               <span className={styles.squadName}>{currentSquad.team}</span>
               <span className={styles.squadSeason}>{currentSquad.season}</span>
             </div>
-            <div className={styles.playerList}>
-              {eligiblePlayers.map((p) => (
-                <button
-                  key={p.id}
-                  className={`${styles.playerRow} ${!p.available ? styles.playerMuted : ''}`}
-                  onClick={() => p.available && handlePickPlayer(p)}
-                  disabled={!p.available}
-                >
-                  <span className={styles.playerPos}>{getPlayerPosGroup(p)}</span>
-                  <span className={styles.playerName}>{p.name}</span>
-                  <span className={styles.playerOvr}>{Math.round(p.ovr)}</span>
-                </button>
-              ))}
+
+            {/* Reroll inside overlay */}
+            <div className={styles.overlayReroll}>
+              <button className={styles.rerollBtn} onClick={handleReroll} disabled={rerollsLeft <= 0}>
+                Reroll ({rerollsLeft} kvar)
+              </button>
+              <button className={styles.spinBtnSm} onClick={handleSpin}>
+                Ny trupp
+              </button>
             </div>
-            {eligiblePlayers.filter((p) => p.available).length === 0 && (
+
+            {/* Position chooser for multi-position players */}
+            {pendingPlayer ? (
+              <div className={styles.posChooser}>
+                <p className={styles.posChooserText}>
+                  Valj position for {pendingPlayer.name}
+                </p>
+                <div className={styles.posChooserBtns}>
+                  {pendingGroups.map((g) => (
+                    <button
+                      key={g}
+                      className={styles.posChooserBtn}
+                      onClick={() => addPlayer(pendingPlayer, g)}
+                    >
+                      {getPositionLabel(g)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={styles.playerList}>
+                {eligiblePlayers.map((p) => (
+                  <button
+                    key={p.id}
+                    className={`${styles.playerRow} ${!p.available ? styles.playerMuted : ''}`}
+                    onClick={() => p.available && handlePickPlayer(p)}
+                    disabled={!p.available}
+                  >
+                    <span className={styles.playerPos}>
+                      {p.openGroups.map(getPositionLabel).join('/')}
+                    </span>
+                    <span className={styles.playerName}>{p.name}</span>
+                    <span className={styles.playerOvr}>{Math.round(p.ovr)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!pendingPlayer && eligiblePlayers.filter((p) => p.available).length === 0 && (
               <button className={styles.skipBtn} onClick={handleSpin}>
                 Inga valbara, snurra igen
               </button>

@@ -23,57 +23,70 @@ const posGroupMap: Record<string, string> = {
   LW: 'FW', RW: 'FW', ST: 'FW',
 };
 
-export function getPlayerPosGroup(player: SquadPlayer): string {
+export function getPlayerPosGroups(player: SquadPlayer): string[] {
+  const groups = new Set<string>();
   for (const p of player.positions) {
     const g = posGroupMap[p];
-    if (g) return g;
+    if (g) groups.add(g);
   }
-  return 'MF';
+  if (groups.size === 0) groups.add('MF');
+  return [...groups];
+}
+
+export function getPositionLabel(posGroup: string): string {
+  const map: Record<string, string> = { GK: 'MV', DF: 'F', MF: 'MF', FW: 'A' };
+  return map[posGroup] ?? posGroup;
 }
 
 export interface EligiblePlayer extends SquadPlayer {
   available: boolean;
+  openGroups: string[];
 }
 
 export function getEligiblePlayers(
   squad: Squad,
   filledIds: Set<string>,
-  _filledPosGroups: Set<string>,
-  filterPosition: string | null,
   formation: FormationKey,
   filledSlots: string[],
+  filterPosition: string | null,
 ): EligiblePlayer[] {
   const slotsDef = formations[formation];
 
-  // Build a map of label -> position group for already-filled slots
-  const filledGroups = new Set<string>();
-  for (const label of filledSlots) {
-    const slot = slotsDef.find((s) => s.label === label);
-    if (slot) filledGroups.add(slot.position);
+  // Count total slots per position group
+  const totalPerGroup: Record<string, number> = {};
+  for (const s of slotsDef) {
+    totalPerGroup[s.position] = (totalPerGroup[s.position] ?? 0) + 1;
   }
 
-  // Determine which position groups are still open
-  const neededGroups = new Set(slotsDef.map((s) => s.position));
-  for (const g of filledGroups) neededGroups.delete(g);
+  // Count filled slots per position group
+  const filledPerGroup: Record<string, number> = {};
+  for (const label of filledSlots) {
+    const slot = slotsDef.find((s) => s.label === label);
+    if (slot) {
+      filledPerGroup[slot.position] = (filledPerGroup[slot.position] ?? 0) + 1;
+    }
+  }
 
-  // If filtering by a specific slot, only that slot's position group is needed
+  function groupIsOpen(g: string): boolean {
+    return (filledPerGroup[g] ?? 0) < (totalPerGroup[g] ?? 0);
+  }
+
   const filterGroup = filterPosition
     ? slotsDef.find((s) => s.label === filterPosition)?.position ?? null
     : null;
 
-  if (filterGroup && !neededGroups.has(filterGroup)) {
-    // selected slot's group is already full — no one is available
-    return squad.players.map((p) => ({ ...p, available: false }));
+  if (filterGroup && !groupIsOpen(filterGroup)) {
+    return squad.players.map((p) => ({ ...p, available: false, openGroups: [] }));
   }
 
   return squad.players.map((p) => {
     const alreadyUsed = filledIds.has(p.id);
-    const playerGroup = getPlayerPosGroup(p);
-    const groupOpen = filterGroup
-      ? neededGroups.has(filterGroup) && playerGroup === filterGroup
-      : neededGroups.has(playerGroup);
-    const available = !alreadyUsed && groupOpen;
-    return { ...p, available };
+    const playerGroups = getPlayerPosGroups(p);
+    const openGroups = playerGroups.filter((g) =>
+      filterGroup ? g === filterGroup : groupIsOpen(g)
+    );
+    const available = !alreadyUsed && openGroups.length > 0;
+    return { ...p, available, openGroups };
   });
 }
 
@@ -81,14 +94,39 @@ export function autoAssignSlot(
   player: SquadPlayer,
   formation: FormationKey,
   filledSlots: string[],
+  preferredGroup?: string,
 ): string | null {
   const slotsDef = formations[formation];
-  const playerGroup = getPlayerPosGroup(player);
+  const groups = getPlayerPosGroups(player);
+  const targetGroup = preferredGroup
+    ? (groups.includes(preferredGroup) ? preferredGroup : groups[0])
+    : groups[0];
 
   const openSlots = slotsDef.filter(
-    (s) => s.position === playerGroup && !filledSlots.includes(s.label)
+    (s) => s.position === targetGroup && !filledSlots.includes(s.label)
   );
 
   if (openSlots.length === 0) return null;
   return openSlots[0].label;
+}
+
+export function getOpenGroupsForPlayer(
+  player: SquadPlayer,
+  formation: FormationKey,
+  filledSlots: string[],
+): string[] {
+  const slotsDef = formations[formation];
+  const totalPerGroup: Record<string, number> = {};
+  for (const s of slotsDef) {
+    totalPerGroup[s.position] = (totalPerGroup[s.position] ?? 0) + 1;
+  }
+  const filledPerGroup: Record<string, number> = {};
+  for (const label of filledSlots) {
+    const slot = slotsDef.find((s) => s.label === label);
+    if (slot) {
+      filledPerGroup[slot.position] = (filledPerGroup[slot.position] ?? 0) + 1;
+    }
+  }
+  const playerGroups = getPlayerPosGroups(player);
+  return playerGroups.filter((g) => (filledPerGroup[g] ?? 0) < (totalPerGroup[g] ?? 0));
 }
