@@ -23,6 +23,7 @@ export default function MatchReplay({
   const [played, setPlayed] = useState(0);
   const [done, setDone] = useState(false);
   const [autoPlay, setAutoPlay] = useState(true);
+  const [showPlayers, setShowPlayers] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -64,23 +65,44 @@ export default function MatchReplay({
 
       <div className={styles.main}>
         <div className={styles.left}>
-          <div className={styles.slotList}>
-            {slotDefs.map((slot) => (
-              <PlayerSlot
-                key={slot.label}
-                positionLabel={slot.label}
-                player={slots[slot.label] ?? null}
-                muted
-              />
-            ))}
-          </div>
-          <FormationView formation={formation} slots={slots} compact />
           <OverallStrip
             overall={result.userTeam.overall}
             attack={result.userTeam.attack}
             midfield={result.userTeam.midfield}
             defence={result.userTeam.defence}
           />
+
+          <div className={styles.viewToggle}>
+            <button
+              className={`${styles.toggleBtn} ${!showPlayers ? styles.toggleActive : ''}`}
+              onClick={() => setShowPlayers(false)}
+            >
+              UPPSTÄLLNING
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${showPlayers ? styles.toggleActive : ''}`}
+              onClick={() => setShowPlayers(true)}
+            >
+              SPELARE
+            </button>
+          </div>
+
+          <div className={styles.viewPanel}>
+            {showPlayers ? (
+              <div className={styles.slotList}>
+                {slotDefs.map((slot) => (
+                  <PlayerSlot
+                    key={slot.label}
+                    positionLabel={slot.label}
+                    player={slots[slot.label] ?? null}
+                    muted
+                  />
+                ))}
+              </div>
+            ) : (
+              <FormationView formation={formation} slots={slots} tall />
+            )}
+          </div>
         </div>
 
         <div className={styles.right}>
@@ -127,6 +149,7 @@ export default function MatchReplay({
             {done && (
               <>
                 <div className={styles.finalSection}>
+                  <div className={styles.sectionLabel}>SLUTTABELL</div>
                   <div className={styles.finalHeader}>
                     <div className={styles.bigRecord}>
                       {u.wins}W - {u.draws}D - {u.losses}L
@@ -180,6 +203,7 @@ export default function MatchReplay({
                 </div>
 
                 <div className={styles.awardsSection}>
+                  <div className={styles.sectionLabel}>UTMARKELSER</div>
                   <div className={styles.awards}>
                     {result.goldenBoot && (
                       <div className={styles.award}>

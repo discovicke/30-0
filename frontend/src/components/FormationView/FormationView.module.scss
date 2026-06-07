@@ -50,6 +50,40 @@
       font-size: 4.5px;
     }
   }
+
+  &.tall {
+    padding: 20px 14px 14px;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+
+    .field {
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .row {
+      gap: 16px;
+    }
+
+    .dot {
+      width: 36px;
+      height: 36px;
+    }
+
+    .dot span {
+      font-size: 10px;
+    }
+
+    .pname {
+      font-size: 16px;
+      max-width: 80px;
+    }
+
+    .povr {
+      font-size: 16px;
+    }
+  }
 }
 
 .field {

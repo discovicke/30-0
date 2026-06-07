@@ -24,10 +24,46 @@
   top: 0;
 }
 
+.viewToggle {
+  display: flex;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+}
+
+.toggleBtn {
+  flex: 1;
+  padding: 7px 10px;
+  background: $sand-surface;
+  color: $ink-muted;
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+
+  &:first-child {
+    border-right: 0.5px solid $sand-border;
+  }
+
+  &.toggleActive {
+    background: $ink;
+    color: $chrome-text;
+  }
+}
+
+.viewPanel {
+  flex: 1;
+  min-height: 450px;
+  display: flex;
+  flex-direction: column;
+}
+
 .slotList {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  flex: 1;
 }
 
 .right {
@@ -161,14 +197,25 @@
   padding-left: 16px;
 }
 
-.finalSection {
+.sectionLabel {
+  font-family: $font-mono;
+  font-size: 9px;
+  color: $ttv-meta;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   padding: 8px 0 4px;
-  margin-top: 10px;
-  border-top: 1px solid $ttv-border;
+  border-bottom: 0.5px solid $ttv-border;
+  margin-bottom: 6px;
+}
+
+.finalSection {
+  padding: 12px 0 6px;
+  margin-top: 14px;
+  border-top: 2px solid $ttv-border;
 }
 
 .finalHeader {
-  padding: 4px 0 8px;
+  padding: 4px 0 10px;
   text-align: center;
 }
 
@@ -202,9 +249,9 @@
 }
 
 .awardsSection {
-  padding: 8px 0 4px;
-  margin-top: 10px;
-  border-top: 1px solid $ttv-border;
+  padding: 12px 0 6px;
+  margin-top: 14px;
+  border-top: 2px solid $ttv-border;
 }
 
 .awards {

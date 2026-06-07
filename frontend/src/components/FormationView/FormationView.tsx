@@ -6,13 +6,14 @@ interface Props {
   formation: FormationKey;
   slots: Record<string, PlayerCard>;
   compact?: boolean;
+  tall?: boolean;
 }
 
-export default function FormationView({ formation, slots, compact }: Props) {
+export default function FormationView({ formation, slots, compact, tall }: Props) {
   const slotDefs = formations[formation];
 
   return (
-    <div className={`${styles.pitch} ${compact ? styles.compact : ''}`}>
+    <div className={`${styles.pitch} ${compact ? styles.compact : ''} ${tall ? styles.tall : ''}`}>
       <div className={styles.field}>
         {renderRow(slotDefs.filter((s) => s.position === 'FW'), 0)}
         {renderRow(slotDefs.filter((s) => s.position === 'MF'), 1)}
