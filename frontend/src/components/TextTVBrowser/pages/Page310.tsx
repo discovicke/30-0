@@ -11,8 +11,8 @@ export default function Page310({ result, roundOffset }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
-        SASONGEN HAR INTE SPELATS ANNU<br />
-        NAVIGERA TILL 310 FOR ATT SIMULERA
+        SASONGEN HAR INTE SPELATS ÄNNU<br />
+        NAVIGERA TILL 310 FÖR ATT SIMULERA
       </div>
     );
   }
@@ -59,7 +59,7 @@ export default function Page310({ result, roundOffset }: Props) {
 
         return (
           <div key={roundNum} className={styles.matchBlock}>
-            <div className={styles.matchRoundHeader}>OMGANG {roundNum}</div>
+            <div className={styles.matchRoundHeader}>OMGÅNG {roundNum}</div>
             <div className={styles.matchLine}>
               <span className={homeClass}>{homeTeam}</span>
               <span className={`${styles.matchScore} ${scoreClass}`}>
@@ -69,7 +69,7 @@ export default function Page310({ result, roundOffset }: Props) {
             </div>
             {goalLines.map((line, gi) => (
               <div key={gi} className={styles.matchGoals}>
-                MAL: {line}
+                MÅL: {line}
               </div>
             ))}
           </div>

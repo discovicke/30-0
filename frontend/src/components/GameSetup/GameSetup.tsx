@@ -7,6 +7,15 @@ interface Props {
   onStart: (config: GameConfig) => void;
 }
 
+const formationQuotes: Record<string, string> = {
+  '4-3-3': 'Holger Nilsson ritade upp den på en servett 1974. Fortfarande oöverträffad.',
+  '4-4-2': 'Lika säkert som tacos på fredagar, Pelle Olsson hade varit stolt!',
+  '4-5-1': 'Är det den mest flexibla uppställningen? Upp till bevis!',
+  '3-4-3': 'Tre backar? Roy Hodgson skulle ha fått hjärtattack.',
+  '3-5-2': 'Allan Kuhn lever! Mittfältsdominans till varje pris.',
+  '5-4-1': 'Oklart hur man säger Catenaccio på svenska, men bussen är åtminstone parkerad!',
+};
+
 export default function GameSetup({ onStart }: Props) {
   const [draftMode, setDraftMode] = useState<DraftMode>('squad-first');
   const [ratingMode, setRatingMode] = useState<RatingMode>('season');
@@ -18,77 +27,99 @@ export default function GameSetup({ onStart }: Props) {
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
+    <div className={styles.page}>
+      <div className={styles.hero}>
         <h1 className={styles.title}>30-0</h1>
-        <p className={styles.subtitle}>Bygg det ultimata Allsvenska laget</p>
-      </div>
-      <div className={styles.card}>
-        <h2 className={styles.sectionTitle}>Spelinstallningar</h2>
-
-        <label className={styles.label}>
-          Draft Mode
-          <select value={draftMode} onChange={(e) => setDraftMode(e.target.value as DraftMode)}>
-            <option value="squad-first">Squad First</option>
-            <option value="position-first">Position First</option>
-          </select>
-        </label>
-
-        <label className={styles.label}>
-          Rating Mode
-          <select value={ratingMode} onChange={(e) => setRatingMode(e.target.value as RatingMode)}>
-            <option value="season">Current Season</option>
-            <option value="peak">Peak</option>
-          </select>
-        </label>
-
-        <label className={styles.label}>
-          Formation
-          <select value={formation} onChange={(e) => setFormation(e.target.value as FormationKey)}>
-            {formationKeys.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
-        </label>
-
-        <label className={styles.label}>
-          Svarighetsgrad
-          <div className={styles.difficultyRow}>
-            {(['easy', 'normal', 'hard'] as Difficulty[]).map((d) => (
-              <button
-                key={d}
-                className={`${styles.difficultyBtn} ${difficulty === d ? styles.active : ''}`}
-                onClick={() => setDifficulty(d)}
-              >
-                {d === 'easy' && 'Easy'}
-                {d === 'normal' && 'Normal'}
-                {d === 'hard' && 'Hard'}
-              </button>
-            ))}
-          </div>
-        </label>
-
-        <button className={styles.startBtn} onClick={handleStart}>
-          Starta Draft
-        </button>
+        <p className={styles.subtitle}>Drafta ditt ultimata Allsvenska XI</p>
       </div>
 
-      <div className={styles.rules}>
-        <h3>Sa fungerar det</h3>
-        <ul>
-          <li>Drafta 11 spelare fran Allsvenska trupper 2001-2025</li>
-          <li>Fyll din formation och simulera en 30-matchars sasong</li>
-          <li>Malet: ga obesegrad - 30-0</li>
-        </ul>
-        {draftMode === 'squad-first' && (
-          <p className={styles.modeHint}>
-            <strong>Squad First:</strong> Snurra fram en trupp, valj spelare, auto-assign till ledig position
-          </p>
-        )}
-        {draftMode === 'position-first' && (
-          <p className={styles.modeHint}>
-            <strong>Position First:</strong> Valj en position forst, snurra sen fram spelare som passar den positionen
-          </p>
-        )}
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Draft Mode</h2>
+        <div className={styles.btnRow}>
+          <button
+            className={`${styles.optionBtn} ${draftMode === 'squad-first' ? styles.active : ''}`}
+            onClick={() => setDraftMode('squad-first')}
+          >
+            <strong>Squad First</strong>
+            <span>Snurra klubb, välj spelare, auto-assign position</span>
+          </button>
+          <button
+            className={`${styles.optionBtn} ${draftMode === 'position-first' ? styles.active : ''}`}
+            onClick={() => setDraftMode('position-first')}
+          >
+            <strong>Position First</strong>
+            <span>Välj position, snurra sen klubb för att fylla den</span>
+          </button>
+        </div>
       </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Spelarbetyg</h2>
+        <div className={styles.btnRow}>
+          <button
+            className={`${styles.optionBtn} ${ratingMode === 'season' ? styles.active : ''}`}
+            onClick={() => setRatingMode('season')}
+          >
+            <strong>Karriärsäsonger</strong>
+            <span>Spelarna betygsatta som den exakta säsongen</span>
+          </button>
+          <button
+            className={`${styles.optionBtn} ${ratingMode === 'peak' ? styles.active : ''}`}
+            onClick={() => setRatingMode('peak')}
+          >
+            <strong>Prime Mode</strong>
+            <span>Alla spelare på sin karriärs bästa betyg</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Svårighetsgrad</h2>
+        <div className={styles.diffRow}>
+          <button
+            className={`${styles.diffBtn} ${difficulty === 'easy' ? styles.active : ''}`}
+            onClick={() => setDifficulty('easy')}
+          >
+            <strong>Easy</strong>
+            <span>3 omkast</span>
+          </button>
+          <button
+            className={`${styles.diffBtn} ${difficulty === 'normal' ? styles.active : ''}`}
+            onClick={() => setDifficulty('normal')}
+          >
+            <strong>Normal</strong>
+            <span>1 omkast</span>
+          </button>
+          <button
+            className={`${styles.diffBtn} ${difficulty === 'hard' ? styles.active : ''}`}
+            onClick={() => setDifficulty('hard')}
+          >
+            <strong>Hard</strong>
+            <span>Inga omkast</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Formation</h2>
+        <div className={styles.formGrid}>
+          {formationKeys.map((f) => (
+            <button
+              key={f}
+              className={`${styles.formBtn} ${formation === f ? styles.active : ''}`}
+              onClick={() => setFormation(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+        <p className={styles.formQuote}>{formationQuotes[formation]}</p>
+      </div>
+
+      <button className={styles.startBtn} onClick={handleStart}>
+        Starta Draft
+        <span className={styles.arrow}>&rarr;</span>
+      </button>
     </div>
   );
 }

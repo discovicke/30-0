@@ -17,19 +17,6 @@ export const formations: Record<FormationKey, FormationSlot[]> = {
     { label: 'RM', position: 'MF', specificPositions: ['CM', 'RW', 'CAM'] },
     { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
   ],
-  '4-2-3-1': [
-    { label: 'GK', position: 'GK', specificPositions: ['GK'] },
-    { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
-    { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
-    { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
-    { label: 'RB', position: 'DF', specificPositions: ['CB', 'CM'] },
-    { label: 'CDM1', position: 'MF', specificPositions: ['CDM', 'CM'] },
-    { label: 'CDM2', position: 'MF', specificPositions: ['CDM', 'CM'] },
-    { label: 'LW', position: 'MF', specificPositions: ['LW', 'RW', 'CAM'] },
-    { label: 'CAM', position: 'MF', specificPositions: ['CAM', 'CM'] },
-    { label: 'RW', position: 'MF', specificPositions: ['RW', 'LW', 'CAM'] },
-    { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
-  ],
   '4-5-1': [
     { label: 'GK', position: 'GK', specificPositions: ['GK'] },
     { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
@@ -97,7 +84,7 @@ export const formations: Record<FormationKey, FormationSlot[]> = {
   ],
 };
 
-export const formationKeys: FormationKey[] = ['5-4-1', '4-2-3-1', '4-5-1', '3-4-3', '3-5-2', '4-4-2', '4-3-3'];
+export const formationKeys: FormationKey[] = ['5-4-1', '4-5-1', '3-4-3', '3-5-2', '4-4-2', '4-3-3'];
 
 export function getAllAITeams(): AITeam[] {
   return [

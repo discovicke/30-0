@@ -9,8 +9,8 @@ export default function Page320({ result }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
-        SASONGEN HAR INTE SPELATS ANNU<br />
-        NAVIGERA TILL 310 FOR ATT SIMULERA
+        SASONGEN HAR INTE SPELATS ÄNNU<br />
+        NAVIGERA TILL 310 FÖR ATT SIMULERA
       </div>
     );
   }
@@ -20,7 +20,7 @@ export default function Page320({ result }: Props) {
   return (
     <div>
       <div className={styles.pageTitle}>ALLSVENSKAN SLUTTABELL</div>
-      <div className={styles.pageSubtitle}>SASONG 2025</div>
+      <div className={styles.pageSubtitle}>SÄSONG 2025</div>
 
       <table className={styles.ttvTable}>
         <thead>

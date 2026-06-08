@@ -25,12 +25,12 @@ const VALID_PAGES = new Set(PAGE_ORDER);
 const PAGE_TITLES: Record<number, string> = {
   300: 'ALLSVENSKT 30-0',
   301: 'DIN TRUPP',
-  302: 'FORHANDSTIPS',
+   302: 'FÖRHANDSTIPS',
   310: 'RESULTAT OMG 1-10',
   311: 'RESULTAT OMG 11-20',
   312: 'RESULTAT OMG 21-30',
   320: 'SLUTTABELL',
-  321: 'SASONGSARTIKEL',
+   321: 'SÄSONGSARTIKEL',
 };
 
 export default function TextTVBrowser({

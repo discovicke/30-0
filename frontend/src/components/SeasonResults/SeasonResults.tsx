@@ -22,7 +22,7 @@ export default function SeasonResults({ result, onRestart }: Props) {
             {u.wins}W - {u.draws}D - {u.losses}L
           </div>
           <div className={styles.ptsLine}>
-            {u.points} POANG  GD {gd >= 0 ? `+${gd}` : gd}
+            {u.points} POÄNG  GD {gd >= 0 ? `+${gd}` : gd}
           </div>
           <div className={styles.posLine}>
             PLATS {result.finalPosition}/{result.finalTable.length}
@@ -74,7 +74,7 @@ export default function SeasonResults({ result, onRestart }: Props) {
           {result.goldenBoot && (
             <div className={styles.award}>
               <span className={styles.awardIcon}>G</span>
-              <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mal</span>
+              <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mål</span>
             </div>
           )}
           {result.playmaker && (

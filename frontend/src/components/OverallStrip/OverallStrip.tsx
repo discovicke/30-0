@@ -26,11 +26,11 @@ export default function OverallStrip({
         <span className={styles.subValue}>{emptyAttack ? '–' : Math.round(attack)}</span>
       </div>
       <div className={styles.subRow}>
-        <span className={styles.subLabel}>Mittfalt</span>
+        <span className={styles.subLabel}>Mittfält</span>
         <span className={styles.subValue}>{emptyMidfield ? '–' : Math.round(midfield)}</span>
       </div>
       <div className={styles.subRow}>
-        <span className={styles.subLabel}>Forsvar</span>
+        <span className={styles.subLabel}>Försvar</span>
         <span className={styles.subValue}>{emptyDefence ? '–' : Math.round(defence)}</span>
       </div>
     </div>

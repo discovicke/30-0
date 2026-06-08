@@ -38,17 +38,17 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
   // Find strongest & weakest areas
   const areas = [
     { label: 'ANFALL', val: xi.attack },
-    { label: 'MITTFALT', val: xi.midfield },
-    { label: 'FORSVAR', val: xi.defence },
-    { label: 'MALVAKT', val: xi.gkRating },
+    { label: 'MITTFÄLT', val: xi.midfield },
+    { label: 'FÖRSVAR', val: xi.defence },
+    { label: 'MÅLVAKT', val: xi.gkRating },
   ];
   const strongest = [...areas].sort((a, b) => b.val - a.val)[0];
   const weakest = [...areas].sort((a, b) => a.val - b.val)[0];
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · SASONG 2025</div>
-      <div className={styles.pageSubtitle}>FORHANDSTIPS</div>
+      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · SÄSONG 2025</div>
+      <div className={styles.pageSubtitle}>FÖRHANDSTIPS</div>
 
       <div className={styles.row}>
         <span className={styles.label}>PROJEKTERAD PLACERING</span>
@@ -63,7 +63,7 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
         <span className={styles.val}>{isRelegation ? 'JA' : 'NEJ'}</span>
       </div>
       <div className={styles.row}>
-        <span className={styles.label}>FORVANTADE POANG</span>
+        <span className={styles.label}>FÖRVÄNTADE POÄNG</span>
         <span className={styles.valYellow}>{odds.projectedPoints}</span>
       </div>
 
@@ -108,11 +108,11 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
 
       {!simulated ? (
         <div className={styles.instruction} onClick={() => onNavigate(310)} style={{ cursor: 'pointer' }}>
-          SASONGEN BORJAR: TRYCK 310 → SIMULERA
+          SASONGEN BÖRJAR: TRYCK 310 → SIMULERA
         </div>
       ) : (
         <div className={styles.instruction}>
-          SASONGEN KLAR · {positionSuffix(odds.projectedPosition)} PROJEKTERAD
+          SÄSONGEN KLAR · {positionSuffix(odds.projectedPosition)} PROJEKTERAD
         </div>
       )}
     </div>

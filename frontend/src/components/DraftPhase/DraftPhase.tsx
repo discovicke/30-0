@@ -243,7 +243,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         <StepIndicator current={2} total={4} labels={stepLabels} />
         <div className={styles.center}>
           <div className={styles.spinner} />
-          <p>Simulerar sasongen...</p>
+          <p>Simulerar säsongen...</p>
         </div>
       </div>
     );
@@ -317,7 +317,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               </button>
 
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
-                <span className={styles.hint}>Klicka pa en position pa planen</span>
+                <span className={styles.hint}>Klicka på en position på planen</span>
               )}
             </>
           )}
@@ -356,9 +356,9 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
 
             {pendingPlayer ? (
               <div className={styles.posChooser}>
-                <p className={styles.posChooserText}>
-                  Valj position for {pendingPlayer.name}
-                </p>
+                  <p className={styles.posChooserText}>
+                    Välj position för {pendingPlayer.name}
+                  </p>
                 <div className={styles.posChooserBtns}>
                   {pendingGroups.map((g) => (
                     <button
