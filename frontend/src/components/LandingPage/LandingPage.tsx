@@ -195,45 +195,17 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                 </div>
             </div>
 
-            <div className={styles.ctaSection}>
-                <h2 className={styles.ctaTitle}>Kan du bygga det ultimata Allsvenska laget?</h2>
-                <p className={styles.ctaDesc}>
-                    Drafta din XI, simulera säsongen och se om ditt lag kan uppnå det omöjliga:
-                    <br></br>
-                    30 vinster på 30 matcher.
-                </p>
-                <button className={styles.primaryBtn} onClick={onStart}>
-                    Spela 30-0
-                    <span className={styles.arrow}>&rarr;</span>
-                </button>
-            </div>
-
-            <footer className={styles.footer}>
-                <div className={styles.footerActions}>
-                    <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener"
-                       className={styles.footerBtn}>
-                        &#128187; Källkod på GitHub
-                    </a>
-                    <a href="mailto:discovicke@gmail.com" className={styles.footerBtn}>
-                        &#9993; Feedback &amp; frågor
-                    </a>
-                    <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener"
-                       className={styles.footerBtnPrimary}>
-                        &#9749; Stötta projektet
-                    </a>
-                </div>
-                <p className={styles.footerCredit}>
-                    Inspirerat av <a href="https://82-0.com" target="_blank" rel="noopener">82-0.com</a> och <a
-                    href="https://38-0.app" target="_blank" rel="noopener">38-0.app</a>
-                </p>
-                <p className={styles.footerDisclaimer}>
-                    30-0 är ett oberoende, fan-skapat spel. Det är inte associerat med, godkänt av, sponsrat av
-                    eller kopplat till Allsvenskan, någon fotbollsklubb, tävling, liga, styrande organ eller
-                    organisation, eller med något spel, utgivare eller betygsleverantör. Alla klubbnamn,
-                    spelarnamn, betyg och säsongsdata används endast i informations- och beskrivningssyfte,
-                    och alla varumärken, logotyper och annan immateriell egendom tillhör respektive ägare.
-                </p>
-            </footer>
-        </div>
-    );
+      <div className={styles.ctaSection}>
+        <h2 className={styles.ctaTitle}>Kan du bygga det ultimata Allsvenska laget?</h2>
+        <p className={styles.ctaDesc}>
+          Drafta ditt XI, simulera säsongen och se om ditt lag kan uppnå det omöjliga:
+          30 vinster på 30 matcher.
+        </p>
+        <button className={styles.primaryBtn} onClick={onStart}>
+          Spela 30-0
+          <span className={styles.arrow}>&rarr;</span>
+        </button>
+      </div>
+    </div>
+  );
 }

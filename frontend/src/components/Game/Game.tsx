@@ -4,6 +4,7 @@ import Header from '../Header/Header';
 import LandingPage from '../LandingPage/LandingPage';
 import GameSetup from '../GameSetup/GameSetup';
 import DraftPhase from '../DraftPhase/DraftPhase';
+import Footer from '../Footer/Footer';
 import styles from './Game.module.scss';
 
 function loadSavedDraft(): SavedDraftState | null {
@@ -89,6 +90,7 @@ export default function Game() {
       <div className={styles.wrapper}>
         <Header onHome={handleHome} />
         <LandingPage onStart={() => setPhase('setup')} onContinue={handleContinue} canContinue={canContinue} />
+        <Footer />
       </div>
     );
   }
@@ -102,6 +104,7 @@ export default function Game() {
           <div className={styles.spinner} />
           <p>Laddar speldata...</p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -114,6 +117,7 @@ export default function Game() {
         <div className={styles.center}>
           <p className={styles.error}>{error}</p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -124,6 +128,7 @@ export default function Game() {
       <div className={styles.wrapper}>
         <Header onHome={handleHome} />
         <GameSetup onStart={handleStart} />
+        <Footer />
       </div>
     );
   }
@@ -138,6 +143,7 @@ export default function Game() {
         onRestart={handleRestart}
         savedState={savedDraft ?? undefined}
       />
+      <Footer />
     </div>
   );
 }

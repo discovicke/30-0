@@ -3,7 +3,7 @@
 .page {
   max-width: 680px;
   margin: 0 auto;
-  padding: 0 24px 60px;
+  padding: 0 24px 48px;
 }
 
 // ── Hero ──
@@ -311,97 +311,3 @@
   line-height: 1.5;
 }
 
-// ── Footer ──
-
-.footer {
-  text-align: center;
-  padding-top: 32px;
-  border-top: 0.5px solid $sand-border;
-}
-
-.footerActions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.footerBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  border: 1px solid $sand-border;
-  border-radius: $radius-md;
-  color: $ink-muted;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.15s;
-
-  &:hover {
-    border-color: $ink;
-    color: $ink;
-    background: $sand-surface;
-  }
-}
-
-.footerBtnPrimary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  background: $ink;
-  color: $chrome-text;
-  border: 1px solid $ink;
-  border-radius: $radius-md;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 0.15s;
-
-  &:hover {
-    opacity: 0.85;
-  }
-}
-
-.footerLinks {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 16px;
-
-  a {
-    font-size: 0.8125rem;
-    color: $ink-muted;
-    text-decoration: none;
-
-    &:hover {
-      color: $ink;
-    }
-  }
-}
-
-.footerCredit {
-  font-size: 0.75rem;
-  color: $ink-ghost;
-  margin-bottom: 10px;
-
-  a {
-    color: $ink-muted;
-    text-decoration: underline;
-
-    &:hover {
-      color: $ink;
-    }
-  }
-}
-
-.footerDisclaimer {
-  font-size: 0.625rem;
-  color: $ink-disabled;
-  line-height: 1.5;
-  max-width: 520px;
-  margin: 0 auto;
-}
