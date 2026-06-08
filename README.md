@@ -8,7 +8,7 @@ Ett webbaserat draftspel inspirerat av klassiska 38-0. Du väljer formation, dra
 
 ## Spela
 
-[30-0.app](https://30-0.app) – ingen installation krävs, fungerar i webbläsaren.
+[30-0.se](https://30-0.se) – ingen installation krävs, fungerar i webbläsaren.
 
 ---
 
