@@ -1,7 +1,7 @@
-import type { TeamXI, SeasonResult } from '../../../types';
-import type { PreSeasonOdds } from '../../../engine/draftEngine';
-import { generateArticleData } from '../../../engine/seasonArticle';
-import styles from './pages.module.scss';
+import type { TeamXI, SeasonResult } from "../../../types";
+import type { PreSeasonOdds } from "../../../engine/draftEngine";
+import { generateArticleData } from "../../../engine/seasonArticle";
+import styles from "./pages.module.scss";
 
 interface Props {
   result: SeasonResult | null;
@@ -11,14 +11,14 @@ interface Props {
 }
 
 function positionSuffix(pos: number): string {
-  if (pos === 1 || pos === 2) return pos + ':a';
-  return pos + ':e';
+  if (pos === 1 || pos === 2) return pos + ":a";
+  return pos + ":e";
 }
 
 function performanceLabel(final: number, projected: number): string {
-  if (final < projected) return 'ÖVERPRESTATION';
-  if (final === projected) return 'FÖRVANTAT';
-  return 'UNDERPRESTATION';
+  if (final < projected) return "ÖVERPRESTATION";
+  if (final === projected) return "FÖRVANTAT";
+  return "UNDERPRESTATION";
 }
 
 export default function Page321({ result, odds, onRestart }: Props) {
@@ -49,7 +49,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
         <span className={styles.statLabel}>PLACERING</span>
         <span className={styles.statVal}>
           {positionSuffix(result.finalPosition)} AV {result.finalTable.length}
-          {result.finalPosition === 1 ? '  (MÄSTARE)' : ''}
+          {result.finalPosition === 1 ? "  (MÄSTARE)" : ""}
         </span>
         <span className={styles.statLabel}>PROJEKTERAD</span>
         <span className={styles.statVal}>
@@ -63,7 +63,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
         <span className={styles.statVal}>{user.wins} - {user.draws} - {user.losses}</span>
         <span className={styles.statLabel}>MÅLSKILLNAD</span>
         <span className={styles.statVal}>
-          {gd >= 0 ? '+' : ''}{gd}  ({user.goalsFor} GM / {user.goalsAgainst} IM)
+          {gd >= 0 ? "+" : ""}{gd}  ({user.goalsFor} GM / {user.goalsAgainst} IM)
         </span>
         <span className={styles.statLabel}>POÄNG</span>
         <span className={styles.statVal}>{user.points}</span>

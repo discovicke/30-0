@@ -1,5 +1,5 @@
 import type { Squad, SquadPlayer, FormationKey, FormationSlot } from '../types';
-import { formations } from './simulationEngine';
+import { formations, getAllAITeams } from './simulationEngine';
 
 export function getRerollCount(difficulty: 'easy' | 'normal' | 'hard'): number {
   return difficulty === 'easy' ? 3 : difficulty === 'normal' ? 1 : 0;
@@ -149,11 +149,10 @@ export interface PreSeasonOdds {
 }
 
 export function computePreSeasonOdds(overall: number): PreSeasonOdds {
-  const strength = Math.max(0, Math.min(1, (overall - 55) / 38));
-  const posStrength = Math.max(0, Math.min(1, (overall - 55) / 28));
+  const strength = Math.max(0, Math.min(1, (overall - 55) / 38)); const aiTeams = getAllAITeams(); const allTeamsSorted = [...aiTeams, { name: "DITT LAG", strength: overall }].sort((a, b) => b.strength - a.strength); const actualRank = allTeamsSorted.findIndex(t => t.name === "DITT LAG") + 1;
 
   return {
-    projectedPosition: Math.max(1, Math.round(17 - posStrength * 16)),
+    projectedPosition: actualRank,
     projectedPoints: Math.round(28 + strength * 37),
     winLeague: Math.round(Math.pow(strength, 1.8) * 60 * 10) / 10,
     top4: Math.round(Math.min(99.9, Math.pow(strength, 0.7) * 99.9) * 10) / 10,
