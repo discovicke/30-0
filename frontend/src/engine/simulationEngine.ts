@@ -51,7 +51,7 @@ export function getAllAITeams(): AITeam[] {
   return [
     { name: 'Malmö', strength: 79, tier: 'Elit' },
     { name: 'Djurgården', strength: 78, tier: 'Elit' },
-    { name: 'AIK Stockholm', strength: 77, tier: 'Elit' },
+    { name: 'AIK', strength: 77, tier: 'Elit' },
     { name: 'Göteborg', strength: 76, tier: 'Elit' },
     { name: 'Hammarby', strength: 75, tier: 'Stark' },
     { name: 'Elfsborg', strength: 74, tier: 'Stark' },
