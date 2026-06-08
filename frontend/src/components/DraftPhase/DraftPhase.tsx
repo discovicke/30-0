@@ -42,6 +42,12 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
   const [draftState, setDraftState] = useState<DraftState>(savedState?.draftState ?? 'drafting');
   const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
+  const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
+
+  // Auto-switch to TextTV on mobile when draft completes
+  useEffect(() => {
+    if (draftState === 'ready') setMobileView('texttv');
+  }, [draftState]);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
@@ -295,7 +301,25 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         </div>
       )}
 
-      <div className={styles.main}>
+      {/* Mobile tab switch between squad and TextTV */}
+      {draftState === 'ready' && (
+        <div className={styles.mobileTabs}>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'trupp' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('trupp')}
+          >
+            SE TRUPP
+          </button>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'texttv' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('texttv')}
+          >
+            TEXT-TV {!result ? '(SIMULERA)' : ''}
+          </button>
+        </div>
+      )}
+
+      <div className={`${styles.main} ${draftState === 'ready' && mobileView === 'texttv' ? styles.mainTextTV : ''}`}>
         <div className={styles.left}>
           {draftState === 'drafting' && (
             <div className={styles.rerollHeader}>
@@ -381,6 +405,21 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
           )}
         </div>
       </div>
+
+      {/* Mobile TextTV (replaces left column on mobile when texttv tab active) */}
+      {draftState === 'ready' && odds && mobileView === 'texttv' && (
+        <div className={styles.mobileTextTV}>
+          <TextTVBrowser
+            xi={xi}
+            formation={config.formation}
+            config={config}
+            odds={odds}
+            result={result}
+            onSimulate={handleSimulate}
+            onRestart={onRestart}
+          />
+        </div>
+      )}
 
       {/* Squad overlay */}
       {showOverlay && (

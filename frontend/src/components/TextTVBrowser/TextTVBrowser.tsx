@@ -170,7 +170,7 @@ export default function TextTVBrowser({
           <div className={styles.inputArea}>
             <span className={styles.inputLabel}>SID</span>
             <span className={styles.inputDisplay}>
-              {pageInput.padEnd(3, '_')}
+              {(pageInput || String(currentPage)).padEnd(3, '\u00A0')}
             </span>
           </div>
           <button className={styles.navBtn} onClick={() => navigateTo(nextPage)}>

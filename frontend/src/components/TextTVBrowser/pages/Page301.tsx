@@ -14,8 +14,8 @@ export default function Page301({ xi, formation }: Props) {
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · {formation.toUpperCase()}</div>
-      <div className={styles.pageSubtitle}>DIN TRUPP</div>
+      <div className={styles.pageTitle}>DIN TRUPP - {formation.toUpperCase()}</div>
+      <div className={styles.pageSubtitle}>DEN SPORTSLIGA LEDNINGEN KOM FRAM TILL FÖLJANDE SPELARE</div>
 
       <div className={`${styles.squadRow} ${styles.squadHeader}`}>
         <span className={styles.squadPos}>POS</span>

@@ -40,7 +40,7 @@ export default function Page320({ result }: Props) {
           {table.map((t, i) => {
             const isUser = t.name === 'Your XI';
             const pos = i + 1;
-            const isEurope = pos <= 2;
+            const isEurope = pos <= 1;
             const isRelegation = pos >= table.length - 1;
             const totalMatches = (t.wins ?? 0) + (t.draws ?? 0) + (t.losses ?? 0);
 

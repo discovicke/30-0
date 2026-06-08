@@ -40,11 +40,11 @@ export default function Page302({ xi, odds }: Props) {
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · SÄSONG 2025</div>
-      <div className={styles.pageSubtitle}>FÖRHANDSTIPS</div>
+      <div className={styles.pageTitle}>FÖRHANDSTIPS - DITT LAG</div>
+      <div className={styles.pageSubtitle}>SAMMANFATTNING: "EXPERTERNA" HAR TIPPAT ÅRETS ALLSVENSKA</div>
 
       <div className={styles.row}>
-        <span className={styles.label}>PROJEKTERAD PLACERING</span>
+        <span className={styles.label}>TIPPAD PLACERING</span>
         <span className={styles.valYellow}>{projRange}</span>
       </div>
       <div className={styles.row}>
@@ -76,7 +76,7 @@ export default function Page302({ xi, odds }: Props) {
         <span className={styles.barValue}>{Math.round(weakest.val)}/99</span>
       </div>
 
-      <div className={styles.section}>ALLA OMRADEN</div>
+      <div className={styles.section}>ALLA OMRÅDEN</div>
       {areas.map((a) => (
         <div key={a.label} className={styles.barRow}>
           <span className={styles.barLabel}>{a.label}</span>

@@ -285,6 +285,62 @@
   margin-bottom: 4px;
 }
 
+.matchResultGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0;
+  align-items: start;
+}
+
+.matchHomeCol {
+  font-family: $font-mono;
+  font-size: 14px;
+  padding: 3px 6px 3px 0;
+  text-align: right;
+}
+
+.matchScore {
+  font-family: $font-mono;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 36px;
+  text-align: center;
+  padding-top: 3px;
+}
+
+.matchAwayCol {
+  font-family: $font-mono;
+  font-size: 14px;
+  padding: 3px 0 3px 6px;
+  text-align: left;
+}
+
+.matchGoalRow {
+  display: contents;
+}
+
+.matchGoalHome {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ttv-cyan;
+  line-height: 1.5;
+  padding: 0 6px 0 0;
+  text-align: right;
+}
+
+.matchGoalSep {
+  content: '';
+}
+
+.matchGoalAway {
+  font-family: $font-mono;
+  font-size: 11px;
+  color: $ttv-cyan;
+  line-height: 1.5;
+  padding: 0 0 0 6px;
+  text-align: left;
+}
+
 .matchLine {
   display: flex;
   align-items: baseline;
