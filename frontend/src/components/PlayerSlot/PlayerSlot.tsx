@@ -1,4 +1,5 @@
 import type { SquadPlayer } from '../../types';
+import { displayName } from '../../utils/teamNames';
 import styles from './PlayerSlot.module.scss';
 
 interface Props {
@@ -34,7 +35,7 @@ export default function PlayerSlot({ positionLabel, player, active, muted, posit
         {player ? (
           <>
             <span className={styles.name}>{player.name}</span>
-            <span className={styles.meta}>{player.team} &middot; {player.season}</span>
+            <span className={styles.meta}>{displayName(player.team)} &middot; {player.season}</span>
           </>
         ) : (
           <span className={styles.emptyText}>Inte draftad</span>

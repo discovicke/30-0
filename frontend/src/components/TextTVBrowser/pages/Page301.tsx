@@ -1,6 +1,7 @@
 import type { TeamXI, FormationKey } from '../../../types';
 import { formations } from '../../../engine/simulationEngine';
 import { getSwedishLabel, sortSlotsRightToLeft } from '../../../engine/draftEngine';
+import { shortName } from '../../../utils/teamNames';
 import styles from './pages.module.scss';
 
 interface Props {
@@ -31,7 +32,7 @@ export default function Page301({ xi, formation }: Props) {
           <div key={slot.label} className={styles.squadRow}>
             <span className={styles.squadPos}>{getSwedishLabel(slot.label)}</span>
             <span className={styles.squadName}>{player.name.toUpperCase()}</span>
-            <span className={styles.squadClub}>{player.team.toUpperCase()}</span>
+            <span className={styles.squadClub}>{shortName(player.team).toUpperCase()}</span>
             <span className={styles.squadYear}>{player.season}</span>
             <span className={styles.squadOvr}>{Math.round(player.ovr)}</span>
           </div>

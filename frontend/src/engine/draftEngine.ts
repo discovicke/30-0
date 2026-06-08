@@ -39,12 +39,13 @@ export function getPositionLabel(posGroup: string): string {
 }
 
 const swedishSlotLabels: Record<string, string> = {
-  GK: 'MV', LB: 'VB', CB1: 'MB', CB2: 'MB', RB: 'HB',
+  GK: 'MV', LB: 'VB', CB1: 'MB', CB2: 'MB', RB: 'HB', CB3: 'MB',
   CM1: 'CM', CM2: 'CM', CM3: 'CM',
+  CDM1: 'DM', CDM2: 'DM',
+  CAM: 'OM',
   LM: 'VM', RM: 'HM',
   LW: 'VY', RW: 'HY', ST: 'ANF',
   ST1: 'ANF', ST2: 'ANF',
-  CB3: 'MB',
 };
 
 export function getSwedishLabel(label: string): string {
@@ -145,9 +146,10 @@ export interface PreSeasonOdds {
 
 export function computePreSeasonOdds(overall: number): PreSeasonOdds {
   const strength = Math.max(0, Math.min(1, (overall - 55) / 38));
+  const posStrength = Math.max(0, Math.min(1, (overall - 55) / 28));
 
   return {
-    projectedPosition: Math.max(1, Math.round(16 - strength * 14)),
+    projectedPosition: Math.max(1, Math.round(17 - posStrength * 16)),
     projectedPoints: Math.round(28 + strength * 37),
     winLeague: Math.round(Math.pow(strength, 1.8) * 60 * 10) / 10,
     top4: Math.round(Math.min(99.9, Math.pow(strength, 0.7) * 99.9) * 10) / 10,

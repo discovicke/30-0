@@ -27,7 +27,7 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
     .sort((a, b) => b.strength - a.strength);
 
   const projRange = odds.projectedPosition <= 3
-    ? '1-3 PLATS'
+    ? '1-5 PLATS'
     : odds.projectedPosition <= 8
     ? `${odds.projectedPosition - 2}-${odds.projectedPosition + 2} PLATS`
     : `${odds.projectedPosition - 2}-${odds.projectedPosition + 1} PLATS`;
@@ -99,10 +99,7 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
           <div key={t.name} className={`${styles.tippedRow} ${isYou ? styles.tippedYou : ''}`}>
             <span className={styles.tippedRank}>{i + 1}.</span>
             <span className={styles.tippedName}>{t.name}</span>
-            <span className={styles.tippedOvr}>
-              OVR {Math.round(t.strength)}
-              {isYou && <span className={styles.tippedMarker}> ← DU</span>}
-            </span>
+
           </div>
         );
       })}
