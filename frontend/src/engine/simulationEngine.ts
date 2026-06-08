@@ -110,7 +110,7 @@ export function computeTeamRatings(xi: TeamXI): void {
   const slots = xi.slots;
   const slotsDef = formations[xi.formation];
   let attack = 0, midfield = 0, defence = 0;
-  let attackN = 0, midfieldN = 0, defenceN = 0;
+  let attackN = 0, midfieldN = 0, defenceN = 0; let gkRating = 0;
   for (const slot of slotsDef) {
     const player = slots[slot.label];
     if (!player) continue;
