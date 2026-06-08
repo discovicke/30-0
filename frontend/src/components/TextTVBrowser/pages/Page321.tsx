@@ -16,8 +16,8 @@ function positionSuffix(pos: number): string {
 }
 
 function performanceLabel(final: number, projected: number): string {
-  if (final < projected) return 'OVERPRESTATION';
-  if (final === projected) return 'FORVANTAT';
+  if (final < projected) return 'ÖVERPRESTATION';
+  if (final === projected) return 'FÖRVANTAT';
   return 'UNDERPRESTATION';
 }
 
@@ -25,7 +25,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
-        SASONGEN HAR INTE SPELATS ÄNNU<br />
+        SÄSONGEN HAR INTE SPELATS ÄNNU<br />
         NAVIGERA TILL 310 FÖR ATT SIMULERA
       </div>
     );
@@ -37,14 +37,14 @@ export default function Page321({ result, odds, onRestart }: Props) {
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKAN 2025 · SLUTRAPPORT</div>
-      <div className={styles.pageSubtitle}>SÄSONGSARTIKEL</div>
+      <div className={styles.pageTitle}>SÄSONGSAVSLUTNING - SLUTRAPPORT</div>
+      <div className={styles.pageSubtitle}>SÄSONGSKRÖNIKAN</div>
 
       <div className={styles.quoteBlock}>
         "{article.quote}"
       </div>
 
-      <div className={styles.section}>SASONGSRESULTAT</div>
+      <div className={styles.section}>SÄSONGSRESULTAT</div>
       <div className={styles.statGrid}>
         <span className={styles.statLabel}>PLACERING</span>
         <span className={styles.statVal}>
@@ -71,7 +71,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
 
       {(result.goldenBoot || result.playmaker || result.goldenGlove || result.playerOfSeason) && (
         <>
-          <div className={styles.section}>INDIVIDUELLA UTMARKELSER</div>
+          <div className={styles.section}>INDIVIDUELLA UTMÄRKELSER</div>
           {result.goldenBoot && (
             <div className={styles.awardRow}>
               <span className={styles.awardLabel}>SKYTTEKUNG</span>

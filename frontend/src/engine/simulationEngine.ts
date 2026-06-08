@@ -88,21 +88,21 @@ export const formationKeys: FormationKey[] = ['5-4-1', '4-5-1', '3-4-3', '3-5-2'
 
 export function getAllAITeams(): AITeam[] {
   return [
-    { name: 'Malmö', strength: 79, tier: 'Elit' },
-    { name: 'Djurgården', strength: 78, tier: 'Elit' },
-    { name: 'AIK', strength: 77, tier: 'Elit' },
-    { name: 'Göteborg', strength: 76, tier: 'Elit' },
-    { name: 'Hammarby', strength: 75, tier: 'Stark' },
-    { name: 'Elfsborg', strength: 74, tier: 'Stark' },
-    { name: 'BK Häcken', strength: 73, tier: 'Stark' },
-    { name: 'Norrköping', strength: 72, tier: 'Stark' },
-    { name: 'Helsingborg', strength: 70, tier: 'Mellan' },
-    { name: 'Kalmar', strength: 69, tier: 'Mellan' },
-    { name: 'Örebro', strength: 68, tier: 'Mellan' },
-    { name: 'Halmstad', strength: 67, tier: 'Mellan' },
-    { name: 'Mjällby', strength: 66, tier: 'Lägre' },
-    { name: 'Sundsvall', strength: 65, tier: 'Lägre' },
-    { name: 'Gefle', strength: 64, tier: 'Lägre' },
+    { name: 'Malmö', strength: 91, tier: 'Elit' },
+    { name: 'AIK Stockholm', strength: 90, tier: 'Elit' },
+    { name: 'Djurgården', strength: 89, tier: 'Elit' },
+    { name: 'Göteborg', strength: 89, tier: 'Elit' },
+    { name: 'Elfsborg', strength: 87, tier: 'Stark' },
+    { name: 'BK Häcken', strength: 86, tier: 'Stark' },
+    { name: 'Hammarby', strength: 85, tier: 'Stark' },
+    { name: 'Norrköping', strength: 83, tier: 'Mellan' },
+    { name: 'Helsingborg', strength: 82, tier: 'Mellan' },
+    { name: 'Kalmar', strength: 81, tier: 'Mellan' },
+    { name: 'Halmstad', strength: 79, tier: 'Lägre' },
+    { name: 'Örebro', strength: 78, tier: 'Lägre' },
+    { name: 'Sundsvall', strength: 77, tier: 'Lägre' },
+    { name: 'Gefle', strength: 76, tier: 'Lägre' },
+    { name: 'Mjällby', strength: 76, tier: 'Lägre' },
   ];
 }
 
@@ -117,22 +117,20 @@ export function computeTeamRatings(xi: TeamXI): void {
     switch (slot.position) {
       case 'FW': attack += player.ovr; attackN++; break;
       case 'MF': midfield += player.ovr; midfieldN++; break;
-      case 'DF':
-      case 'GK': defence += player.ovr; defenceN++; break;
+      case 'DF': defence += player.ovr; defenceN++; break;
+      case 'GK':
+        defence += player.ovr;
+        defenceN++; 
+        gkRating = player.ovr;
+        break;
     }
   }
   xi.attack = attackN > 0 ? +(attack / attackN).toFixed(1) : 50;
   xi.midfield = midfieldN > 0 ? +(midfield / midfieldN).toFixed(1) : 50;
   xi.defence = defenceN > 0 ? +(defence / defenceN).toFixed(1) : 50;
-  xi.gkRating = defenceN > 0 ? +(defence / defenceN).toFixed(1) : 50;
-  xi.overall = +((xi.attack + xi.midfield + xi.defence) / 3).toFixed(1);
+  xi.gkRating = +gkRating.toFixed(1); xi.overall = +((xi.attack + xi.midfield + xi.defence) / 3).toFixed(1);
 }
-
-function poisson(lambda: number): number {
-  if (lambda <= 0) return 0;
-  const L = Math.exp(-lambda);
-  let k = 0;
-  let p = 1;
+  function poisson(lambda: number): number { if (lambda <= 0) return 0; const L = Math.exp(-lambda); let k = 0; let p = 1;
   do {
     k++;
     p *= Math.random();
@@ -189,9 +187,9 @@ export function simulateMatch(user: TeamXI, ai: AITeam, isUserHome: boolean, for
   const userDefence = user.midfield * 0.2 + user.defence * 0.8;
   const userStrength = (userOffence + userDefence) / 2;
   const strengthRatio = Math.max(userStrength / Math.max(ai.strength, 1), 0.1);
-  const baseRate = 1.2;
-  const exponent = 3.5;
-  const homeBonus = 0.08;
+  const baseRate = 1.25;
+  const exponent = 4.2;
+  const homeBonus = 0.10;
   let userExpected = baseRate * Math.pow(strengthRatio, exponent) + (isUserHome ? homeBonus : 0);
   let aiExpected = baseRate * Math.pow(1 / strengthRatio, exponent) + (isUserHome ? 0 : homeBonus);
   userExpected = Math.max(0.2, Math.min(userExpected, 6));
@@ -226,8 +224,11 @@ export function simulateMatch(user: TeamXI, ai: AITeam, isUserHome: boolean, for
 
 export function simulateAIMatch(home: AITeam, away: AITeam): MatchResult {
   const strengthRatio = Math.max(home.strength / Math.max(away.strength, 1), 0.1);
-  let homeExpected = 1.2 * Math.pow(strengthRatio, 3.5) + 0.08;
-  let awayExpected = 1.2 * Math.pow(1 / strengthRatio, 3.5);
+  const baseRate = 1.25;
+  const exponent = 4.2;
+  const homeBonus = 0.10;
+  let homeExpected = baseRate * Math.pow(strengthRatio, exponent) + homeBonus;
+  let awayExpected = baseRate * Math.pow(1 / strengthRatio, exponent);
   homeExpected = Math.max(0.2, Math.min(homeExpected, 6));
   awayExpected = Math.max(0.2, Math.min(awayExpected, 6));
   return {
@@ -377,7 +378,7 @@ export function simulateSeason(user: TeamXI, formation: FormationKey): SeasonRes
     assists,
     cleanSheets,
     finalPosition: userPosition,
-    expectedPoints: Math.round(45 + (user.overall - aiTeams.reduce((s, t) => s + t.strength, 0) / aiTeams.length) * 2),
+    expectedPoints: Math.round(45 + (user.overall - aiTeams.reduce((s, t) => s + t.strength, 0) / aiTeams.length) * 3),
     expectedPosition: expectedPos,
     finalTable: allTeams,
     goldenBoot: goldenBoot ? { playerName: goldenBoot[0], goals: goldenBoot[1] } : null,

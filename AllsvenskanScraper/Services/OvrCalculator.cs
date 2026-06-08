@@ -1,9 +1,34 @@
 using System.Text.Json;
+using System.Globalization;
+using System.Text;
 
 namespace AllsvenskanScraper;
 
 public static class OvrCalculator
 {
+    private static string NormalizeName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "";
+        var normalizedString = name.Normalize(NormalizationForm.FormD);
+        var stringBuilder = new StringBuilder();
+
+        foreach (var c in normalizedString)
+        {
+            var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+            {
+                stringBuilder.Append(c);
+            }
+        }
+
+        return stringBuilder.ToString().Normalize(NormalizationForm.FormC).ToLower()
+            .Replace("ø", "o")
+            .Replace("æ", "ae")
+            .Replace("ð", "d")
+            .Replace("þ", "th")
+            .Replace("ß", "ss");
+    }
+
     public static async Task RunCompute(string dataDir)
     {
         var playersDir = Path.Combine(dataDir, "players");
@@ -181,10 +206,55 @@ public static class OvrCalculator
                 }
             }
 
+            // Apply cult/icon boosts
+            var cultBoosts = new Dictionary<string, double>();
+            var cultPath = Path.Combine(dataDir, "cult_boosts.json");
+            if (File.Exists(cultPath))
+            {
+                var cultJson = await File.ReadAllTextAsync(cultPath);
+                using var doc = JsonDocument.Parse(cultJson);
+                foreach (var tier in doc.RootElement.EnumerateObject())
+                {
+                    if (tier.Value.TryGetProperty("Boost", out var bProp) && tier.Value.TryGetProperty("Players", out var pProp))
+                    {
+                        var boost = bProp.GetDouble();
+                        foreach (var player in pProp.EnumerateArray())
+                        {
+                            var name = player.GetString();
+                            if (name != null) cultBoosts[NormalizeName(name)] = boost;
+                        }
+                    }
+                }
+                Console.WriteLine($"Loaded {cultBoosts.Count} cult/icon names from config");
+            }
+
+            var boostedCount = 0;
+            var boostedNames = new HashSet<string>();
+            foreach (var player in allWithOvr)
+            {
+                if (cultBoosts.TryGetValue(NormalizeName(player.Name), out var baseBoost))
+                {
+                    var seasons = seasonsPerPlayer.GetValueOrDefault(player.Name, 1);
+                    // Apply a modifier based on seasons to reward loyalty/presence
+                    // 1 season = 70% boost, 2 seasons = 85%, 3+ seasons = 100%
+                    var loyaltyMod = seasons switch
+                    {
+                        1 => 0.7,
+                        2 => 0.85,
+                        _ => 1.0
+                    };
+                    var finalCultBoost = baseBoost * loyaltyMod;
+                    player.Ovr = Math.Round(Math.Clamp(player.Ovr.Value + finalCultBoost, 40, 99), 1);
+                    boostedCount++;
+                    boostedNames.Add(player.Name);
+                }
+            }
+            Console.WriteLine($"Applied cult boost to {boostedCount} player-seasons ({boostedNames.Count} unique players)");
+
             var finalMin2 = allWithOvr.Min(p => p.Ovr!.Value);
             var finalMax2 = allWithOvr.Max(p => p.Ovr!.Value);
             var finalAvg2 = allWithOvr.Average(p => p.Ovr!.Value);
-            Console.WriteLine($"After longevity boost: {finalMin2:F1} - {finalMax2:F1} (avg {finalAvg2:F1})");
+            Console.WriteLine($"After longevity & cult boost: {finalMin2:F1} - {finalMax2:F1} (avg {finalAvg2:F1})");
         }
 
         var byYear = allPlayers.GroupBy(p => p.Season);
