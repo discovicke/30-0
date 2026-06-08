@@ -15,18 +15,16 @@ function makeBar(val: number, max: number = 99): string {
 }
 
 export default function Page302({ xi, odds }: Props) {
-  const aiTeams = getAllAITeams();
-  const allTeams = [...aiTeams, { name: 'DITT LAG', strength: xi.overall, tier: undefined }]
-    .sort((a, b) => b.strength - a.strength);
 
-  const projRange = odds.projectedPosition <= 3
+  const aiTeams = getAllAITeams(); const allTeams = [...aiTeams, { name: "DITT LAG", strength: xi.overall, tier: undefined }].sort((a, b) => b.strength - a.strength); const actualRank = allTeams.findIndex(t => t.name === "DITT LAG") + 1;
+  const projRange = actualRank <= 3
     ? '1-5 PLATS'
-    : odds.projectedPosition <= 8
-    ? `${odds.projectedPosition - 2}-${odds.projectedPosition + 2} PLATS`
-    : `${odds.projectedPosition - 2}-${odds.projectedPosition + 1} PLATS`;
+    : actualRank <= 8
+    ? `${actualRank - 2}-${actualRank + 2} PLATS`
+    : `${actualRank - 2}-${actualRank + 1} PLATS`;
 
-  const isTitle = odds.projectedPosition <= 3;
-  const isRelegation = odds.projectedPosition >= 14;
+  const isTitle = actualRank <= 3;
+  const isRelegation = actualRank >= 14;
 
   // Find strongest & weakest areas
   const areas = [
