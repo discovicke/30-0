@@ -146,9 +146,10 @@ export interface PreSeasonOdds {
 
 export function computePreSeasonOdds(overall: number): PreSeasonOdds {
   const strength = Math.max(0, Math.min(1, (overall - 55) / 38));
+  const posStrength = Math.max(0, Math.min(1, (overall - 55) / 28));
 
   return {
-    projectedPosition: Math.max(1, Math.round(16 - strength * 14)),
+    projectedPosition: Math.max(1, Math.round(17 - posStrength * 16)),
     projectedPoints: Math.round(28 + strength * 37),
     winLeague: Math.round(Math.pow(strength, 1.8) * 60 * 10) / 10,
     top4: Math.round(Math.min(99.9, Math.pow(strength, 0.7) * 99.9) * 10) / 10,

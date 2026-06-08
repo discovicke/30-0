@@ -15,6 +15,12 @@ function positionSuffix(pos: number): string {
   return pos + ':e';
 }
 
+function performanceLabel(final: number, projected: number): string {
+  if (final < projected) return 'OVERPRESTATION';
+  if (final === projected) return 'FORVANTAT';
+  return 'UNDERPRESTATION';
+}
+
 export default function Page321({ result, odds, onRestart }: Props) {
   if (!result) {
     return (
@@ -28,7 +34,6 @@ export default function Page321({ result, odds, onRestart }: Props) {
   const user = result.userTeam;
   const gd = user.goalsFor - user.goalsAgainst;
   const article = generateArticleData(result);
-  const projHit = Math.abs(result.finalPosition - odds.projectedPosition) <= 2;
 
   return (
     <div>
@@ -49,7 +54,10 @@ export default function Page321({ result, odds, onRestart }: Props) {
         <span className={styles.statLabel}>PROJEKTERAD</span>
         <span className={styles.statVal}>
           {positionSuffix(odds.projectedPosition)}
-          {projHit ? '  ✓ TRAFFADE' : '  ✗ MISSADE'}
+        </span>
+        <span className={styles.statLabel}>PRESTATION</span>
+        <span className={styles.statVal}>
+          {performanceLabel(result.finalPosition, odds.projectedPosition)}
         </span>
         <span className={styles.statLabel}>V - O - F</span>
         <span className={styles.statVal}>{user.wins} - {user.draws} - {user.losses}</span>
