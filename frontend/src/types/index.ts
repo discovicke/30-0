@@ -110,6 +110,9 @@ export interface GameConfig {
   ratingMode: RatingMode;
   difficulty: Difficulty;
   formation: FormationKey;
+  showRatings: boolean;
+  seasonMin: number;
+  seasonMax: number;
 }
 
 export interface SavedDraftState {

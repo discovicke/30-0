@@ -107,3 +107,16 @@
   min-width: 26px;
   text-align: right;
 }
+
+@media (prefers-color-scheme: dark) {
+  .slot { background: #242424; border-color: #333; }
+  .slot.filled { border-color: #555; }
+  .slot:hover:not(:disabled) { border-color: #888; }
+  .posBadge { background: #333; color: #999; }
+  .posBadge.posFilled { background: #444; color: #e0e0e0; }
+  .name { color: #e0e0e0; }
+  .meta { color: #666; }
+  .emptyText { color: #555; }
+  .ovr { color: #e0e0e0; }
+  .ovrEmpty { color: #555; }
+}

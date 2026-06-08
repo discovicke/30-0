@@ -29,7 +29,15 @@ export default function Game() {
   const [error, setError] = useState('');
   const [savedDraft, setSavedDraft] = useState<SavedDraftState | null>(loadSavedDraft());
 
-  async function loadData(mode: RatingMode) {
+  function filterSquads(data: Squad[], c: GameConfig | null): Squad[] {
+    if (!c) return data;
+    let result = data;
+    if (c.seasonMin > 2001) result = result.filter((s) => s.season >= c.seasonMin);
+    if (c.seasonMax < 2025) result = result.filter((s) => s.season <= c.seasonMax);
+    return result;
+  }
+
+  async function loadData(mode: RatingMode, c?: GameConfig | null) {
     if (loading) return;
     setLoading(true);
     try {
@@ -37,7 +45,7 @@ export default function Game() {
       const resp = await fetch(url);
       if (!resp.ok) throw new Error(`Failed to load ${mode} squads data`);
       const data: Squad[] = await resp.json();
-      setSquads(data);
+      setSquads(filterSquads(data, c ?? null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load game data');
     } finally {
@@ -50,14 +58,15 @@ export default function Game() {
     if (phase !== 'setup' && phase !== 'draft') return;
     if (squads.length > 0) return;
     const mode = savedDraft?.config.ratingMode ?? config?.ratingMode ?? 'season';
-    loadData(mode);
+    const c = config ?? savedDraft?.config ?? null;
+    loadData(mode, c);
   }, [phase]);
 
   const handleStart = useCallback(async (c: GameConfig) => {
     setConfig(c);
     clearSavedDraft();
     setSavedDraft(null);
-    await loadData(c.ratingMode);
+    await loadData(c.ratingMode, c);
     setPhase('draft');
   }, []);
 
@@ -66,7 +75,7 @@ export default function Game() {
     if (!saved) return;
     setConfig(saved.config);
     setSavedDraft(saved);
-    await loadData(saved.config.ratingMode);
+    await loadData(saved.config.ratingMode, saved.config);
     setPhase('draft');
   }, []);
 

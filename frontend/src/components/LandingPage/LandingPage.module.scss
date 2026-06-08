@@ -290,6 +290,37 @@
   transform: rotate(45deg);
 }
 
+@media (prefers-color-scheme: dark) {
+  .title { color: #e0e0e0; }
+  .tagline { color: #666; }
+  .alpha { color: #666; border-color: #333; }
+  .subtitle { color: #e0e0e0; }
+  .desc { color: #999; }
+  .primaryBtn { background: #e0e0e0; color: #1a1a1a; }
+  .secondaryBtn { color: #999; border-color: #333; }
+  .secondaryBtn:hover:not(:disabled) { border-color: #e0e0e0; color: #e0e0e0; }
+  .secondaryBtn:disabled { opacity: 0.3; }
+  .statsRow { border-color: #333; }
+  .statNum { color: #e0e0e0; }
+  .statLabel { color: #999; }
+  .sectionTitle { color: #e0e0e0; }
+  .bodyText p { color: #999; }
+  .step { background: #242424; border-color: #333; }
+  .stepNum { background: #e0e0e0; color: #1a1a1a; }
+  .step strong { color: #e0e0e0; }
+  .step p { color: #999; }
+  .challengeList li { color: #e0e0e0; background: #242424; border-color: #333; }
+  .faqItem { background: #242424; border-color: #333; }
+  .faqItem[open] { border-color: #555; }
+  .faqQuestion { color: #e0e0e0; }
+  .faqQuestion:hover { background: #333; }
+  .faqQuestion::after { color: #999; }
+  .faqAnswer { color: #999; }
+  .ctaSection { border-color: #333; }
+  .ctaTitle { color: #e0e0e0; }
+  .ctaDesc { color: #999; }
+}
+
 .faqAnswer {
   font-size: 0.8125rem;
   color: $ink-muted;

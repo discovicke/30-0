@@ -65,3 +65,29 @@ input, select {
     background: rgba($ink-ghost, 0.35);
   }
 }
+
+// ── Dark mode ──
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  a {
+    color: #e0e0e0;
+  }
+
+  ::selection {
+    background: rgba($badge-yellow, 0.25);
+    color: #e0e0e0;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+  }
+}

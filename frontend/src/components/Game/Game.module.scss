@@ -44,3 +44,14 @@
 .error {
   color: $color-danger;
 }
+
+@media (prefers-color-scheme: dark) {
+  .center {
+    color: #999;
+  }
+
+  .spinner {
+    border-color: #333;
+    border-top-color: #e0e0e0;
+  }
+}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { TeamXI, FormationKey, GameConfig, SeasonResult } from '../../types';
+import type { TeamXI, FormationKey, SeasonResult } from '../../types';
 import type { PreSeasonOdds } from '../../engine/draftEngine';
 import Page300 from './pages/Page300';
 import Page301 from './pages/Page301';
@@ -13,7 +13,6 @@ import styles from './TextTVBrowser.module.scss';
 interface Props {
   xi: TeamXI;
   formation: FormationKey;
-  config: GameConfig;
   odds: PreSeasonOdds;
   result: SeasonResult | null;
   onSimulate: () => void;

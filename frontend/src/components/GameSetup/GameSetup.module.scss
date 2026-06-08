@@ -197,3 +197,149 @@
 .startBtn:hover .arrow {
   transform: translateX(3px);
 }
+
+// ── Disabled option state (for hard mode forced hide) ──
+
+.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+  &:hover { border-color: $sand-border; }
+}
+
+.forced {
+  cursor: default;
+  pointer-events: none;
+  &.active {
+    background: $ink;
+    border-color: $ink;
+    strong { color: $chrome-text; }
+    span { color: rgba(255,255,255,0.6); }
+  }
+}
+
+// ── Range slider ──
+
+.rangeLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-family: $font-mono;
+  color: $ink;
+}
+
+.rangeWrapper {
+  position: relative;
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.rangeTrack {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: $sand-border;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.rangeFill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: $ink;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.rangeInput {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: transparent;
+  pointer-events: none;
+  margin: 0;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: $ink;
+    border: 2px solid $chrome-text;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: transform 0.1s;
+    &:hover { transform: scale(1.2); }
+  }
+
+  &::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: $ink;
+    border: 2px solid $chrome-text;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+}
+
+.rangeInputMin {
+  z-index: 2;
+}
+
+.rangeInputMax {
+  z-index: 1;
+}
+
+.rangeTicks {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0 0;
+}
+
+.rangeTick {
+  font-size: 0.625rem;
+  color: $ink-ghost;
+  font-family: $font-mono;
+}
+
+@media (prefers-color-scheme: dark) {
+  .title { color: #e0e0e0; }
+  .subtitle { color: #666; }
+  .sectionTitle { color: #666; }
+  .optionBtn { background: #242424; border-color: #333; color: #999; }
+  .optionBtn strong { color: #e0e0e0; }
+  .optionBtn:hover { border-color: #888; }
+  .optionBtn.active { background: #e0e0e0; border-color: #e0e0e0; }
+  .optionBtn.active strong { color: #1a1a1a; }
+  .optionBtn.active span { color: rgba(0,0,0,0.6); }
+  .diffBtn { background: #242424; border-color: #333; color: #999; }
+  .diffBtn strong { color: #e0e0e0; }
+  .diffBtn:hover { border-color: #888; }
+  .diffBtn.active { background: #e0e0e0; border-color: #e0e0e0; }
+  .diffBtn.active strong { color: #1a1a1a; }
+  .diffBtn.active span { color: rgba(0,0,0,0.6); }
+  .formBtn { background: #242424; border-color: #333; color: #999; }
+  .formBtn:hover { border-color: #888; color: #e0e0e0; }
+  .formBtn.active { background: #e0e0e0; border-color: #e0e0e0; color: #1a1a1a; }
+  .formQuote { color: #666; }
+  .startBtn { background: #e0e0e0; color: #1a1a1a; }
+  .rangeLabels { color: #e0e0e0; }
+  .rangeTrack { background: #333; }
+  .rangeFill { background: #e0e0e0; }
+  .rangeInput::-webkit-slider-thumb { background: #e0e0e0; border-color: #242424; }
+  .rangeInput::-moz-range-thumb { background: #e0e0e0; border-color: #242424; }
+  .rangeTick { color: #666; }
+  .disabled { opacity: 0.3; }
+  .forced.active { background: #444; border-color: #444; }
+  .forced.active strong { color: #999; }
+  .forced.active span { color: #666; }
+}
