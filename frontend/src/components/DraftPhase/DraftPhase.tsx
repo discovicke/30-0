@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult } from '../../types';
+import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult, SavedDraftState } from '../../types';
 import { formations, simulateSeason, computeTeamRatings } from '../../engine/simulationEngine';
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
@@ -18,19 +18,20 @@ interface Props {
   config: GameConfig;
   squads: Squad[];
   onRestart: () => void;
+  savedState?: SavedDraftState;
 }
 
 const stepLabels = ['Start', 'Draft', 'Text-TV', 'Klar'];
 
 type DraftState = 'drafting' | 'ready' | 'simulating';
 
-export default function DraftPhase({ config, squads, onRestart }: Props) {
-  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>({});
-  const [filledIds, setFilledIds] = useState<Set<string>>(new Set());
-  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set());
-  const [rerollsLeft, setRerollsLeft] = useState(getRerollCount(config.difficulty));
-  const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
+  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
+  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? []));
+  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
+  const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
+  const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(savedState?.selectedSlot ?? null);
   const [spinning, setSpinning] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [rollTeam, setRollTeam] = useState('');
@@ -39,8 +40,8 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [teamLocked, setTeamLocked] = useState(false);
   const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
-  const [draftState, setDraftState] = useState<DraftState>('drafting');
-  const [result, setResult] = useState<SeasonResult | null>(null);
+  const [draftState, setDraftState] = useState<DraftState>(savedState?.draftState ?? 'drafting');
+  const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
@@ -183,6 +184,22 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   useEffect(() => {
     if (allFilled && draftState === 'drafting') setDraftState('ready');
   }, [allFilled, draftState]);
+
+  // Save state to localStorage for Continue Draft
+  useEffect(() => {
+    const state: SavedDraftState = {
+      config,
+      filledSlots,
+      filledIds: [...filledIds],
+      usedSquadKeys: [...usedSquadKeys],
+      rerollsLeft,
+      currentSquad,
+      selectedSlot,
+      draftState,
+      result,
+    };
+    localStorage.setItem('30-0-draft', JSON.stringify(state));
+  }, [filledSlots, filledIds, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
 
   // --- Simulate (triggered from TextTVBrowser) ---
 

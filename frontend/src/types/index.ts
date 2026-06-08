@@ -103,11 +103,23 @@ export interface SeasonResult {
 export type DraftMode = 'squad-first' | 'position-first';
 export type RatingMode = 'season' | 'peak';
 export type Difficulty = 'easy' | 'normal' | 'hard';
-export type GamePhase = 'setup' | 'draft' | 'simulating' | 'match-replay' | 'results';
+export type GamePhase = 'landing' | 'setup' | 'draft' | 'simulating' | 'match-replay' | 'results';
 
 export interface GameConfig {
   draftMode: DraftMode;
   ratingMode: RatingMode;
   difficulty: Difficulty;
   formation: FormationKey;
+}
+
+export interface SavedDraftState {
+  config: GameConfig;
+  filledSlots: Record<string, PlayerCard>;
+  filledIds: string[];
+  usedSquadKeys: string[];
+  rerollsLeft: number;
+  currentSquad: Squad | null;
+  selectedSlot: string | null;
+  draftState: 'drafting' | 'ready' | 'simulating';
+  result: SeasonResult | null;
 }
