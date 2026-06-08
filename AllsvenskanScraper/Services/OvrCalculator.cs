@@ -109,7 +109,7 @@ public static class OvrCalculator
                 normStats[key] = Math.Clamp(ZScoreToPercentile(z) * 99, 1, 99);
             }
 
-            var rawOvr = CalculateWeightedOvr(broadPos, normStats);
+            var rawOvr = CalculateWeightedOvr(broadPos, player.Positions, normStats);
             player.Ovr = Math.Round(rawOvr, 1);
             computed++;
         }
@@ -122,10 +122,7 @@ public static class OvrCalculator
                 g =>
                 {
                     var totalMin = g.Sum(p => p.Minutes);
-                    return (
-                        AvgGoalsPer90: g.Sum(p => p.Stats.GetValueOrDefault("goals_per90", 0) * p.Minutes) / (double)totalMin,
-                        AvgOvr: g.Sum(p => p.Ovr!.Value * p.Minutes) / (double)totalMin
-                    );
+                    return g.Sum(p => p.Ovr!.Value * p.Minutes) / (double)totalMin;
                 });
 
         var seasonAvgOvr = allPlayers
@@ -147,19 +144,9 @@ public static class OvrCalculator
             if (!teamSeasonStats.TryGetValue(tsKey, out var ts)) continue;
             if (!seasonAvgOvr.TryGetValue(player.Season, out var leagueOvr)) continue;
 
-            var teamFactor = ts.AvgOvr / leagueOvr;
-            var adjustment = 1.0 + (1.0 - teamFactor) * 0.08;
-            adjustment = Math.Clamp(adjustment, 0.85, 1.15);
-
-            var broadPos = player.BroadPositions.Count > 0 ? player.BroadPositions[0] : "Unknown";
-            if (broadPos == "DF" || broadPos == "GK")
-            {
-                var teamGoalRatio = ts.AvgGoalsPer90 / Math.Max(allPlayers
-                    .Where(p => p.Season == player.Season && p.Minutes >= 500)
-                    .Average(p => p.Stats.GetValueOrDefault("goals_per90", 0)), 0.01);
-                if (teamGoalRatio > 1.15)
-                    adjustment *= 0.97;
-            }
+            var teamFactor = ts / leagueOvr;
+            var adjustment = 1.0 + (1.0 - teamFactor) * 0.04;
+            adjustment = Math.Clamp(adjustment, 0.92, 1.08);
 
             player.Ovr = Math.Round(player.Ovr.Value * adjustment, 1);
         }
@@ -250,11 +237,20 @@ public static class OvrCalculator
         return Math.Clamp(0.5 * (1.0 + sign * erf), 0, 1);
     }
 
-    public static double CalculateWeightedOvr(string pos, Dictionary<string, double> norm)
+    public static double CalculateWeightedOvr(string broadPos, List<string> specificPositions, Dictionary<string, double> norm)
     {
         double S(string key) => norm.GetValueOrDefault(key, 50);
 
-        var weightTable = pos switch
+        var weightKey = broadPos;
+        if (broadPos == "MF" && specificPositions != null)
+        {
+            if (specificPositions.Contains("CAM"))
+                weightKey = "MF_AT";
+            else if (specificPositions.Contains("CDM"))
+                weightKey = "MF_DEF";
+        }
+
+        var weightTable = weightKey switch
         {
             "FW" => new (string key, double w)[]
             {
@@ -267,6 +263,31 @@ public static class OvrCalculator
                 ("goals_pens_per90", 0.05),
                 ("interceptions_per90", 0.05),
                 ("goals_per_shot_on_target", 0.05),
+            },
+            "MF_AT" => new (string key, double w)[]
+            {
+                ("goals_per90", 0.25),
+                ("assists_per90", 0.25),
+                ("shots_on_target_per90", 0.15),
+                ("tackles_won_per90", 0.08),
+                ("interceptions_per90", 0.07),
+                ("goals_per_shot", 0.05),
+                ("shots_on_target_pct", 0.05),
+                ("goals_per_shot_on_target", 0.05),
+                ("goals_pens_per90", 0.05),
+            },
+            "MF_DEF" => new (string key, double w)[]
+            {
+                ("tackles_won_per90", 0.25),
+                ("interceptions_per90", 0.20),
+                ("assists_per90", 0.12),
+                ("goals_per90", 0.10),
+                ("shots_on_target_per90", 0.08),
+                ("goals_per_shot", 0.05),
+                ("shots_on_target_pct", 0.05),
+                ("goals_pens_per90", 0.05),
+                ("goals_per_shot_on_target", 0.05),
+                ("crosses_per90", 0.05),
             },
             "MF" => new (string key, double w)[]
             {
@@ -302,6 +323,9 @@ public static class OvrCalculator
             _ => new (string key, double w)[] { }
         };
 
+        var totalIntendedWeight = weightTable.Sum(w => w.w);
+        var minWeight = totalIntendedWeight * 0.50;
+
         double total = 0, totalWeight = 0;
         foreach (var (key, w) in weightTable)
         {
@@ -310,6 +334,13 @@ public static class OvrCalculator
                 total += w * S(key);
                 totalWeight += w;
             }
+        }
+
+        if (totalWeight < minWeight)
+        {
+            var missingWeight = minWeight - totalWeight;
+            total += missingWeight * 50;
+            totalWeight = minWeight;
         }
 
         return totalWeight > 0 ? total / totalWeight : 50;
