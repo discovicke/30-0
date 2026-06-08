@@ -259,16 +259,13 @@ export function simulateSeason(user: TeamXI, formation: FormationKey): SeasonRes
   const goalScorers: Record<string, number> = {};
   const assists: Record<string, number> = {};
   const cleanSheets: Record<string, number> = {};
-  for (const ai of aiTeams) {
-    const homeMatch = simulateMatch(user, ai, true, formation);
-    matches.push(homeMatch);
-    if (homeMatch.isUserHome ? homeMatch.awayGoals === 0 : homeMatch.homeGoals === 0) {
-      const gk = user.slots['GK'];
-      if (gk) cleanSheets[gk.name] = (cleanSheets[gk.name] ?? 0) + 1;
-    }
-    const awayMatch = simulateMatch(user, ai, false, formation);
-    matches.push(awayMatch);
-    if (awayMatch.isUserHome ? awayMatch.awayGoals === 0 : awayMatch.homeGoals === 0) {
+  for (let r = 0; r < aiTeams.length * 2; r++) {
+    const ai = aiTeams[r % aiTeams.length];
+    const i = r % aiTeams.length;
+    const isHome = (i % 2 === 0) !== (r >= aiTeams.length);
+    const match = simulateMatch(user, ai, isHome, formation);
+    matches.push(match);
+    if (match.isUserHome ? match.awayGoals === 0 : match.homeGoals === 0) {
       const gk = user.slots['GK'];
       if (gk) cleanSheets[gk.name] = (cleanSheets[gk.name] ?? 0) + 1;
     }
