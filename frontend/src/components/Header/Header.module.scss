@@ -21,6 +21,8 @@
   cursor: pointer;
   letter-spacing: -0.04em;
   transition: opacity 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     opacity: 0.75;
@@ -31,15 +33,24 @@
   display: flex;
   gap: 4px;
   margin-left: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .mode {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   padding: 6px 12px;
   border-radius: 6px;
   letter-spacing: 0.02em;
   transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .active {

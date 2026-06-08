@@ -7,21 +7,28 @@ export default function Footer() {
     return (
         <>
             <footer className={styles.footer}>
-                <div className={styles.actions}>
-                    <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={styles.btn}>
-                        &#128187; Bidra till källkoden
-                    </a>
-                    <a href="mailto:johanssonviktor@pm.me" className={styles.btn}>
-                        &#9993; Lämna feedback eller buggar
-                    </a>
-                    <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener"
-                       className={styles.btnPrimary}>
-                        &#9749; Stötta projektets kostnader med en kaffe
-                    </a>
-                    <button className={styles.btn} onClick={() => setShowPrivacy(true)}>
-                        &#9432; Integritets policy
-                    </button>
-                </div>
+      <div className={styles.actions}>
+        <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={styles.btn}>
+          <span className={styles.btnIcon}>⌨</span>
+          <span className={styles.btnLabel}>Källkod</span>
+          <span className={styles.btnDesc}>Öppen källkod på GitHub</span>
+        </a>
+        <a href="mailto:johanssonviktor@pm.me" className={styles.btn}>
+          <span className={styles.btnIcon}>✉</span>
+          <span className={styles.btnLabel}>Feedback</span>
+          <span className={styles.btnDesc}>Buggar eller förslag</span>
+        </a>
+        <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener" className={styles.btnPrimary}>
+          <span className={styles.btnIcon}>☕</span>
+          <span className={styles.btnLabel}>Bjud på en kaffe</span>
+          <span className={styles.btnDesc}>Hjälper täcka servrar och tid</span>
+        </a>
+        <button className={styles.btn} onClick={() => setShowPrivacy(true)}>
+          <span className={styles.btnIcon}>ℹ</span>
+          <span className={styles.btnLabel}>Integritet</span>
+          <span className={styles.btnDesc}>Vad vi samlar in (spoiler: inget)</span>
+        </button>
+      </div>
 
                 <p className={styles.credit}>
                     Inspirerat av <a href="https://82-0.com" target="_blank" rel="noopener">82-0.com</a> och{' '}
