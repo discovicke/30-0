@@ -4,20 +4,33 @@ import type {
 } from '../types';
 
 export const formations: Record<FormationKey, FormationSlot[]> = {
-  '4-3-3': [
+  '5-4-1': [
+    { label: 'GK', position: 'GK', specificPositions: ['GK'] },
+    { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB3', position: 'DF', specificPositions: ['CB'] },
+    { label: 'RB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'LM', position: 'MF', specificPositions: ['CM', 'LW', 'CAM'] },
+    { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'RM', position: 'MF', specificPositions: ['CM', 'RW', 'CAM'] },
+    { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+  ],
+  '4-2-3-1': [
     { label: 'GK', position: 'GK', specificPositions: ['GK'] },
     { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
     { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
     { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
     { label: 'RB', position: 'DF', specificPositions: ['CB', 'CM'] },
-    { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
-    { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
-    { label: 'CM3', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
-    { label: 'LW', position: 'FW', specificPositions: ['LW', 'RW', 'ST'] },
+    { label: 'CDM1', position: 'MF', specificPositions: ['CDM', 'CM'] },
+    { label: 'CDM2', position: 'MF', specificPositions: ['CDM', 'CM'] },
+    { label: 'LW', position: 'MF', specificPositions: ['LW', 'RW', 'CAM'] },
+    { label: 'CAM', position: 'MF', specificPositions: ['CAM', 'CM'] },
+    { label: 'RW', position: 'MF', specificPositions: ['RW', 'LW', 'CAM'] },
     { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
-    { label: 'RW', position: 'FW', specificPositions: ['RW', 'LW', 'ST'] },
   ],
-  '4-4-2': [
+  '4-5-1': [
     { label: 'GK', position: 'GK', specificPositions: ['GK'] },
     { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
     { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
@@ -27,8 +40,21 @@ export const formations: Record<FormationKey, FormationSlot[]> = {
     { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
     { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
     { label: 'RM', position: 'MF', specificPositions: ['CM', 'RW', 'CAM'] },
-    { label: 'ST1', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
-    { label: 'ST2', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+    { label: 'CAM', position: 'MF', specificPositions: ['CAM', 'CM'] },
+    { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+  ],
+  '3-4-3': [
+    { label: 'GK', position: 'GK', specificPositions: ['GK'] },
+    { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB3', position: 'DF', specificPositions: ['CB'] },
+    { label: 'LM', position: 'MF', specificPositions: ['CM', 'LW', 'CAM'] },
+    { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'RM', position: 'MF', specificPositions: ['CM', 'RW', 'CAM'] },
+    { label: 'LW', position: 'FW', specificPositions: ['LW', 'RW', 'ST'] },
+    { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+    { label: 'RW', position: 'FW', specificPositions: ['RW', 'LW', 'ST'] },
   ],
   '3-5-2': [
     { label: 'GK', position: 'GK', specificPositions: ['GK'] },
@@ -43,9 +69,35 @@ export const formations: Record<FormationKey, FormationSlot[]> = {
     { label: 'ST1', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
     { label: 'ST2', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
   ],
+  '4-4-2': [
+    { label: 'GK', position: 'GK', specificPositions: ['GK'] },
+    { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
+    { label: 'RB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'LM', position: 'MF', specificPositions: ['CM', 'LW', 'CAM'] },
+    { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'RM', position: 'MF', specificPositions: ['CM', 'RW', 'CAM'] },
+    { label: 'ST1', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+    { label: 'ST2', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+  ],
+  '4-3-3': [
+    { label: 'GK', position: 'GK', specificPositions: ['GK'] },
+    { label: 'LB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'CB1', position: 'DF', specificPositions: ['CB'] },
+    { label: 'CB2', position: 'DF', specificPositions: ['CB'] },
+    { label: 'RB', position: 'DF', specificPositions: ['CB', 'CM'] },
+    { label: 'CM1', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'CM2', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'CM3', position: 'MF', specificPositions: ['CM', 'CDM', 'CAM'] },
+    { label: 'LW', position: 'FW', specificPositions: ['LW', 'RW', 'ST'] },
+    { label: 'ST', position: 'FW', specificPositions: ['ST', 'LW', 'RW'] },
+    { label: 'RW', position: 'FW', specificPositions: ['RW', 'LW', 'ST'] },
+  ],
 };
 
-export const formationKeys: FormationKey[] = ['4-3-3', '4-4-2', '3-5-2'];
+export const formationKeys: FormationKey[] = ['5-4-1', '4-2-3-1', '4-5-1', '3-4-3', '3-5-2', '4-4-2', '4-3-3'];
 
 export function getAllAITeams(): AITeam[] {
   return [
@@ -70,23 +122,23 @@ export function getAllAITeams(): AITeam[] {
 export function computeTeamRatings(xi: TeamXI): void {
   const slots = xi.slots;
   const slotsDef = formations[xi.formation];
-  let attack = 0, midfield = 0, defence = 0, gk = 0;
-  let attackN = 0, midfieldN = 0, defenceN = 0, gkN = 0;
+  let attack = 0, midfield = 0, defence = 0;
+  let attackN = 0, midfieldN = 0, defenceN = 0;
   for (const slot of slotsDef) {
     const player = slots[slot.label];
     if (!player) continue;
     switch (slot.position) {
       case 'FW': attack += player.ovr; attackN++; break;
       case 'MF': midfield += player.ovr; midfieldN++; break;
-      case 'DF': defence += player.ovr; defenceN++; break;
-      case 'GK': gk += player.ovr; gkN++; break;
+      case 'DF':
+      case 'GK': defence += player.ovr; defenceN++; break;
     }
   }
   xi.attack = attackN > 0 ? +(attack / attackN).toFixed(1) : 50;
   xi.midfield = midfieldN > 0 ? +(midfield / midfieldN).toFixed(1) : 50;
   xi.defence = defenceN > 0 ? +(defence / defenceN).toFixed(1) : 50;
-  xi.gkRating = gkN > 0 ? +(gk / gkN).toFixed(1) : 50;
-  xi.overall = +((xi.attack + xi.midfield + xi.defence + xi.gkRating) / 4).toFixed(1);
+  xi.gkRating = defenceN > 0 ? +(defence / defenceN).toFixed(1) : 50;
+  xi.overall = +((xi.attack + xi.midfield + xi.defence) / 3).toFixed(1);
 }
 
 function poisson(lambda: number): number {
@@ -147,7 +199,7 @@ function pickGoalScorer(xi: TeamXI, formation: FormationKey): { scorer: string; 
 export function simulateMatch(user: TeamXI, ai: AITeam, isUserHome: boolean, formation: FormationKey): MatchResult {
   computeTeamRatings(user);
   const userOffence = user.attack * 0.4 + user.midfield * 0.6;
-  const userDefence = user.midfield * 0.2 + user.defence * 0.5 + user.gkRating * 0.3;
+  const userDefence = user.midfield * 0.2 + user.defence * 0.8;
   const userStrength = (userOffence + userDefence) / 2;
   const strengthRatio = Math.max(userStrength / Math.max(ai.strength, 1), 0.1);
   const baseRate = 1.2;

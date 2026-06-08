@@ -58,6 +58,18 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
 
   const slotDefs = formations[config.formation];
 
+  const groupCounts = { FW: 0, MF: 0, DF: 0 };
+  for (const label of filledLabels) {
+    const def = slotDefs.find((s) => s.label === label);
+    if (!def) continue;
+    if (def.position === 'GK' || def.position === 'DF') groupCounts.DF++;
+    else if (def.position === 'MF') groupCounts.MF++;
+    else if (def.position === 'FW') groupCounts.FW++;
+  }
+  const emptyAttack = groupCounts.FW === 0;
+  const emptyMidfield = groupCounts.MF === 0;
+  const emptyDefence = groupCounts.DF === 0;
+
   // --- Draft logic (slot machine) ---
 
   const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -231,6 +243,9 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
             attack={xi.attack}
             midfield={xi.midfield}
             defence={xi.defence}
+            emptyAttack={emptyAttack}
+            emptyMidfield={emptyMidfield}
+            emptyDefence={emptyDefence}
           />
           <FormationView
             formation={config.formation}

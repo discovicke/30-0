@@ -39,12 +39,13 @@ export function getPositionLabel(posGroup: string): string {
 }
 
 const swedishSlotLabels: Record<string, string> = {
-  GK: 'MV', LB: 'VB', CB1: 'MB', CB2: 'MB', RB: 'HB',
+  GK: 'MV', LB: 'VB', CB1: 'MB', CB2: 'MB', RB: 'HB', CB3: 'MB',
   CM1: 'CM', CM2: 'CM', CM3: 'CM',
+  CDM1: 'DM', CDM2: 'DM',
+  CAM: 'OM',
   LM: 'VM', RM: 'HM',
   LW: 'VY', RW: 'HY', ST: 'ANF',
   ST1: 'ANF', ST2: 'ANF',
-  CB3: 'MB',
 };
 
 export function getSwedishLabel(label: string): string {
