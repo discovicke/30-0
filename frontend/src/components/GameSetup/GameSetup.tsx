@@ -30,7 +30,7 @@ export default function GameSetup({ onStart }: Props) {
     <div className={styles.page}>
       <div className={styles.hero}>
         <h1 className={styles.title}>30-0</h1>
-        <p className={styles.subtitle}>Drafta ditt ultimata Allsvenska XI</p>
+        <p className={styles.subtitle}>Drafta din ultimata Allsvenska XI</p>
       </div>
 
       <div className={styles.section}>
@@ -40,14 +40,14 @@ export default function GameSetup({ onStart }: Props) {
             className={`${styles.optionBtn} ${draftMode === 'squad-first' ? styles.active : ''}`}
             onClick={() => setDraftMode('squad-first')}
           >
-            <strong>Squad First</strong>
+            <strong>Trupp först</strong>
             <span>Snurra klubb, välj spelare, auto-assign position</span>
           </button>
           <button
             className={`${styles.optionBtn} ${draftMode === 'position-first' ? styles.active : ''}`}
             onClick={() => setDraftMode('position-first')}
           >
-            <strong>Position First</strong>
+            <strong>Position först</strong>
             <span>Välj position, snurra sen klubb för att fylla den</span>
           </button>
         </div>
@@ -61,14 +61,14 @@ export default function GameSetup({ onStart }: Props) {
             onClick={() => setRatingMode('season')}
           >
             <strong>Karriärsäsonger</strong>
-            <span>Spelarna betygsatta som den exakta säsongen</span>
+            <span>Spelarna betygsatta enligt säsong</span>
           </button>
           <button
             className={`${styles.optionBtn} ${ratingMode === 'peak' ? styles.active : ''}`}
             onClick={() => setRatingMode('peak')}
           >
-            <strong>Prime Mode</strong>
-            <span>Alla spelare på sin karriärs bästa betyg</span>
+            <strong>Toppade lag</strong>
+            <span>Alla spelare får sin karriärs bästa betyg</span>
           </button>
         </div>
       </div>
@@ -80,22 +80,22 @@ export default function GameSetup({ onStart }: Props) {
             className={`${styles.diffBtn} ${difficulty === 'easy' ? styles.active : ''}`}
             onClick={() => setDifficulty('easy')}
           >
-            <strong>Easy</strong>
-            <span>3 omkast</span>
+            <strong>Lätt</strong>
+            <span>3 rerolls</span>
           </button>
           <button
             className={`${styles.diffBtn} ${difficulty === 'normal' ? styles.active : ''}`}
             onClick={() => setDifficulty('normal')}
           >
             <strong>Normal</strong>
-            <span>1 omkast</span>
+            <span>1 reroll</span>
           </button>
           <button
             className={`${styles.diffBtn} ${difficulty === 'hard' ? styles.active : ''}`}
             onClick={() => setDifficulty('hard')}
           >
-            <strong>Hard</strong>
-            <span>Inga omkast</span>
+            <strong>Svårt</strong>
+            <span>Inga rerolls</span>
           </button>
         </div>
       </div>
