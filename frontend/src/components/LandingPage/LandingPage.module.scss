@@ -211,17 +211,27 @@
 
 .challengeList {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 
   li {
-    font-size: 0.9375rem;
-    color: $ink-muted;
-    padding: 10px 14px;
+    font-size: 0.875rem;
+    color: $ink;
+    font-weight: 500;
+    padding: 14px 16px;
     background: $sand-white;
     border: 0.5px solid $sand-border;
-    border-radius: $radius-sm;
+    border-radius: $radius-md;
+    line-height: 1.4;
+    transition: border-color 0.15s, box-shadow 0.15s;
+
+    &:hover {
+      border-color: $ink;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
   }
 }
 
@@ -307,6 +317,53 @@
   text-align: center;
   padding-top: 32px;
   border-top: 0.5px solid $sand-border;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.footerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: 1px solid $sand-border;
+  border-radius: $radius-md;
+  color: $ink-muted;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+    background: $sand-surface;
+  }
+}
+
+.footerBtnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: $ink;
+  color: $chrome-text;
+  border: 1px solid $ink;
+  border-radius: $radius-md;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
 }
 
 .footerLinks {

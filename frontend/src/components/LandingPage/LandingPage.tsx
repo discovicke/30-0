@@ -114,12 +114,12 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
             <div className={styles.section}>
                 <h2 className={styles.sectionTitle}>Populära utmaningar</h2>
                 <ul className={styles.challengeList}>
-                    <li>&#9656; Gå en hel 30-matchers säsong obesegrad</li>
-                    <li>&#9656; Jaga en perfekt 30-0-0</li>
-                    <li>&#9656; Vinn Allsvenskan</li>
-                    <li>&#9656; Bygg ett modern-tids XI (2016–2025)</li>
-                    <li>&#9656; Drafta ett all-star XI från alla epoker</li>
-                    <li>&#9656; Vinn på svår nivå med dolda betyg</li>
+          <li>Vinn Allsvenskan</li>
+          <li>Gå en säsong obesegrad</li>
+          <li>Jaga en perfekt 30-0-0</li>
+          <li>Bygg en modern-tids XI (2016–2025)</li>
+          <li>Drafta en all-star XI från hela 2000-talet</li>
+          <li>Vinn på svår nivå med dolda betyg</li>
                 </ul>
             </div>
 
@@ -147,7 +147,7 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                     <details className={styles.faqItem}>
                         <summary className={styles.faqQuestion}>Vilka spelare och klubbar ingår?</summary>
                         <p className={styles.faqAnswer}>
-                            Alla Allsvenska klubbar från säsongerna 2001 till 2025 – över 6 700
+                            Alla Allsvenska klubbar från säsongerna 2001 till 2025, över 6 700
                             spelarsäsonger. Från etablerade storklubbar till klassiska lag som
                             gjort avtryck i serien.
                         </p>
@@ -162,7 +162,7 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                         <summary className={styles.faqQuestion}>Är 30-0 ett fantasy football-spel?</summary>
                         <p className={styles.faqAnswer}>
                             Nej. 30-0 är inte kopplat till verkliga matcher eller poängsystem.
-                            Du bygger en statisk XI som sedan simulerar en säsong — som ett
+                            Du bygger en statisk XI som sedan simulerar en säsong - som ett
                             digitalt "tänk om"-kort.
                         </p>
                     </details>
@@ -177,9 +177,12 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                     <details className={styles.faqItem}>
                         <summary className={styles.faqQuestion}>Var kommer spelarbetygen ifrån?</summary>
                         <p className={styles.faqAnswer}>
-                            30-0's player ratings are an independent interpretation based on publicly available data and
-                            are used for descriptive purposes only — they may differ from any official source. 38-0 is
-                            not affiliated with, endorsed by, or sponsored by any game, publisher, or ratings provider.
+                            Betygen är baserade på offentlig statistik över varje spelares prestationer
+                            under en given säsong; mål, assist, position, speltid och lagets resultat
+                            vägs samman till ett betyg på skalan 1–99. <br></br><br></br>
+                            Enkelt förklarat: spelare som
+                            statistiskt levererade på planen får högre betyg, oavsett om de var stjärnor i topplag
+                            eller nyckelspelare i bottenlag.
                         </p>
                     </details>
                     <details className={styles.faqItem}>
@@ -206,9 +209,18 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
             </div>
 
             <footer className={styles.footer}>
-                <div className={styles.footerLinks}>
-                    <a href="mailto:johanssonviktor@pm.me">&#9993; Feedback &amp; buggar</a>
-                    <a href="https://buymeacoffee.com/discovicke">&#9749; Gillar du spelet?</a>
+                <div className={styles.footerActions}>
+                    <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener"
+                       className={styles.footerBtn}>
+                        &#128187; Källkod på GitHub
+                    </a>
+                    <a href="mailto:discovicke@gmail.com" className={styles.footerBtn}>
+                        &#9993; Feedback &amp; frågor
+                    </a>
+                    <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener"
+                       className={styles.footerBtnPrimary}>
+                        &#9749; Stötta projektet
+                    </a>
                 </div>
                 <p className={styles.footerCredit}>
                     Inspirerat av <a href="https://82-0.com" target="_blank" rel="noopener">82-0.com</a> och <a
