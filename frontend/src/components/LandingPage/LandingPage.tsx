@@ -98,7 +98,7 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                     <div className={styles.step}>
                         <span className={styles.stepNum}>3</span>
                         <div>
-                            <strong>Bygg ditt XI</strong>
+                            <strong>Bygg din XI</strong>
                             <p>Upprepa tills alla 11 positioner är fyllda med Allsvensk talang.</p>
                         </div>
                     </div>

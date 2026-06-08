@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult, SavedDraftState } from '../../types';
 import { formations, simulateSeason, computeTeamRatings } from '../../engine/simulationEngine';
 import {
@@ -7,7 +7,6 @@ import {
   computePreSeasonOdds,
 } from '../../engine/draftEngine';
 
-const seasons = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
 import {X, ArrowLeft} from 'lucide-react';
 import FormationView from '../FormationView/FormationView';
 import OverallStrip from '../OverallStrip/OverallStrip';
@@ -55,6 +54,11 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const filledCount = Object.keys(filledSlots).length;
   const filledLabels = Object.keys(filledSlots);
   const allFilled = filledCount >= totalSlots;
+
+  const reelSeasons = useMemo(() =>
+    Array.from({ length: config.seasonMax - config.seasonMin + 1 }, (_, i) => config.seasonMin + i),
+    [config.seasonMin, config.seasonMax]
+  );
 
   const xi = {
     name: 'Your XI',
@@ -124,7 +128,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         setSpinning(false);
         return;
       }
-      setRollSeason(String(seasons[Math.floor(Math.random() * seasons.length)]));
+      setRollSeason(String(reelSeasons[Math.floor(Math.random() * reelSeasons.length)]));
       setRollTick((t) => t + 1);
       const p = step / seasonSteps;
       rollTimerRef.current = setTimeout(() => rollSeasonStep(step + 1), 60 + p * p * 260);
@@ -153,9 +157,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
 
     if (config.draftMode === 'position-first') {
       if (!selectedSlot) return;
-      const slot = slotDefs.find((s) => s.label === selectedSlot);
-      if (!slot) return;
-      addPlayer(player, slot.position);
+      addPlayer(player, undefined, selectedSlot);
       return;
     }
 
@@ -172,7 +174,21 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     setPendingGroups(openGroups);
   }
 
-  function addPlayer(player: SquadPlayer, targetGroup: string) {
+  function addPlayer(player: SquadPlayer, targetGroup?: string, exactSlot?: string) {
+    if (exactSlot && !filledSlots[exactSlot]) {
+      const card: PlayerCard = {
+        name: player.name, season: player.season, team: player.team,
+        ovr: player.ovr, positions: [...player.positions], id: player.id,
+      };
+      setFilledSlots({ ...filledSlots, [exactSlot]: card });
+      setFilledIds(new Set([...filledIds, player.id]));
+      setCurrentSquad(null);
+      setSelectedSlot(null);
+      setPendingPlayer(null);
+      setPendingGroups([]);
+      return;
+    }
+
     const targetSlot = autoAssignSlot(player, config.formation, filledLabels, targetGroup);
     if (!targetSlot || filledSlots[targetSlot]) return;
 
@@ -307,9 +323,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               Snurra fram spelare
             </button>
           )}
-          {!config.showRatings && filledCount > 0 && (
-            <span className={styles.hiddenHint}>Betyg är dolda (svår nivå)</span>
-          )}
         </div>
       )}
 
@@ -354,7 +367,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             tall
             interactive={draftState === 'drafting'}
             selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
-            showRatings={config.showRatings}
             onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
           />
           <OverallStrip
@@ -365,7 +377,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             emptyAttack={emptyAttack}
             emptyMidfield={emptyMidfield}
             emptyDefence={emptyDefence}
-            showRatings={config.showRatings}
           />
         </div>
 
@@ -410,9 +421,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                 <span className={styles.hint}>Klicka på en position på planen</span>
               )}
 
-              {!config.showRatings && filledCount > 0 && (
-                <span className={styles.hiddenHint}>Betyg är dolda (svår nivå)</span>
-              )}
             </div>
           )}
 
@@ -420,7 +428,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             <TextTVBrowser
               xi={xi}
               formation={config.formation}
-              config={config}
               odds={odds}
               result={result}
               onSimulate={handleSimulate}
@@ -436,7 +443,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
           <TextTVBrowser
             xi={xi}
             formation={config.formation}
-            config={config}
             odds={odds}
             result={result}
             onSimulate={handleSimulate}

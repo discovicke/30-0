@@ -10,11 +10,10 @@ interface Props {
   tall?: boolean;
   interactive?: boolean;
   selectedSlot?: string | null;
-  showRatings?: boolean;
   onSlotClick?: (label: string) => void;
 }
 
-export default function FormationView({ formation, slots, compact, tall, interactive, selectedSlot, showRatings = true, onSlotClick }: Props) {
+export default function FormationView({ formation, slots, compact, tall, interactive, selectedSlot, onSlotClick }: Props) {
   const slotDefs = formations[formation];
 
   return (
@@ -49,7 +48,7 @@ export default function FormationView({ formation, slots, compact, tall, interac
               {player ? (
                 <>
                   <span className={styles.pname}>{player.name.split(' ').pop()}</span>
-                  <span className={styles.povr}>{showRatings ? Math.round(player.ovr) : '??'}</span>
+                  <span className={styles.povr}>{Math.round(player.ovr)}</span>
                 </>
               ) : (
                 <>

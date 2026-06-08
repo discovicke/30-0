@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { TeamXI, FormationKey, GameConfig, SeasonResult } from '../../types';
+import type { TeamXI, FormationKey, SeasonResult } from '../../types';
 import type { PreSeasonOdds } from '../../engine/draftEngine';
 import Page300 from './pages/Page300';
 import Page301 from './pages/Page301';
@@ -13,7 +13,6 @@ import styles from './TextTVBrowser.module.scss';
 interface Props {
   xi: TeamXI;
   formation: FormationKey;
-  config: GameConfig;
   odds: PreSeasonOdds;
   result: SeasonResult | null;
   onSimulate: () => void;
@@ -44,7 +43,7 @@ function formatDate(date: Date) {
 }
 
 export default function TextTVBrowser({
-  xi, formation, config, odds, result, onSimulate, onRestart,
+  xi, formation, odds, result, onSimulate, onRestart,
 }: Props) {
   const [currentPage, setCurrentPage] = useState(() => result ? 310 : 300);
   const [pageInput, setPageInput] = useState('');
@@ -146,7 +145,7 @@ export default function TextTVBrowser({
       case 300:
         return <Page300 xi={xi} formation={formation} simulated={simulated} onNavigate={navigateTo} />;
       case 301:
-        return <Page301 xi={xi} formation={formation} showRatings={config.showRatings} />;
+        return <Page301 xi={xi} formation={formation} />;
       case 302:
         return <Page302 xi={xi} odds={odds} />;
       case 310:
