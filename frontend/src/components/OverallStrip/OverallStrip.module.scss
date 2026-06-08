@@ -1,57 +1,71 @@
 @use '../../styles/variables' as *;
 
 .strip {
-  width: 100%;
-  margin-bottom: 14px;
-  border: 1px solid $sand-border;
-  border-radius: 6px;
+  display: flex;
+  align-items: stretch;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
   overflow: hidden;
 }
 
 .mainRow {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
   background: $ink;
-  padding: 10px 16px;
+  padding: 3px 10px;
+  flex-shrink: 0;
 }
 
 .mainLabel {
-  font-size: 13px;
+  font-size: 11px;
   color: $badge-yellow;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .mainValue {
-  font-size: 28px;
+  font-size: 16px;
   font-weight: 700;
   color: $badge-yellow;
+  font-family: $font-mono;
+  line-height: 1;
+}
+
+.subGroup {
+  display: flex;
+  gap: 0;
+  flex: 1;
 }
 
 .subRow {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
   background: $sand-white;
-  padding: 8px 16px;
-  border-top: 0.5px solid $sand-border;
+  padding: 3px 8px;
+  flex: 1;
+  justify-content: center;
+  border-left: 0.5px solid $sand-border;
 
-  &:last-child {
-    border-radius: 0 0 6px 6px;
+  &:first-child {
+    border-left: none;
   }
 }
 
 .subLabel {
-  font-size: 12px;
+  font-size: 11px;
   color: $ink-muted;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1;
 }
 
 .subValue {
   font-family: $font-mono;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: $ink;
+  line-height: 1;
 }

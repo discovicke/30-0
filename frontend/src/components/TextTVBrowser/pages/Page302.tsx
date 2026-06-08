@@ -6,8 +6,6 @@ import styles from './pages.module.scss';
 interface Props {
   xi: TeamXI;
   odds: PreSeasonOdds;
-  simulated: boolean;
-  onNavigate: (page: number) => void;
 }
 
 function makeBar(val: number, max: number = 99): string {
@@ -16,12 +14,7 @@ function makeBar(val: number, max: number = 99): string {
   return '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
 }
 
-function positionSuffix(pos: number): string {
-  if (pos === 1 || pos === 2) return pos + ':a';
-  return pos + ':e';
-}
-
-export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
+export default function Page302({ xi, odds }: Props) {
   const aiTeams = getAllAITeams();
   const allTeams = [...aiTeams, { name: 'DITT LAG', strength: xi.overall, tier: undefined }]
     .sort((a, b) => b.strength - a.strength);
@@ -104,17 +97,6 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
         );
       })}
 
-      <hr className={styles.separator} />
-
-      {!simulated ? (
-        <div className={styles.instruction} onClick={() => onNavigate(310)} style={{ cursor: 'pointer' }}>
-          SASONGEN BÖRJAR: TRYCK 310 → SIMULERA
-        </div>
-      ) : (
-        <div className={styles.instruction}>
-          SÄSONGEN KLAR · {positionSuffix(odds.projectedPosition)} PROJEKTERAD
-        </div>
-      )}
     </div>
   );
 }

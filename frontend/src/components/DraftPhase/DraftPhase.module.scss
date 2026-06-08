@@ -4,12 +4,13 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 14px 24px;
   flex: 1;
+  min-height: 0;
   position: relative;
 
   @media (max-width: 800px) {
-    padding: 0 8px;
+    padding: 0 8px 16px;
   }
 }
 
@@ -36,9 +37,10 @@
 .main {
   display: grid;
   grid-template-columns: 400px 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   flex: 1;
-  align-items: stretch;
+  min-height: 0;
 
   @media (max-width: 800px) {
     grid-template-columns: 1fr;
@@ -48,6 +50,12 @@
 .left {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+
+  > div:last-child {
+    margin-top: auto;
+  }
 }
 
 .right {
@@ -58,6 +66,56 @@
   align-items: center;
   min-height: 0;
   overflow: hidden;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+.rerollHeader {
+  display: flex;
+  justify-content: flex-end;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+.mobileControls {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+}
+
+.desktopControls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+.right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0 0;
+  align-items: center;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
 }
 
 // ── Reroll dots ──

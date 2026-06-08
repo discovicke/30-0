@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { TeamXI, FormationKey, GameConfig, SeasonResult } from '../../types';
 import type { PreSeasonOdds } from '../../engine/draftEngine';
 import Page300 from './pages/Page300';
@@ -25,13 +25,24 @@ const VALID_PAGES = new Set(PAGE_ORDER);
 const PAGE_TITLES: Record<number, string> = {
   300: 'ALLSVENSKT 30-0',
   301: 'DIN TRUPP',
-   302: 'FÖRHANDSTIPS',
+  302: 'FÖRHANDSTIPS',
   310: 'RESULTAT OMG 1-10',
   311: 'RESULTAT OMG 11-20',
   312: 'RESULTAT OMG 21-30',
   320: 'SLUTTABELL',
-   321: 'SÄSONGSARTIKEL',
+  321: 'SÄSONGSARTIKEL',
 };
+
+const DAYS = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function formatDate(date: Date) {
+  const day = DAYS[date.getDay()];
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mon = MONTHS[date.getMonth()];
+  const yyyy = date.getFullYear();
+  return `${day} ${dd} ${mon} ${yyyy}`;
+}
 
 export default function TextTVBrowser({
   xi, formation, odds, result, onSimulate, onRestart,
@@ -41,12 +52,13 @@ export default function TextTVBrowser({
 
   const simulated = result !== null;
 
+  const dateStr = useMemo(() => formatDate(new Date()), []);
+
   const navigateTo = useCallback((page: number) => {
     if (!VALID_PAGES.has(page)) return;
-    // Trigger simulation when navigating to result pages
     if (page >= 310 && !simulated) {
       onSimulate();
-      return; // will re-render with result, user can navigate again
+      return;
     }
     setCurrentPage(page);
     setPageInput('');
@@ -54,7 +66,6 @@ export default function TextTVBrowser({
 
   const getPrev = useCallback(() => {
     const idx = PAGE_ORDER.indexOf(currentPage);
-    // Skip locked pages when going backwards
     if (!simulated) {
       const preSimPages = PAGE_ORDER.filter((p) => p < 310);
       const i = preSimPages.indexOf(currentPage);
@@ -68,18 +79,15 @@ export default function TextTVBrowser({
     if (!simulated) {
       const preSimPages = PAGE_ORDER.filter((p) => p < 310);
       const i = preSimPages.indexOf(currentPage);
-      if (i === preSimPages.length - 1) return 310; // allow jumping to 310 to trigger sim
+      if (i === preSimPages.length - 1) return 310;
       return preSimPages[(i + 1) % preSimPages.length];
     }
     return PAGE_ORDER[(idx + 1) % PAGE_ORDER.length];
   }, [currentPage, simulated]);
 
-  // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Don't capture if user is typing in an input/textarea
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
       if (e.key === 'ArrowLeft') {
         e.preventDefault();
         navigateTo(getPrev());
@@ -92,11 +100,8 @@ export default function TextTVBrowser({
         setPageInput(next);
         if (next.length === 3) {
           const num = parseInt(next, 10);
-          if (VALID_PAGES.has(num)) {
-            navigateTo(num);
-          } else {
-            setPageInput('');
-          }
+          if (VALID_PAGES.has(num)) navigateTo(num);
+          else setPageInput('');
         }
       } else if (e.key === 'Backspace') {
         e.preventDefault();
@@ -122,7 +127,7 @@ export default function TextTVBrowser({
       case 301:
         return <Page301 xi={xi} formation={formation} />;
       case 302:
-        return <Page302 xi={xi} odds={odds} onNavigate={navigateTo} simulated={simulated} />;
+        return <Page302 xi={xi} odds={odds} />;
       case 310:
         return <Page310 result={result} roundOffset={0} />;
       case 311:
@@ -141,9 +146,22 @@ export default function TextTVBrowser({
   return (
     <div className={styles.browser}>
       <div className={styles.header}>
-        <span className={styles.headerLeft}>SVT TEXT-TV</span>
-        <span className={styles.headerCenter}>SID {currentPage}</span>
-        <span className={styles.headerRight}>{PAGE_TITLES[currentPage] ?? ''}</span>
+        <span className={styles.brand}>SVT TEXT-TV</span>
+        <div className={styles.nav}>
+          <button className={styles.navBtn} onClick={() => navigateTo(prevPage)}>
+            ◄ {prevPage}
+          </button>
+          <div className={styles.inputArea}>
+            <span className={styles.inputLabel}>SID</span>
+            <span className={styles.inputDisplay}>
+              {pageInput.padEnd(3, '_')}
+            </span>
+          </div>
+          <button className={styles.navBtn} onClick={() => navigateTo(nextPage)}>
+            {nextPage} ►
+          </button>
+        </div>
+        <span className={styles.date}>{dateStr}</span>
       </div>
 
       <div className={styles.body}>
@@ -151,18 +169,7 @@ export default function TextTVBrowser({
       </div>
 
       <div className={styles.footer}>
-        <button className={styles.navBtn} onClick={() => navigateTo(prevPage)}>
-          ◄ {prevPage}
-        </button>
-        <div className={styles.inputArea}>
-          <span className={styles.inputLabel}>SID</span>
-          <span className={styles.inputDisplay}>
-            {pageInput.padEnd(3, '_')}
-          </span>
-        </div>
-        <button className={styles.navBtn} onClick={() => navigateTo(nextPage)}>
-          {nextPage} ►
-        </button>
+        <span className={styles.pageTitle}>{PAGE_TITLES[currentPage] ?? ''}</span>
       </div>
     </div>
   );

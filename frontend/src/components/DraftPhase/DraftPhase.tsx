@@ -253,30 +253,52 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     <div className={styles.container}>
       <StepIndicator current={currentStep} total={4} labels={stepLabels} />
 
+      {/* Mobile-only controls above pitch */}
+      {draftState === 'drafting' && (
+        <div className={styles.mobileControls}>
+          <div className={styles.rerollRow}>
+            <span className={styles.rerollLabel}>Omkast</span>
+            <div className={styles.rerollDots}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <span
+                  key={i}
+                  className={`${styles.rerollDot} ${i < rerollsLeft ? styles.rerollActive : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className={styles.progress}>
+            <span className={styles.progressLabel}>Du har tagit ut</span>
+            <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+            <span className={styles.progressLabel}>spelare</span>
+          </div>
+          <div className={styles.slotMachine}>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
+                  {rolling ? rollTeam : (currentSquad?.team ?? '---')}
+                </span>
+              </div>
+            </div>
+            <span className={styles.slotX}>X</span>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={rollTick + 1000} className={styles.slotText}>
+                  {rolling ? rollSeason : (currentSquad ? String(currentSquad.season) : '--')}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+            Snurra fram spelare
+          </button>
+        </div>
+      )}
+
       <div className={styles.main}>
         <div className={styles.left}>
-          <OverallStrip
-            overall={xi.overall}
-            attack={xi.attack}
-            midfield={xi.midfield}
-            defence={xi.defence}
-            emptyAttack={emptyAttack}
-            emptyMidfield={emptyMidfield}
-            emptyDefence={emptyDefence}
-          />
-          <FormationView
-            formation={config.formation}
-            slots={filledSlots}
-            tall
-            interactive={draftState === 'drafting'}
-            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
-            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
-          />
-        </div>
-
-        <div className={styles.right}>
           {draftState === 'drafting' && (
-            <>
+            <div className={styles.rerollHeader}>
               <div className={styles.rerollRow}>
                 <span className={styles.rerollLabel}>Omkast</span>
                 <div className={styles.rerollDots}>
@@ -288,10 +310,34 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+          <FormationView
+            formation={config.formation}
+            slots={filledSlots}
+            tall
+            interactive={draftState === 'drafting'}
+            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
+            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
+          />
+          <OverallStrip
+            overall={xi.overall}
+            attack={xi.attack}
+            midfield={xi.midfield}
+            defence={xi.defence}
+            emptyAttack={emptyAttack}
+            emptyMidfield={emptyMidfield}
+            emptyDefence={emptyDefence}
+          />
+        </div>
 
+        <div className={styles.right}>
+          {draftState === 'drafting' && (
+            <div className={styles.desktopControls}>
               <div className={styles.progress}>
-                <span className={styles.progressLabel}>Spelare</span>
+                <span className={styles.progressLabel}>Du har tagit ut</span>
                 <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+                <span className={styles.progressLabel}>spelare</span>
               </div>
 
               <div className={styles.slotMachine}>
@@ -319,7 +365,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
                 <span className={styles.hint}>Klicka på en position på planen</span>
               )}
-            </>
+            </div>
           )}
 
           {draftState === 'ready' && odds && (
