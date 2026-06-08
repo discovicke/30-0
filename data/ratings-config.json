@@ -1,0 +1,102 @@
+{
+  "positions": {
+    "FW": {
+      "primaryStats": {
+        "goals_per90": 0.38,
+        "assists_per90": 0.22,
+        "shots_on_target_per90": 0.14,
+        "goals_per_shot": 0.09,
+        "shots_on_target_pct": 0.09,
+        "tackles_won_per90": 0.03,
+        "interceptions_per90": 0.02,
+        "cards_yellow_per90": 0.02,
+        "cards_red_per90": 0.01
+      },
+      "negativeStats": ["cards_yellow_per90", "cards_red_per90"],
+      "minWeightRatio": 0.40,
+      "fallbackValue": 50
+    },
+    "MF": {
+      "primaryStats": {
+        "goals_per90": 0.18,
+        "assists_per90": 0.18,
+        "tackles_won_per90": 0.22,
+        "interceptions_per90": 0.16,
+        "shots_on_target_per90": 0.12,
+        "goals_per_shot": 0.04,
+        "cards_yellow_per90": 0.05,
+        "cards_red_per90": 0.03,
+        "shots_on_target_pct": 0.02
+      },
+      "negativeStats": ["cards_yellow_per90", "cards_red_per90"],
+      "minWeightRatio": 0.40,
+      "fallbackValue": 50
+    },
+    "DF": {
+      "primaryStats": {
+        "tackles_won_per90": 0.25,
+        "interceptions_per90": 0.20,
+        "goals_per90": 0.10,
+        "assists_per90": 0.08,
+        "shots_on_target_per90": 0.08,
+        "cards_yellow_per90": 0.08,
+        "cards_red_per90": 0.05,
+        "crosses_per90": 0.04,
+        "goals_per_shot": 0.03,
+        "goals_per_shot_on_target": 0.03
+      },
+      "negativeStats": ["cards_yellow_per90", "cards_red_per90"],
+      "minWeightRatio": 0.30,
+      "fallbackValue": 50
+    },
+    "GK": {
+      "primaryStats": {
+        "save_pct": 0.35,
+        "saves_per90": 0.20,
+        "clean_sheets_per90": 0.20,
+        "goals_against_per90": 0.15,
+        "goals_per90": 0.05,
+        "assists_per90": 0.05
+      },
+      "negativeStats": ["goals_against_per90"],
+      "minWeightRatio": 0.30,
+      "fallbackValue": 50
+    }
+  },
+  "scaling": {
+    "floor": 40,
+    "ceiling": 99,
+    "targetMean": 55,
+    "targetStdev": 15
+  },
+  "minutesBonus": {
+    "enabled": true,
+    "threshold": 500,
+    "bonusPerFullSeason": 2.0,
+    "maxBonus": 6.0,
+    "fullSeasonMinutes": 2700
+  },
+  "longevityBonus": {
+    "enabled": true,
+    "bonusPerExtraSeason": 1.0,
+    "maxBonus": 5.0,
+    "extraSeasonThreshold": 3
+  },
+  "minutesFloor": {
+    "enabled": true,
+    "threshold": 2000,
+    "minRating": 45
+  },
+  "teamBonus": {
+    "enabled": true,
+    "gold": 3.0,
+    "silver": 2.0,
+    "bronze": 1.0
+  },
+  "eraCaps": {
+    "DF": { "2001": 80, "2014": 88, "2019": 99 },
+    "MF": { "2001": 85, "2014": 92, "2019": 96 },
+    "FW": { "2001": 92, "2014": 96, "2019": 99 },
+    "GK": { "2001": 96 }
+  }
+}
