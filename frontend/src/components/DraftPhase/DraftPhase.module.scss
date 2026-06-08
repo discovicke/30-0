@@ -345,21 +345,51 @@
 
 .squadHeader {
   display: flex;
-  justify-content: space-between;
-  padding: 10px 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px 10px 14px;
   border-bottom: 0.5px solid $sand-border;
 }
 
+.squadHeaderInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .squadName {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: $ink;
 }
 
 .squadSeason {
   font-family: $font-mono;
-  font-size: 11px;
-  color: $ink-ghost;
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-muted;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 50%;
+  color: $ink-muted;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $sand-border;
+    color: $ink;
+  }
 }
 
 .playerList {
@@ -411,15 +441,15 @@
 
 .playerName {
   flex: 1;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: $ink;
 }
 
 .playerOvr {
   font-family: $font-mono;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
   color: $ink;
 }
 
@@ -448,33 +478,27 @@
 }
 
 .rerollBtn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   background: transparent;
   border: 0.5px solid $sand-border;
   border-radius: $radius-sm;
   color: $ink-muted;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   transition: all 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: $ink;
     color: $ink;
   }
-}
 
-.spinBtnSm {
-  padding: 5px 12px;
-  background: $ink;
-  color: $chrome-text;
-  font-size: 10px;
-  font-weight: 500;
-  border-radius: $radius-sm;
-
-  &:hover {
-    opacity: 0.85;
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 }
+
+
 
 .posChooser {
   padding: 14px;
@@ -511,4 +535,20 @@
   &.posDF { background: #66BB6A; }
   &.posMF { background: #FFA726; }
   &.posFW { background: #EF5350; }
+}
+
+.posBackBtn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
 }

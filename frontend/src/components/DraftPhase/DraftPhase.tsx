@@ -43,6 +43,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const [draftState, setDraftState] = useState<DraftState>(savedState?.draftState ?? 'drafting');
   const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
   const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
+  const [overlayVisible, setOverlayVisible] = useState(true);
 
   // Auto-switch to TextTV on mobile when draft completes
   useEffect(() => {
@@ -89,6 +90,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     setCurrentSquad(null);
     setPendingPlayer(null);
     setPendingGroups([]);
+    setOverlayVisible(true);
 
     const squad = pickRandomSquad(squads, usedSquadKeys);
     const teamSteps = 14;
@@ -233,7 +235,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const canSpin = !spinning && !pendingPlayer && !allFilled
     && (config.draftMode !== 'position-first' || selectedSlot !== null);
 
-  const showOverlay = currentSquad && !spinning;
+  const showOverlay = currentSquad && !spinning && overlayVisible;
 
   const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall) : null;
 
@@ -295,9 +297,15 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               </div>
             </div>
           </div>
-          <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
-            Snurra fram spelare
-          </button>
+          {currentSquad && !overlayVisible ? (
+            <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+              Visa trupp
+            </button>
+          ) : (
+            <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+              Snurra fram spelare
+            </button>
+          )}
         </div>
       )}
 
@@ -382,9 +390,15 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                 </div>
               </div>
 
-              <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
-                Snurra fram spelare
-              </button>
+              {currentSquad && !overlayVisible ? (
+                <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+                  Visa trupp
+                </button>
+              ) : (
+                <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+                  Snurra fram spelare
+                </button>
+              )}
 
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
                 <span className={styles.hint}>Klicka på en position på planen</span>
@@ -426,16 +440,18 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         <div className={styles.squadOverlay}>
           <div className={styles.squadCard}>
             <div className={styles.squadHeader}>
-              <span className={styles.squadName}>{currentSquad.team}</span>
-              <span className={styles.squadSeason}>{currentSquad.season}</span>
+              <div className={styles.squadHeaderInfo}>
+                <span className={styles.squadName}>{currentSquad.team}</span>
+                <span className={styles.squadSeason}>{currentSquad.season}</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => { setOverlayVisible(false); setPendingPlayer(null); }}>
+                ✕
+              </button>
             </div>
 
             <div className={styles.overlayReroll}>
               <button className={styles.rerollBtn} onClick={handleReroll} disabled={rerollsLeft <= 0}>
                 Reroll ({rerollsLeft} kvar)
-              </button>
-              <button className={styles.spinBtnSm} onClick={handleSpin}>
-                Ny trupp
               </button>
             </div>
 
@@ -455,6 +471,9 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                     </button>
                   ))}
                 </div>
+                <button className={styles.posBackBtn} onClick={() => { setPendingPlayer(null); setPendingGroups([]); }}>
+                  ← Tillbaka till spelarlistan
+                </button>
               </div>
             ) : (
               <div className={styles.playerList}>
