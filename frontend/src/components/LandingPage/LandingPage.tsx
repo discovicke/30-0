@@ -193,13 +193,24 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
                             En allusion till 38-0 och 82-0 som inspiration.
                         </p>
                     </details>
+                    <details className={styles.faqItem}>
+                        <summary className={styles.faqQuestion}>Spelet är i alpha – hur pålitliga är betygen?</summary>
+                        <p className={styles.faqAnswer}>
+                            30-0 är i alpha-läge. Betyg och statistik bygger på offentlig data men
+                            uträkningarna är fortfarande under utveckling och kan justeras.<br/><br/>
+                            Vill du hjälpa till? Du kan:<br/>
+                            &bull; Bidra med bättre statistikunderlag – hitta fel eller saknade data<br/>
+                            &bull; Hjälpa till med uträkningar – föreslå förbättringar av betygsformeln<br/>
+                            &bull; Bidra till källkoden på <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener">GitHub</a> – bygg funktioner, fixa buggar eller förbättra designen
+                        </p>
+                    </details>
                 </div>
             </div>
 
       <div className={styles.ctaSection}>
         <h2 className={styles.ctaTitle}>Kan du bygga det ultimata Allsvenska laget?</h2>
         <p className={styles.ctaDesc}>
-          Drafta ditt XI, simulera säsongen och se om ditt lag kan uppnå det omöjliga:
+          Drafta din XI, simulera säsongen och se om ditt lag kan uppnå det omöjliga:
           30 vinster på 30 matcher.
         </p>
         <button className={styles.primaryBtn} onClick={onStart}>
