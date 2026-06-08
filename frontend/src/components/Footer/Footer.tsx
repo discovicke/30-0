@@ -9,12 +9,12 @@ export default function Footer() {
         <>
             <footer className={styles.footer}>
               <div className={styles.actions}>
-                <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={styles.btn}>
+                <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={`${styles.btn} ${styles.btnGray}`}>
                   <Code size={18} />
                   <span className={styles.btnLabel}>Källkod</span>
                   <span className={styles.btnDesc}>Öppen källkod på GitHub</span>
                 </a>
-                <a href="mailto:johanssonviktor@pm.me" className={styles.btn}>
+                <a href="mailto:johanssonviktor@pm.me" className={`${styles.btn} ${styles.btnGray}`}>
                   <Mail size={18} />
                   <span className={styles.btnLabel}>Feedback</span>
                   <span className={styles.btnDesc}>Buggar eller förslag</span>

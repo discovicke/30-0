@@ -561,3 +561,40 @@
     color: $ink;
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  .progressLabel { color: #999; }
+  .progressCount { color: #e0e0e0; }
+  .rerollLabel { color: #999; }
+  .rerollDot { background: #444; }
+  .rerollDot.rerollActive { background: #e0e0e0; }
+  .spinBtn { background: #e0e0e0; color: #1a1a1a; }
+  .hint { color: #666; }
+  .slotReel { background: #242424; border-color: #555; }
+  .slotText { color: #e0e0e0; }
+  .slotX { color: #666; }
+  .mobileTab { background: #242424; border-color: #333; color: #999; }
+  .mobileTab:hover { border-color: #888; color: #e0e0e0; }
+  .mobileTabActive { background: #e0e0e0; color: #1a1a1a; border-color: #e0e0e0; }
+  .mobileTabActive:hover { color: #1a1a1a; }
+  .center p { color: #999; }
+  .spinner { border-color: #333; border-top-color: #e0e0e0; }
+  .squadCard { background: #242424; border-color: #333; }
+  .squadHeader { border-color: #333; }
+  .squadName { color: #e0e0e0; }
+  .squadSeason { color: #999; }
+  .closeBtn { color: #999; }
+  .closeBtn:hover { border-color: #555; color: #e0e0e0; }
+  .playerRow { background: #1a1a1a; border-color: #333; }
+  .playerRow:hover:not(:disabled) { border-color: #888; }
+  .playerName { color: #e0e0e0; }
+  .playerOvr { color: #e0e0e0; }
+  .skipBtn { background: #1a1a1a; border-color: #333; color: #999; }
+  .skipBtn:hover { border-color: #888; color: #e0e0e0; }
+  .overlayReroll { border-color: #333; }
+  .rerollBtn { border-color: #333; color: #999; }
+  .rerollBtn:hover:not(:disabled) { border-color: #888; color: #e0e0e0; }
+  .posChooserText { color: #e0e0e0; }
+  .posBackBtn { border-color: #333; color: #999; }
+  .posBackBtn:hover { border-color: #888; color: #e0e0e0; }
+}

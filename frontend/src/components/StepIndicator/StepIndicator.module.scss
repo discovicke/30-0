@@ -46,3 +46,9 @@
   letter-spacing: 0.04em;
   transition: color 0.2s;
 }
+
+@media (prefers-color-scheme: dark) {
+  .step.active .label { color: #e0e0e0; }
+  .label { color: #666; }
+  .dot { background: #444; }
+}

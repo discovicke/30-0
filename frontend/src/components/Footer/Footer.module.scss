@@ -57,21 +57,47 @@
   align-items: center;
   gap: 1px;
   padding: 7px 14px;
-  border: 0.5px solid $ink;
+  border: 0.5px solid $badge-yellow;
   border-radius: $radius-sm;
-  background: $ink;
-  color: $chrome-text;
+  background: $badge-yellow;
+  color: $ink;
   text-decoration: none;
   cursor: pointer;
   font-family: inherit;
   transition: opacity 0.15s;
   min-width: 120px;
 
-  .btnLabel { color: $chrome-text; }
-  .btnDesc { color: rgba(255,255,255,0.5); }
+  .btnLabel { color: $ink; }
+  .btnDesc { color: rgba(0,0,0,0.5); }
 
   &:hover {
-    opacity: 0.85;
+    opacity: 0.8;
+  }
+}
+
+.btnGray {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 14px;
+  border: 0.5px solid $ink-muted;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  text-decoration: none;
+  background: $sand-white;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  min-width: 120px;
+
+  .btnLabel { color: $ink; }
+  .btnDesc { color: $ink-muted; }
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+    background: $sand-surface;
   }
 }
 
@@ -195,4 +221,27 @@
   font-size: 0.75rem !important;
   color: $ink-ghost !important;
   margin-bottom: 16px !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .footer { border-color: #333; }
+  .btn { border-color: #333; color: #999; }
+  .btn:hover { border-color: #888; color: #e0e0e0; background: #242424; }
+  .btnGray { border-color: #555; color: #999; background: #242424; }
+  .btnGray .btnLabel { color: #e0e0e0; }
+  .btnGray .btnDesc { color: #999; }
+  .btnGray:hover { border-color: #e0e0e0; color: #e0e0e0; background: #333; }
+  .btnGray:hover .btnLabel { color: #e0e0e0; }
+  .credit { color: #666; }
+  .credit a { color: #999; }
+  .credit a:hover { color: #e0e0e0; }
+  .disclaimer { color: #555; }
+  .modal { background: #242424; }
+  .closeBtn { background: #1a1a1a; border-color: #333; color: #999; }
+  .closeBtn:hover { border-color: #888; color: #e0e0e0; }
+  .privacy h1 { color: #e0e0e0; }
+  .privacy h2 { color: #e0e0e0; }
+  .privacy p { color: #999; }
+  .privacy li { color: #999; }
+  .privacy a { color: #e0e0e0; }
 }
