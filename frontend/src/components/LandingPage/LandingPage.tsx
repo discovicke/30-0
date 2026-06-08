@@ -12,6 +12,7 @@ export default function LandingPage({onStart, onContinue, canContinue}: Props) {
             <div className={styles.hero}>
                 <p className={styles.tagline}>Inofficiell supporterapp</p>
                 <h1 className={styles.title}>30-0</h1>
+                <span className={styles.alpha}>Alpha</span>
                 <p className={styles.subtitle}>
                     Bygg det ultimata Allsvenska laget.<br/>
                     Simulera en 30-matchers säsong.

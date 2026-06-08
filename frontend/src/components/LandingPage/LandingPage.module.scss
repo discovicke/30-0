@@ -29,6 +29,20 @@
   letter-spacing: -0.06em;
   color: $ink;
   line-height: 1;
+  margin-bottom: 4px;
+}
+
+.alpha {
+  display: inline-block;
+  font-family: $font-mono;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: $ink-ghost;
+  border: 0.5px solid $sand-border;
+  border-radius: 4px;
+  padding: 2px 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: 16px;
 }
 
@@ -226,12 +240,6 @@
     border: 0.5px solid $sand-border;
     border-radius: $radius-md;
     line-height: 1.4;
-    transition: border-color 0.15s, box-shadow 0.15s;
-
-    &:hover {
-      border-color: $ink;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
   }
 }
 
