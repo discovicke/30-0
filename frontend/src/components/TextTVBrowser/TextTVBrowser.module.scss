@@ -11,6 +11,7 @@
   max-height: 100%;
   width: 100%;
   align-self: stretch;
+  position: relative;
 }
 
 .header {
@@ -97,6 +98,47 @@
   scrollbar-gutter: stable;
   padding: 10px 14px 14px;
   min-height: 0;
+  position: relative;
+}
+
+.scrollArrowDown {
+  position: absolute;
+  bottom: 28px;
+  right: 4px;
+  background: rgba($ttv-title, 0.2);
+  color: $ttv-title;
+  border: 1px solid $ttv-border;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.15s;
+  z-index: 2;
+
+  &:hover {
+    background: rgba($ttv-title, 0.4);
+  }
+}
+
+.scrollArrowUp {
+  position: absolute;
+  top: 48px;
+  right: 4px;
+  background: rgba($ttv-title, 0.2);
+  color: $ttv-title;
+  border: 1px solid $ttv-border;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  transition: background 0.15s;
+  z-index: 2;
+
+  &:hover {
+    background: rgba($ttv-title, 0.4);
+  }
 }
 
 .footer {

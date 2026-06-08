@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { TeamXI, FormationKey, GameConfig, SeasonResult } from '../../types';
 import type { PreSeasonOdds } from '../../engine/draftEngine';
 import Page300 from './pages/Page300';
@@ -19,16 +19,14 @@ interface Props {
   onRestart: () => void;
 }
 
-const PAGE_ORDER = [300, 301, 302, 310, 311, 312, 320, 321];
+const PAGE_ORDER = [300, 301, 302, 310, 320, 321];
 const VALID_PAGES = new Set(PAGE_ORDER);
 
 const PAGE_TITLES: Record<number, string> = {
   300: 'ALLSVENSKT 30-0',
   301: 'DIN TRUPP',
   302: 'FÖRHANDSTIPS',
-  310: 'RESULTAT OMG 1-10',
-  311: 'RESULTAT OMG 11-20',
-  312: 'RESULTAT OMG 21-30',
+  310: 'RESULTAT',
   320: 'SLUTTABELL',
   321: 'SÄSONGSARTIKEL',
 };
@@ -49,10 +47,32 @@ export default function TextTVBrowser({
 }: Props) {
   const [currentPage, setCurrentPage] = useState(() => result ? 310 : 300);
   const [pageInput, setPageInput] = useState('');
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
 
   const simulated = result !== null;
 
   const dateStr = useMemo(() => formatDate(new Date()), []);
+
+  const checkScroll = useCallback(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 4);
+    setCanScrollDown(el.scrollTop < el.scrollHeight - el.clientHeight - 4);
+  }, []);
+
+  useEffect(() => {
+    // Check after render
+    requestAnimationFrame(checkScroll);
+  }, [currentPage, checkScroll]);
+
+  const scrollBy = useCallback((amount: number) => {
+    const el = bodyRef.current;
+    if (!el) return;
+    el.scrollBy({ top: amount, behavior: 'smooth' });
+    setTimeout(checkScroll, 200);
+  }, [checkScroll]);
 
   const navigateTo = useCallback((page: number) => {
     if (!VALID_PAGES.has(page)) return;
@@ -129,11 +149,7 @@ export default function TextTVBrowser({
       case 302:
         return <Page302 xi={xi} odds={odds} />;
       case 310:
-        return <Page310 result={result} roundOffset={0} />;
-      case 311:
-        return <Page310 result={result} roundOffset={10} />;
-      case 312:
-        return <Page310 result={result} roundOffset={20} />;
+        return <Page310 result={result} />;
       case 320:
         return <Page320 result={result} />;
       case 321:
@@ -164,9 +180,19 @@ export default function TextTVBrowser({
         <span className={styles.date}>{dateStr}</span>
       </div>
 
-      <div className={styles.body}>
+      <div className={styles.body} ref={bodyRef} onScroll={checkScroll}>
         {renderPage()}
       </div>
+      {canScrollUp && (
+        <button className={styles.scrollArrowUp} onClick={() => scrollBy(-200)}>
+          ▲
+        </button>
+      )}
+      {canScrollDown && (
+        <button className={styles.scrollArrowDown} onClick={() => scrollBy(200)}>
+          ▼
+        </button>
+      )}
 
       <div className={styles.footer}>
         <span className={styles.pageTitle}>{PAGE_TITLES[currentPage] ?? ''}</span>

@@ -4,10 +4,9 @@ import styles from './pages.module.scss';
 
 interface Props {
   result: SeasonResult | null;
-  roundOffset: number; // 0, 10, or 20
 }
 
-export default function Page310({ result, roundOffset }: Props) {
+export default function Page310({ result }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
@@ -18,17 +17,14 @@ export default function Page310({ result, roundOffset }: Props) {
   }
 
   const userMatches = extractUserMatches(result.matches);
-  const slice = userMatches.slice(roundOffset, roundOffset + 10);
-  const startRound = roundOffset + 1;
-  const endRound = Math.min(roundOffset + 10, userMatches.length);
 
   return (
     <div>
-      <div className={styles.pageTitle}>RESULTAT OMG {startRound}-{endRound}</div>
+      <div className={styles.pageTitle}>RESULTAT</div>
       <div className={styles.pageSubtitle}>ALLSVENSKT 30-0 · SASONG 2025</div>
 
-      {slice.map((m, i) => {
-        const roundNum = roundOffset + i + 1;
+      {userMatches.map((m, i) => {
+        const roundNum = i + 1;
         const isHome = m.isUserHome;
         const userGoals = isHome ? m.homeGoals : m.awayGoals;
         const oppGoals = isHome ? m.awayGoals : m.homeGoals;
@@ -45,15 +41,7 @@ export default function Page310({ result, roundOffset }: Props) {
         const goalLines: string[] = [];
         if (m.goals.length > 0) {
           const sorted = [...m.goals].sort((a, b) => a.minute - b.minute);
-          // Group by team (user goals vs opponent goals)
-          const userGoalEvents = sorted.filter(() => {
-            // User goals: scorer is in user's team
-            // Since we can't easily tell, use the convention:
-            // all goals in user matches are attributed to their respective teams
-            // For now, show all goals together
-            return true;
-          });
-          const goalText = userGoalEvents.map((g) => `${g.scorer} ${g.minute}'`).join('  ');
+          const goalText = sorted.map((g) => `${g.scorer} ${g.minute}'`).join('  ');
           if (goalText) goalLines.push(goalText);
         }
 
