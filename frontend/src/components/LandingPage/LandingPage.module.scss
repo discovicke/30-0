@@ -225,6 +225,60 @@
   }
 }
 
+// ── FAQ ──
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.faqItem {
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  background: $sand-white;
+
+  &[open] {
+    border-color: $ink;
+  }
+}
+
+.faqQuestion {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $ink;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  &::after {
+    content: '+';
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: $ink-muted;
+    transition: transform 0.2s;
+  }
+
+  &:hover {
+    background: $sand-surface;
+  }
+}
+
+.faqItem[open] .faqQuestion::after {
+  transform: rotate(45deg);
+}
+
+.faqAnswer {
+  font-size: 0.8125rem;
+  color: $ink-muted;
+  line-height: 1.5;
+  padding: 0 14px 12px;
+}
+
 // ── CTA ──
 
 .ctaSection {

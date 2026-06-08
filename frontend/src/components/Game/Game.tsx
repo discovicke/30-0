@@ -130,7 +130,7 @@ export default function Game() {
 
   // Draft phase
   return (
-    <div className={styles.wrapper}>
+    <div className={`${styles.wrapper} ${styles.wrapperNoScroll}`}>
       <Header onHome={handleHome} />
       <DraftPhase
         config={config}
