@@ -4,74 +4,123 @@ import styles from './pages.module.scss';
 
 interface Props {
   result: SeasonResult | null;
-  roundOffset: number; // 0, 10, or 20
 }
 
-export default function Page310({ result, roundOffset }: Props) {
+function groupGoals(
+  goals: { minute: number; scorer: string }[],
+  excludeName: string,
+): { scorer: string; minutes: string }[] {
+  const playerGoals = goals.filter((g) => g.scorer !== excludeName);
+  const grouped: Record<string, number[]> = {};
+  for (const g of playerGoals) {
+    if (!grouped[g.scorer]) grouped[g.scorer] = [];
+    grouped[g.scorer].push(g.minute);
+  }
+  return Object.entries(grouped)
+    .map(([scorer, minutes]) => ({
+      scorer,
+      minutes: minutes.sort((a, b) => a - b).join(', '),
+    }))
+    .sort((a, b) => {
+      const aMin = parseInt(a.minutes, 10);
+      const bMin = parseInt(b.minutes, 10);
+      return aMin - bMin;
+    });
+}
+
+function opponentGoalLines(
+  goals: { minute: number; scorer: string }[],
+  teamName: string,
+): string[] {
+  const oppGoals = goals
+    .filter((g) => g.scorer === teamName)
+    .map((g) => g.minute)
+    .sort((a, b) => a - b);
+  if (oppGoals.length === 0) return [];
+  return [`${teamName} ${oppGoals.join(', ')}'`];
+}
+
+export default function Page310({ result }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
-        SASONGEN HAR INTE SPELATS ANNU<br />
-        NAVIGERA TILL 310 FOR ATT SIMULERA
+        SASONGEN HAR INTE SPELATS ÄNNU<br />
+        NAVIGERA TILL 310 FÖR ATT SIMULERA
       </div>
     );
   }
 
   const userMatches = extractUserMatches(result.matches);
-  const slice = userMatches.slice(roundOffset, roundOffset + 10);
-  const startRound = roundOffset + 1;
-  const endRound = Math.min(roundOffset + 10, userMatches.length);
 
   return (
     <div>
-      <div className={styles.pageTitle}>RESULTAT OMG {startRound}-{endRound}</div>
+      <div className={styles.pageTitle}>RESULTAT</div>
       <div className={styles.pageSubtitle}>ALLSVENSKT 30-0 · SASONG 2025</div>
 
-      {slice.map((m, i) => {
-        const roundNum = roundOffset + i + 1;
+      {userMatches.map((m, i) => {
+        const roundNum = i + 1;
         const isHome = m.isUserHome;
-        const userGoals = isHome ? m.homeGoals : m.awayGoals;
-        const oppGoals = isHome ? m.awayGoals : m.homeGoals;
+        const userGoalsNum = isHome ? m.homeGoals : m.awayGoals;
+        const oppGoalsNum = isHome ? m.awayGoals : m.homeGoals;
         const oppName = isHome ? m.awayTeam : m.homeTeam;
 
-        const scoreClass = userGoals > oppGoals ? styles.matchWin
-          : userGoals < oppGoals ? styles.matchLoss : styles.matchDraw;
+        const scoreClass = userGoalsNum > oppGoalsNum ? styles.matchWin
+          : userGoalsNum < oppGoalsNum ? styles.matchLoss : styles.matchDraw;
 
         const homeTeam = isHome ? 'DITT LAG' : oppName.toUpperCase();
         const awayTeam = isHome ? oppName.toUpperCase() : 'DITT LAG';
         const homeClass = isHome ? styles.matchTeamYou : styles.matchTeam;
         const awayClass = !isHome ? styles.matchTeamYou : styles.matchTeam;
 
-        const goalLines: string[] = [];
-        if (m.goals.length > 0) {
-          const sorted = [...m.goals].sort((a, b) => a.minute - b.minute);
-          // Group by team (user goals vs opponent goals)
-          const userGoalEvents = sorted.filter(() => {
-            // User goals: scorer is in user's team
-            // Since we can't easily tell, use the convention:
-            // all goals in user matches are attributed to their respective teams
-            // For now, show all goals together
-            return true;
-          });
-          const goalText = userGoalEvents.map((g) => `${g.scorer} ${g.minute}'`).join('  ');
-          if (goalText) goalLines.push(goalText);
-        }
+        const userGrouped = groupGoals(m.goals, oppName);
+        const oppLines = opponentGoalLines(m.goals, oppName);
+
+        const maxRows = Math.max(userGrouped.length, oppLines.length);
 
         return (
           <div key={roundNum} className={styles.matchBlock}>
-            <div className={styles.matchRoundHeader}>OMGANG {roundNum}</div>
-            <div className={styles.matchLine}>
-              <span className={homeClass}>{homeTeam}</span>
-              <span className={`${styles.matchScore} ${scoreClass}`}>
-                {m.homeGoals}-{m.awayGoals}
-              </span>
-              <span className={awayClass}>{awayTeam}</span>
+            <div className={styles.matchRoundHeader}>OMGÅNG {roundNum}</div>
+            <div className={styles.matchResultGrid}>
+              {isHome ? (
+                <>
+                  <div className={`${styles.matchHomeCol} ${homeClass}`}>{homeTeam}</div>
+                  <div className={`${styles.matchScore} ${scoreClass}`}>{m.homeGoals}-{m.awayGoals}</div>
+                  <div className={`${styles.matchAwayCol} ${awayClass}`}>{awayTeam}</div>
+                  {Array.from({ length: maxRows }, (_, ri) => (
+                    <div key={ri} className={styles.matchGoalRow}>
+                      <div className={styles.matchGoalHome}>
+                        {userGrouped[ri] && (
+                          <span>{userGrouped[ri].scorer} {userGrouped[ri].minutes}'</span>
+                        )}
+                      </div>
+                      <div className={styles.matchGoalSep} />
+                      <div className={styles.matchGoalAway}>
+                        {oppLines[ri] && <span>{oppLines[ri]}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <div className={`${styles.matchHomeCol} ${homeClass}`}>{homeTeam}</div>
+                  <div className={`${styles.matchScore} ${scoreClass}`}>{m.homeGoals}-{m.awayGoals}</div>
+                  <div className={`${styles.matchAwayCol} ${awayClass}`}>{awayTeam}</div>
+                  {Array.from({ length: maxRows }, (_, ri) => (
+                    <div key={ri} className={styles.matchGoalRow}>
+                      <div className={styles.matchGoalHome}>
+                        {oppLines[ri] && <span>{oppLines[ri]}</span>}
+                      </div>
+                      <div className={styles.matchGoalSep} />
+                      <div className={styles.matchGoalAway}>
+                        {userGrouped[ri] && (
+                          <span>{userGrouped[ri].scorer} {userGrouped[ri].minutes}'</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
-            {goalLines.map((line, gi) => (
-              <div key={gi} className={styles.matchGoals}>
-                MAL: {line}
-              </div>
-            ))}
           </div>
         );
       })}

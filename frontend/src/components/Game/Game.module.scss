@@ -6,6 +6,17 @@
   min-height: 100vh;
 }
 
+.wrapperNoScroll {
+  overflow: hidden;
+  height: 100vh;
+
+  @media (max-width: 800px) {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}
+
 .center {
   display: flex;
   flex-direction: column;

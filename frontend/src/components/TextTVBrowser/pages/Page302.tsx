@@ -6,8 +6,6 @@ import styles from './pages.module.scss';
 interface Props {
   xi: TeamXI;
   odds: PreSeasonOdds;
-  simulated: boolean;
-  onNavigate: (page: number) => void;
 }
 
 function makeBar(val: number, max: number = 99): string {
@@ -16,12 +14,7 @@ function makeBar(val: number, max: number = 99): string {
   return '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
 }
 
-function positionSuffix(pos: number): string {
-  if (pos === 1 || pos === 2) return pos + ':a';
-  return pos + ':e';
-}
-
-export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
+export default function Page302({ xi, odds }: Props) {
   const aiTeams = getAllAITeams();
   const allTeams = [...aiTeams, { name: 'DITT LAG', strength: xi.overall, tier: undefined }]
     .sort((a, b) => b.strength - a.strength);
@@ -38,20 +31,20 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
   // Find strongest & weakest areas
   const areas = [
     { label: 'ANFALL', val: xi.attack },
-    { label: 'MITTFALT', val: xi.midfield },
-    { label: 'FORSVAR', val: xi.defence },
-    { label: 'MALVAKT', val: xi.gkRating },
+    { label: 'MITTFÄLT', val: xi.midfield },
+    { label: 'FÖRSVAR', val: xi.defence },
+    { label: 'MÅLVAKT', val: xi.gkRating },
   ];
   const strongest = [...areas].sort((a, b) => b.val - a.val)[0];
   const weakest = [...areas].sort((a, b) => a.val - b.val)[0];
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · SASONG 2025</div>
-      <div className={styles.pageSubtitle}>FORHANDSTIPS</div>
+      <div className={styles.pageTitle}>FÖRHANDSTIPS - DITT LAG</div>
+      <div className={styles.pageSubtitle}>SAMMANFATTNING: "EXPERTERNA" HAR TIPPAT ÅRETS ALLSVENSKA</div>
 
       <div className={styles.row}>
-        <span className={styles.label}>PROJEKTERAD PLACERING</span>
+        <span className={styles.label}>TIPPAD PLACERING</span>
         <span className={styles.valYellow}>{projRange}</span>
       </div>
       <div className={styles.row}>
@@ -63,7 +56,7 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
         <span className={styles.val}>{isRelegation ? 'JA' : 'NEJ'}</span>
       </div>
       <div className={styles.row}>
-        <span className={styles.label}>FORVANTADE POANG</span>
+        <span className={styles.label}>FÖRVÄNTADE POÄNG</span>
         <span className={styles.valYellow}>{odds.projectedPoints}</span>
       </div>
 
@@ -83,7 +76,7 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
         <span className={styles.barValue}>{Math.round(weakest.val)}/99</span>
       </div>
 
-      <div className={styles.section}>ALLA OMRADEN</div>
+      <div className={styles.section}>ALLA OMRÅDEN</div>
       {areas.map((a) => (
         <div key={a.label} className={styles.barRow}>
           <span className={styles.barLabel}>{a.label}</span>
@@ -104,17 +97,6 @@ export default function Page302({ xi, odds, simulated, onNavigate }: Props) {
         );
       })}
 
-      <hr className={styles.separator} />
-
-      {!simulated ? (
-        <div className={styles.instruction} onClick={() => onNavigate(310)} style={{ cursor: 'pointer' }}>
-          SASONGEN BORJAR: TRYCK 310 → SIMULERA
-        </div>
-      ) : (
-        <div className={styles.instruction}>
-          SASONGEN KLAR · {positionSuffix(odds.projectedPosition)} PROJEKTERAD
-        </div>
-      )}
     </div>
   );
 }

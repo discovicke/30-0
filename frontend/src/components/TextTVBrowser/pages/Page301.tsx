@@ -14,14 +14,14 @@ export default function Page301({ xi, formation }: Props) {
 
   return (
     <div>
-      <div className={styles.pageTitle}>ALLSVENSKT 30-0 · {formation.toUpperCase()}</div>
-      <div className={styles.pageSubtitle}>DIN TRUPP</div>
+      <div className={styles.pageTitle}>DIN TRUPP - {formation.toUpperCase()}</div>
+      <div className={styles.pageSubtitle}>DEN SPORTSLIGA LEDNINGEN KOM FRAM TILL FÖLJANDE SPELARE</div>
 
       <div className={`${styles.squadRow} ${styles.squadHeader}`}>
         <span className={styles.squadPos}>POS</span>
         <span className={styles.squadName}>SPELARE</span>
         <span className={styles.squadClub}>KLUBB</span>
-        <span className={styles.squadYear}>AR</span>
+        <span className={styles.squadYear}>ÅR</span>
         <span className={styles.squadOvr}>OVR</span>
       </div>
 
@@ -40,7 +40,7 @@ export default function Page301({ xi, formation }: Props) {
       })}
 
       <div className={styles.ratingFooter}>
-        ANFALL {Math.round(xi.attack)} · MITT {Math.round(xi.midfield)} · FORSVAR {Math.round(xi.defence)} · MV {Math.round(xi.gkRating)} · OVR {Math.round(xi.overall)}
+        ANFALL {Math.round(xi.attack)} · MITT {Math.round(xi.midfield)} · FÖRSVAR {Math.round(xi.defence)} · MV {Math.round(xi.gkRating)} · OVR {Math.round(xi.overall)}
       </div>
     </div>
   );

@@ -28,7 +28,7 @@ export interface FormationSlot {
   specificPositions: string[];
 }
 
-export type FormationKey = '5-4-1' | '4-2-3-1' | '4-5-1' | '3-4-3' | '3-5-2' | '4-4-2' | '4-3-3';
+export type FormationKey = '5-4-1' | '4-5-1' | '3-4-3' | '3-5-2' | '4-4-2' | '4-3-3';
 
 export interface TeamXI {
   name: string;
@@ -103,11 +103,23 @@ export interface SeasonResult {
 export type DraftMode = 'squad-first' | 'position-first';
 export type RatingMode = 'season' | 'peak';
 export type Difficulty = 'easy' | 'normal' | 'hard';
-export type GamePhase = 'setup' | 'draft' | 'simulating' | 'match-replay' | 'results';
+export type GamePhase = 'landing' | 'setup' | 'draft' | 'simulating' | 'match-replay' | 'results';
 
 export interface GameConfig {
   draftMode: DraftMode;
   ratingMode: RatingMode;
   difficulty: Difficulty;
   formation: FormationKey;
+}
+
+export interface SavedDraftState {
+  config: GameConfig;
+  filledSlots: Record<string, PlayerCard>;
+  filledIds: string[];
+  usedSquadKeys: string[];
+  rerollsLeft: number;
+  currentSquad: Squad | null;
+  selectedSlot: string | null;
+  draftState: 'drafting' | 'ready' | 'simulating';
+  result: SeasonResult | null;
 }

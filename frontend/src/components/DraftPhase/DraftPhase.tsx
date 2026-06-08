@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult } from '../../types';
+import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult, SavedDraftState } from '../../types';
 import { formations, simulateSeason, computeTeamRatings } from '../../engine/simulationEngine';
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
@@ -7,7 +7,8 @@ import {
   computePreSeasonOdds,
 } from '../../engine/draftEngine';
 
-const seasons = [2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024];
+const seasons = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+import {X, ArrowLeft} from 'lucide-react';
 import FormationView from '../FormationView/FormationView';
 import OverallStrip from '../OverallStrip/OverallStrip';
 import StepIndicator from '../StepIndicator/StepIndicator';
@@ -18,19 +19,20 @@ interface Props {
   config: GameConfig;
   squads: Squad[];
   onRestart: () => void;
+  savedState?: SavedDraftState;
 }
 
 const stepLabels = ['Start', 'Draft', 'Text-TV', 'Klar'];
 
 type DraftState = 'drafting' | 'ready' | 'simulating';
 
-export default function DraftPhase({ config, squads, onRestart }: Props) {
-  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>({});
-  const [filledIds, setFilledIds] = useState<Set<string>>(new Set());
-  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set());
-  const [rerollsLeft, setRerollsLeft] = useState(getRerollCount(config.difficulty));
-  const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
+  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
+  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? []));
+  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
+  const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
+  const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(savedState?.selectedSlot ?? null);
   const [spinning, setSpinning] = useState(false);
   const [rolling, setRolling] = useState(false);
   const [rollTeam, setRollTeam] = useState('');
@@ -39,8 +41,15 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   const [teamLocked, setTeamLocked] = useState(false);
   const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
   const [pendingGroups, setPendingGroups] = useState<string[]>([]);
-  const [draftState, setDraftState] = useState<DraftState>('drafting');
-  const [result, setResult] = useState<SeasonResult | null>(null);
+  const [draftState, setDraftState] = useState<DraftState>(savedState?.draftState ?? 'drafting');
+  const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
+  const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
+  const [overlayVisible, setOverlayVisible] = useState(true);
+
+  // Auto-switch to TextTV on mobile when draft completes
+  useEffect(() => {
+    if (draftState === 'ready') setMobileView('texttv');
+  }, [draftState]);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
@@ -82,6 +91,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     setCurrentSquad(null);
     setPendingPlayer(null);
     setPendingGroups([]);
+    setOverlayVisible(true);
 
     const squad = pickRandomSquad(squads, usedSquadKeys);
     const teamSteps = 14;
@@ -184,6 +194,22 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     if (allFilled && draftState === 'drafting') setDraftState('ready');
   }, [allFilled, draftState]);
 
+  // Save state to localStorage for Continue Draft
+  useEffect(() => {
+    const state: SavedDraftState = {
+      config,
+      filledSlots,
+      filledIds: [...filledIds],
+      usedSquadKeys: [...usedSquadKeys],
+      rerollsLeft,
+      currentSquad,
+      selectedSlot,
+      draftState,
+      result,
+    };
+    localStorage.setItem('30-0-draft', JSON.stringify(state));
+  }, [filledSlots, filledIds, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
+
   // --- Simulate (triggered from TextTVBrowser) ---
 
   function handleSimulate() {
@@ -210,7 +236,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
   const canSpin = !spinning && !pendingPlayer && !allFilled
     && (config.draftMode !== 'position-first' || selectedSlot !== null);
 
-  const showOverlay = currentSquad && !spinning;
+  const showOverlay = currentSquad && !spinning && overlayVisible;
 
   const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall) : null;
 
@@ -226,7 +252,7 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
         <StepIndicator current={2} total={4} labels={stepLabels} />
         <div className={styles.center}>
           <div className={styles.spinner} />
-          <p>Simulerar sasongen...</p>
+          <p>Simulerar säsongen...</p>
         </div>
       </div>
     );
@@ -236,30 +262,76 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
     <div className={styles.container}>
       <StepIndicator current={currentStep} total={4} labels={stepLabels} />
 
-      <div className={styles.main}>
-        <div className={styles.left}>
-          <OverallStrip
-            overall={xi.overall}
-            attack={xi.attack}
-            midfield={xi.midfield}
-            defence={xi.defence}
-            emptyAttack={emptyAttack}
-            emptyMidfield={emptyMidfield}
-            emptyDefence={emptyDefence}
-          />
-          <FormationView
-            formation={config.formation}
-            slots={filledSlots}
-            tall
-            interactive={draftState === 'drafting'}
-            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
-            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
-          />
+      {/* Mobile-only controls above pitch */}
+      {draftState === 'drafting' && (
+        <div className={styles.mobileControls}>
+          <div className={styles.rerollRow}>
+            <span className={styles.rerollLabel}>Omkast</span>
+            <div className={styles.rerollDots}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <span
+                  key={i}
+                  className={`${styles.rerollDot} ${i < rerollsLeft ? styles.rerollActive : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className={styles.progress}>
+            <span className={styles.progressLabel}>Du har tagit ut</span>
+            <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+            <span className={styles.progressLabel}>spelare</span>
+          </div>
+          <div className={styles.slotMachine}>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
+                  {rolling ? rollTeam : (currentSquad?.team ?? '---')}
+                </span>
+              </div>
+            </div>
+            <span className={styles.slotX}>X</span>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={rollTick + 1000} className={styles.slotText}>
+                  {rolling ? rollSeason : (currentSquad ? String(currentSquad.season) : '--')}
+                </span>
+              </div>
+            </div>
+          </div>
+          {currentSquad && !overlayVisible ? (
+            <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+              Visa trupp
+            </button>
+          ) : (
+            <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+              Snurra fram spelare
+            </button>
+          )}
         </div>
+      )}
 
-        <div className={styles.right}>
+      {/* Mobile tab switch between squad and TextTV */}
+      {draftState === 'ready' && (
+        <div className={styles.mobileTabs}>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'trupp' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('trupp')}
+          >
+            SE TRUPP
+          </button>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'texttv' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('texttv')}
+          >
+            TEXT-TV {!result ? '(SIMULERA)' : ''}
+          </button>
+        </div>
+      )}
+
+      <div className={`${styles.main} ${draftState === 'ready' && mobileView === 'texttv' ? styles.mainTextTV : ''}`}>
+        <div className={styles.left}>
           {draftState === 'drafting' && (
-            <>
+            <div className={styles.rerollHeader}>
               <div className={styles.rerollRow}>
                 <span className={styles.rerollLabel}>Omkast</span>
                 <div className={styles.rerollDots}>
@@ -271,10 +343,34 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+          <FormationView
+            formation={config.formation}
+            slots={filledSlots}
+            tall
+            interactive={draftState === 'drafting'}
+            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
+            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
+          />
+          <OverallStrip
+            overall={xi.overall}
+            attack={xi.attack}
+            midfield={xi.midfield}
+            defence={xi.defence}
+            emptyAttack={emptyAttack}
+            emptyMidfield={emptyMidfield}
+            emptyDefence={emptyDefence}
+          />
+        </div>
 
+        <div className={styles.right}>
+          {draftState === 'drafting' && (
+            <div className={styles.desktopControls}>
               <div className={styles.progress}>
-                <span className={styles.progressLabel}>Spelare</span>
+                <span className={styles.progressLabel}>Du har tagit ut</span>
                 <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+                <span className={styles.progressLabel}>spelare</span>
               </div>
 
               <div className={styles.slotMachine}>
@@ -295,14 +391,20 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
                 </div>
               </div>
 
-              <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
-                Snurra fram spelare
-              </button>
+              {currentSquad && !overlayVisible ? (
+                <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+                  Visa trupp
+                </button>
+              ) : (
+                <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+                  Snurra fram spelare
+                </button>
+              )}
 
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
-                <span className={styles.hint}>Klicka pa en position pa planen</span>
+                <span className={styles.hint}>Klicka på en position på planen</span>
               )}
-            </>
+            </div>
           )}
 
           {draftState === 'ready' && odds && (
@@ -319,29 +421,46 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
         </div>
       </div>
 
+      {/* Mobile TextTV (replaces left column on mobile when texttv tab active) */}
+      {draftState === 'ready' && odds && mobileView === 'texttv' && (
+        <div className={styles.mobileTextTV}>
+          <TextTVBrowser
+            xi={xi}
+            formation={config.formation}
+            config={config}
+            odds={odds}
+            result={result}
+            onSimulate={handleSimulate}
+            onRestart={onRestart}
+          />
+        </div>
+      )}
+
       {/* Squad overlay */}
       {showOverlay && (
         <div className={styles.squadOverlay}>
           <div className={styles.squadCard}>
             <div className={styles.squadHeader}>
-              <span className={styles.squadName}>{currentSquad.team}</span>
-              <span className={styles.squadSeason}>{currentSquad.season}</span>
+              <div className={styles.squadHeaderInfo}>
+                <span className={styles.squadName}>{currentSquad.team}</span>
+                <span className={styles.squadSeason}>{currentSquad.season}</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => { setOverlayVisible(false); setPendingPlayer(null); }}>
+                <X size={16} />
+              </button>
             </div>
 
             <div className={styles.overlayReroll}>
               <button className={styles.rerollBtn} onClick={handleReroll} disabled={rerollsLeft <= 0}>
                 Reroll ({rerollsLeft} kvar)
               </button>
-              <button className={styles.spinBtnSm} onClick={handleSpin}>
-                Ny trupp
-              </button>
             </div>
 
             {pendingPlayer ? (
               <div className={styles.posChooser}>
-                <p className={styles.posChooserText}>
-                  Valj position for {pendingPlayer.name}
-                </p>
+                  <p className={styles.posChooserText}>
+                    Välj position för {pendingPlayer.name}
+                  </p>
                 <div className={styles.posChooserBtns}>
                   {pendingGroups.map((g) => (
                     <button
@@ -353,6 +472,9 @@ export default function DraftPhase({ config, squads, onRestart }: Props) {
                     </button>
                   ))}
                 </div>
+                <button className={styles.posBackBtn} onClick={() => { setPendingPlayer(null); setPendingGroups([]); }}>
+                  <ArrowLeft size={12} /> Tillbaka till spelarlistan
+                </button>
               </div>
             ) : (
               <div className={styles.playerList}>

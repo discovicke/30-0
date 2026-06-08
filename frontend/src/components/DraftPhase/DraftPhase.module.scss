@@ -4,9 +4,76 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 0 14px;
+  padding: 0 14px 24px;
   flex: 1;
+  min-height: 0;
   position: relative;
+
+  @media (max-width: 800px) {
+    padding: 0 8px 16px;
+    min-height: 600px;
+  }
+}
+
+.mobileTabs {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+.mobileTab {
+  font-family: $font-mono;
+  font-size: 13px;
+  padding: 8px 20px;
+  border: 1px solid $sand-border;
+  border-radius: $radius-sm;
+  background: $sand-surface;
+  color: $ink-muted;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  flex: 1;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.mobileTabActive {
+  background: $ink;
+  color: #FFFFFF;
+  border-color: $ink;
+
+  &:hover {
+    opacity: 0.9;
+    color: #FFFFFF;
+  }
+}
+
+.mainTextTV {
+  @media (max-width: 800px) {
+    display: none !important;
+  }
+}
+
+.mobileTextTV {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 .progress {
@@ -16,7 +83,7 @@
 }
 
 .progressLabel {
-  font-size: 11px;
+  font-size: 12px;
   color: $ink-muted;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -32,14 +99,25 @@
 .main {
   display: grid;
   grid-template-columns: 400px 1fr;
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   flex: 1;
-  align-items: stretch;
+  min-height: 0;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .left {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+
+  > div:last-child {
+    margin-top: auto;
+  }
 }
 
 .right {
@@ -50,6 +128,42 @@
   align-items: center;
   min-height: 0;
   overflow: hidden;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+.rerollHeader {
+  display: flex;
+  justify-content: flex-end;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+.mobileControls {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+}
+
+.desktopControls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
 }
 
 // ── Reroll dots ──
@@ -61,7 +175,7 @@
 }
 
 .rerollLabel {
-  font-size: 11px;
+  font-size: 12px;
   color: $ink-muted;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -107,7 +221,7 @@
 }
 
 .hint {
-  font-size: 10px;
+  font-size: 12px;
   color: $ink-ghost;
   text-align: center;
 }
@@ -132,6 +246,10 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
+
+  @media (max-width: 800px) {
+    width: 130px;
+  }
 }
 
 .reelClip {
@@ -228,21 +346,51 @@
 
 .squadHeader {
   display: flex;
-  justify-content: space-between;
-  padding: 10px 14px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px 10px 14px;
   border-bottom: 0.5px solid $sand-border;
 }
 
+.squadHeaderInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .squadName {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: $ink;
 }
 
 .squadSeason {
   font-family: $font-mono;
-  font-size: 11px;
-  color: $ink-ghost;
+  font-size: 13px;
+  font-weight: 600;
+  color: $ink-muted;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 50%;
+  color: $ink-muted;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    border-color: $sand-border;
+    color: $ink;
+  }
 }
 
 .playerList {
@@ -294,15 +442,15 @@
 
 .playerName {
   flex: 1;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   color: $ink;
 }
 
 .playerOvr {
   font-family: $font-mono;
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
   color: $ink;
 }
 
@@ -313,7 +461,7 @@
   border: 0.5px solid $sand-border;
   border-radius: $radius-sm;
   color: $ink-muted;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   text-align: center;
 
@@ -331,33 +479,27 @@
 }
 
 .rerollBtn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   background: transparent;
   border: 0.5px solid $sand-border;
   border-radius: $radius-sm;
   color: $ink-muted;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.15s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: $ink;
     color: $ink;
   }
-}
 
-.spinBtnSm {
-  padding: 5px 12px;
-  background: $ink;
-  color: $chrome-text;
-  font-size: 10px;
-  font-weight: 500;
-  border-radius: $radius-sm;
-
-  &:hover {
-    opacity: 0.85;
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
   }
 }
+
+
 
 .posChooser {
   padding: 14px;
@@ -394,4 +536,20 @@
   &.posDF { background: #66BB6A; }
   &.posMF { background: #FFA726; }
   &.posFW { background: #EF5350; }
+}
+
+.posBackBtn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
 }

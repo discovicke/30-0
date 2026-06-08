@@ -1,51 +1,29 @@
-# Allsvenskan 30-0
+# 30-0
 
-> Bygg ditt drömlag från 25 säsongers Allsvenskan och spela dig till guldet, klarar du av det obesegrad?
+> Bygg ditt drömlag från 25 säsonger Allsvenskan (2001–2025) och försök vinna guldet — klarar du av det obesegrad?
 
-Ett webbspel inspirerat av [38-0.app](https://38-0.app) och dess föregångare [82-0](https://www.82-0.com/). Du draftar spelare från Allsvenskan 2001–2025, sätter din formation och spelar en 30-matchars säsong mot de 15 föreningar med flest Allsvenska säsonger senaste 25 åren. Lagstyrkan på dessa 15 lag har räknats ut genom att ta genomsnittet på deras insatser dessa 25 år.
+Ett webbaserat draftspel inspirerat av klassiska 38-0. Du väljer formation, drar spelare från verkliga Allsvenska säsonger och spelar en 30 matcher lång säsong mot 15 AI-styrda motståndare.
 
 ---
 
-## Vad är det här?
+## Spela
 
-Du väljer spelare utifrån verklig statistik hämtad från FBref. Varje spelare får ett OVR-betyg (1–99) baserat på sin prestation relativt säsongens genomsnitt. Du kan antingen drafta spelare som de var en specifik säsong, eller plocka varje spelares karriärsbästa.
-
-Sedan kör du säsongen. Vinner du Allsvenskan obesegrad?
+[30-0.app](https://30-0.app) – ingen installation krävs, fungerar i webbläsaren.
 
 ---
 
 ## Funktioner
 
-- **25 säsongers data** (2001–2025) scrapad från FBref
-- **6 779 spelare**, 386 lag, 2 088 unika karriärstoppen-spelare
-- **OVR-rating** per position med z-score, percentiler och lagjustering
-- **Season mode** (spelare betygsatt per säsong) och **Peak mode** (karriärens bästa)
-- **Draft-system** med rerolls och positionsbaserad matchning
-- **Match engine** med hemmaplansfördel, styrkebaserade formel och slumpad målskytt
-- **30-matchars säsong** mot 15 AI-styrda Allsvenskan-lag
-
----
-
-## Hur det fungerar
-
-### Data
-Statistik scrapad med en C# CLI-scraper direkt från FBref. Rådata sparas som JSON och bearbetas lokalt. Inga live-anrop i spelet.
-
-### OVR-beräkning
-```
-z-score → percentil → viktat medel per position → lagjustering → linjär skalning (40–99)
-```
-Exempelindex för anfallare: mål/90 (30%), assist/90 (15%), xG/90 (15%) m.fl.
-
-### Match engine
-Varje match simuleras minut för minut (5-min-intervall). Målchanser genereras baserat på styrkeförhållandet mellan lagen:
-```
-expected = 1.2 × (ratio^3.5) + homeBonus
-```
-Målvaktens OVR väger tungt (30% av lagets overall).
-
-### Formationer
-Stödjer 4-3-3, 4-4-2 och 3-5-2. Varje position matchas mot spelarens faktiska roller i datat.
+- **25 säsongers data** (2001–2025) med statistik från FBref
+- **Sex formationer**: 5-4-1, 4-5-1, 3-4-3, 3-5-2, 4-4-2, 4-3-3
+- **Två draft-lägen**: squad-first (välj spelare fritt ur en trupp) och position-first (klicka på en position först)
+- **Reroll-mekanik**: kasta om truppen — 3 rerolls på easy, 1 på normal, 0 på hard
+- **OVR-betyg** (1–99) per position med z-score, percentil och lagjustering
+- **Season mode** (spelare betygsatta per säsong) eller **Peak mode** (varje spelares karriärsbästa)
+- **Matchmotor** minut-för-minut-simulering med hemmaplansfördel och slumpade målskyttar
+- **30 matcher mot 15 AI-lag** med styrka baserad på historisk Allsvensk statistik
+- **Text-TV-gränssnitt** inspirerat av SVT Text-TV med sidor för trupp, odds, resultat, tabell och säsongsartikel
+- **Auto-spara** – din draft sparas i webbläsaren så du kan fortsätta senare
 
 ---
 
@@ -53,56 +31,44 @@ Stödjer 4-3-3, 4-4-2 och 3-5-2. Varje position matchas mot spelarens faktiska r
 
 | Del | Teknik |
 |-----|--------|
-| Scraper + engine | C# (.NET) |
-| Data | Statisk JSON |
-| Frontend | React + Vite + TypeScript *(kommer)* |
-| Deploy | Cloudflare Pages *(kommer)* |
+| Scraper | C# (.NET) |
+| Databehandling | C# – JSON → statiska datafiler |
+| Frontend | React 19 + Vite + TypeScript |
+| Styling | SCSS-moduler |
+| Deployment | Vercel |
+| Statistikdata | FBref (offentlig, read-only) |
 
 ---
 
-## Status
-
-### Klart
-- [x] Scraper för alla 25 säsonger inklusive målvaktsdata
-- [x] OVR-beräkning med lagjustering
-- [x] Game DB och Peak DB
-- [x] Match engine med hemmaplansfördel
-- [x] 30-matchars säsongssimulation
-- [x] Draft med reroll-mekanik
-
-### Under arbete
-- [ ] Frontend (React + Vite)
-- [ ] Deploy till Cloudflare Pages
-- [ ] Förbättrad draft (gemensam pool istället för per-squad)
-- [ ] Balansering av AI-lag mot verklig historisk data
-
----
-
-## Kör lokalt
+## Utveckling lokalt
 
 ```bash
-# Hämta data från FBref (kräver internetanslutning)
-dotnet run -- scrape 2001 2025
-
-# Beräkna OVR för alla spelare
-dotnet run -- compute
-
-# Bygg peak-databasen
-dotnet run -- build-peak
-
-# Simulera ett draft + säsong
-dotnet run -- draft 4-3-3 1 3 peak
-dotnet run -- simulate 4-3-3
+cd frontend
+npm install
+npm run dev          # Frontend på localhost:5173
+npm run server       # Express-server för API (valfritt)
+npm run dev:all      # Båda samtidigt
+npm run build        # Produktionsbygge
 ```
 
-Använd `--local` för att köra scrapen mot sparade HTML-filer utan nätverksanrop.
+Datafilerna (`src/data/*.json`) är förgenererade och versionshanterade – ingen scraper krävs för att köra frontend.
 
 ---
 
 ## Datakälla
 
-Statistik från [FBref.com](https://fbref.com) (Allsvenskan, `comps/29`). Datan används enbart för privat, icke-kommersiellt bruk.
+Spelarstatistik från [FBref.com](https://fbref.com) (Allsvenskan, `comps/29`). Datan används i beskrivande syfte för ett icke-kommersiellt fanprojekt.
+
+30-0 är ett oberoende projekt utan koppling till Allsvenskan, Svenska Fotbollförbundet, någon fotbollsklubb eller FBref/Sports Reference.
 
 ---
 
-*Projektet är under aktiv utveckling. Frontend och deploy kommer.*
+## Status
+
+Spelet är i alpha med komplett draft- och säsongsflöde. Frontend är fullt fungerande med mobil- och desktop-läge.
+
+### Kommande
+- Förbättrad AI-balansering
+- Ljud och animationer
+- Dela resultat på sociala medier
+- Fler säsonger framåt (2026+)

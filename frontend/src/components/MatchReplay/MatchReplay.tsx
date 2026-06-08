@@ -155,7 +155,7 @@ export default function MatchReplay({
                       {u.wins}W - {u.draws}D - {u.losses}L
                     </div>
                     <div className={styles.ptsLine}>
-                      {u.points} POANG  GD {gd >= 0 ? `+${gd}` : gd}
+                      {u.points} POÄNG  GD {gd >= 0 ? `+${gd}` : gd}
                     </div>
                     <div className={styles.posLine}>
                       PLATS {result.finalPosition}/{result.finalTable.length}
@@ -208,7 +208,7 @@ export default function MatchReplay({
                     {result.goldenBoot && (
                       <div className={styles.award}>
                         <span className={styles.awardIcon}>G</span>
-                        <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mal</span>
+                        <span>{result.goldenBoot.playerName}  {result.goldenBoot.goals} mål</span>
                       </div>
                     )}
                     {result.playmaker && (
@@ -220,7 +220,7 @@ export default function MatchReplay({
                     {result.goldenGlove && (
                       <div className={styles.award}>
                         <span className={styles.awardIcon}>C</span>
-                        <span>{result.goldenGlove.playerName}  {result.goldenGlove.cleanSheets} hallna nollor</span>
+                        <span>{result.goldenGlove.playerName}  {result.goldenGlove.cleanSheets} hållna nollor</span>
                       </div>
                     )}
                     {result.playerOfSeason && (
@@ -238,7 +238,7 @@ export default function MatchReplay({
           <div className={styles.controls}>
             {!done && (
               <button className={styles.nextBtn} onClick={advance}>
-                Nasta match
+                Nästa match
               </button>
             )}
             <button className={styles.autoBtn} onClick={() => setAutoPlay(!autoPlay)}>

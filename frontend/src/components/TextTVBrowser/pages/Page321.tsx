@@ -25,8 +25,8 @@ export default function Page321({ result, odds, onRestart }: Props) {
   if (!result) {
     return (
       <div className={styles.lockedMessage}>
-        SASONGEN HAR INTE SPELATS ANNU<br />
-        NAVIGERA TILL 310 FOR ATT SIMULERA
+        SASONGEN HAR INTE SPELATS ÄNNU<br />
+        NAVIGERA TILL 310 FÖR ATT SIMULERA
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
   return (
     <div>
       <div className={styles.pageTitle}>ALLSVENSKAN 2025 · SLUTRAPPORT</div>
-      <div className={styles.pageSubtitle}>SASONGSARTIKEL</div>
+      <div className={styles.pageSubtitle}>SÄSONGSARTIKEL</div>
 
       <div className={styles.quoteBlock}>
         "{article.quote}"
@@ -49,7 +49,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
         <span className={styles.statLabel}>PLACERING</span>
         <span className={styles.statVal}>
           {positionSuffix(result.finalPosition)} AV {result.finalTable.length}
-          {result.finalPosition === 1 ? '  (MASTARE)' : ''}
+          {result.finalPosition === 1 ? '  (MÄSTARE)' : ''}
         </span>
         <span className={styles.statLabel}>PROJEKTERAD</span>
         <span className={styles.statVal}>
@@ -61,11 +61,11 @@ export default function Page321({ result, odds, onRestart }: Props) {
         </span>
         <span className={styles.statLabel}>V - O - F</span>
         <span className={styles.statVal}>{user.wins} - {user.draws} - {user.losses}</span>
-        <span className={styles.statLabel}>MALSKILLNAD</span>
+        <span className={styles.statLabel}>MÅLSKILLNAD</span>
         <span className={styles.statVal}>
           {gd >= 0 ? '+' : ''}{gd}  ({user.goalsFor} GM / {user.goalsAgainst} IM)
         </span>
-        <span className={styles.statLabel}>POANG</span>
+        <span className={styles.statLabel}>POÄNG</span>
         <span className={styles.statVal}>{user.points}</span>
       </div>
 
@@ -76,7 +76,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
             <div className={styles.awardRow}>
               <span className={styles.awardLabel}>SKYTTEKUNG</span>
               <span className={styles.awardPlayer}>{result.goldenBoot.playerName.toUpperCase()}</span>
-              <span className={styles.awardVal}>{result.goldenBoot.goals} MAL</span>
+              <span className={styles.awardVal}>{result.goldenBoot.goals} MÅL</span>
             </div>
           )}
           {result.playmaker && (
@@ -95,7 +95,7 @@ export default function Page321({ result, odds, onRestart }: Props) {
           )}
           {result.playerOfSeason && (
             <div className={styles.awardRow}>
-              <span className={styles.awardLabel}>ARETS SPELARE</span>
+              <span className={styles.awardLabel}>ÅRETS SPELARE</span>
               <span className={styles.awardPlayer}>{result.playerOfSeason.playerName.toUpperCase()}</span>
               <span className={styles.awardVal}>
                 {result.playerOfSeason.goals}G {result.playerOfSeason.assists}A
@@ -107,11 +107,11 @@ export default function Page321({ result, odds, onRestart }: Props) {
 
       <div className={styles.section}>LAGSTATISTIK</div>
       <div className={styles.statGrid}>
-        <span className={styles.statLabel}>FLEST MAL I EN MATCH</span>
+        <span className={styles.statLabel}>FLEST MÅL I EN MATCH</span>
         <span className={styles.statVal}>
           {article.mostGoalsMatch.goals}  (OMG {article.mostGoalsMatch.round} VS {article.mostGoalsMatch.opponent.toUpperCase()})
         </span>
-        <span className={styles.statLabel}>LANGSTA VINSTSVIT</span>
+        <span className={styles.statLabel}>LÄNGSTA VINSTSVIT</span>
         <span className={styles.statVal}>{article.longestWinStreak} MATCHER</span>
         <span className={styles.statLabel}>HEMMAMATCHER</span>
         <span className={styles.statVal}>
