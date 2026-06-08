@@ -7,13 +7,17 @@ export function getRerollCount(difficulty: 'easy' | 'normal' | 'hard'): number {
 
 export function pickRandomSquad(
   squads: Squad[],
-  usedSquadKeys?: Set<string>
+  usedSquadKeys?: Set<string>,
+  seasonMin?: number,
+  seasonMax?: number,
 ): Squad | null {
-  const available = usedSquadKeys
+  let filtered = usedSquadKeys
     ? squads.filter((s) => !usedSquadKeys.has(`${s.team}|${s.season}`))
     : [...squads];
-  if (available.length === 0) return null;
-  return available[Math.floor(Math.random() * available.length)];
+  if (seasonMin !== undefined) filtered = filtered.filter((s) => s.season >= seasonMin);
+  if (seasonMax !== undefined) filtered = filtered.filter((s) => s.season <= seasonMax);
+  if (filtered.length === 0) return null;
+  return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
 const posGroupMap: Record<string, string> = {

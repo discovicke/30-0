@@ -8,31 +8,33 @@ interface Props {
   emptyAttack?: boolean;
   emptyMidfield?: boolean;
   emptyDefence?: boolean;
+  showRatings?: boolean;
 }
 
 export default function OverallStrip({
   overall, attack, midfield, defence,
   emptyAttack, emptyMidfield, emptyDefence,
+  showRatings = true,
 }: Props) {
   const emptyOverall = emptyAttack && emptyMidfield && emptyDefence;
   return (
     <div className={styles.strip}>
       <div className={styles.mainRow}>
         <span className={styles.mainLabel}>Overall</span>
-        <span className={styles.mainValue}>{emptyOverall ? '–' : Math.round(overall)}</span>
+        <span className={styles.mainValue}>{emptyOverall ? '–' : (showRatings ? Math.round(overall) : '??')}</span>
       </div>
       <div className={styles.subGroup}>
         <div className={styles.subRow}>
           <span className={styles.subLabel}>Anfall</span>
-          <span className={styles.subValue}>{emptyAttack ? '–' : Math.round(attack)}</span>
+          <span className={styles.subValue}>{emptyAttack ? '–' : (showRatings ? Math.round(attack) : '??')}</span>
         </div>
         <div className={styles.subRow}>
           <span className={styles.subLabel}>Mittfält</span>
-          <span className={styles.subValue}>{emptyMidfield ? '–' : Math.round(midfield)}</span>
+          <span className={styles.subValue}>{emptyMidfield ? '–' : (showRatings ? Math.round(midfield) : '??')}</span>
         </div>
         <div className={styles.subRow}>
           <span className={styles.subLabel}>Försvar</span>
-          <span className={styles.subValue}>{emptyDefence ? '–' : Math.round(defence)}</span>
+          <span className={styles.subValue}>{emptyDefence ? '–' : (showRatings ? Math.round(defence) : '??')}</span>
         </div>
       </div>
     </div>

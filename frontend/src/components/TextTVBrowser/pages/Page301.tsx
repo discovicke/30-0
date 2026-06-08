@@ -7,9 +7,10 @@ import styles from './pages.module.scss';
 interface Props {
   xi: TeamXI;
   formation: FormationKey;
+  showRatings?: boolean;
 }
 
-export default function Page301({ xi, formation }: Props) {
+export default function Page301({ xi, formation, showRatings = true }: Props) {
   const slotDefs = sortSlotsRightToLeft(formations[formation]);
 
   return (
@@ -34,13 +35,15 @@ export default function Page301({ xi, formation }: Props) {
             <span className={styles.squadName}>{player.name.toUpperCase()}</span>
             <span className={styles.squadClub}>{shortName(player.team).toUpperCase()}</span>
             <span className={styles.squadYear}>{player.season}</span>
-            <span className={styles.squadOvr}>{Math.round(player.ovr)}</span>
+            <span className={styles.squadOvr}>{showRatings ? Math.round(player.ovr) : '??'}</span>
           </div>
         );
       })}
 
       <div className={styles.ratingFooter}>
-        ANFALL {Math.round(xi.attack)} · MITT {Math.round(xi.midfield)} · FÖRSVAR {Math.round(xi.defence)} · MV {Math.round(xi.gkRating)} · OVR {Math.round(xi.overall)}
+        {showRatings
+          ? `ANFALL ${Math.round(xi.attack)} · MITT ${Math.round(xi.midfield)} · FÖRSVAR ${Math.round(xi.defence)} · MV ${Math.round(xi.gkRating)} · OVR ${Math.round(xi.overall)}`
+          : 'BETYG DOLDA (SVÅR NIVÅ)'}
       </div>
     </div>
   );

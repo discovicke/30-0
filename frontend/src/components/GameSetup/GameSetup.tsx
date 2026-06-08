@@ -17,14 +17,40 @@ const formationQuotes: Record<string, string> = {
 };
 
 export default function GameSetup({ onStart }: Props) {
-  const [draftMode, setDraftMode] = useState<DraftMode>('squad-first');
-  const [ratingMode, setRatingMode] = useState<RatingMode>('season');
   const [difficulty, setDifficulty] = useState<Difficulty>('normal');
+  const [ratingMode, setRatingMode] = useState<RatingMode>('season');
+  const [draftMode, setDraftMode] = useState<DraftMode>('squad-first');
+  const [showRatings, setShowRatings] = useState(true);
+  const [seasonMin, setSeasonMin] = useState(2001);
+  const [seasonMax, setSeasonMax] = useState(2025);
   const [formation, setFormation] = useState<FormationKey>('4-4-2');
 
+  const ratingsHidden = difficulty === 'hard' || !showRatings;
+
   function handleStart() {
-    onStart({ draftMode, ratingMode, difficulty, formation });
+    onStart({
+      draftMode,
+      ratingMode,
+      difficulty,
+      formation,
+      showRatings: difficulty === 'hard' ? false : showRatings,
+      seasonMin,
+      seasonMax,
+    });
   }
+
+  function handleSeasonRangeChange(type: 'min' | 'max', value: number) {
+    if (type === 'min') {
+      const clamped = Math.min(value, seasonMax - 1);
+      setSeasonMin(clamped);
+    } else {
+      const clamped = Math.max(value, seasonMin + 1);
+      setSeasonMax(clamped);
+    }
+  }
+
+  const rangePercentMin = ((seasonMin - 2001) / 24) * 100;
+  const rangePercentMax = ((seasonMax - 2001) / 24) * 100;
 
   return (
     <div className={styles.page}>
@@ -34,43 +60,19 @@ export default function GameSetup({ onStart }: Props) {
       </div>
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Draft Mode</h2>
-        <div className={styles.btnRow}>
-          <button
-            className={`${styles.optionBtn} ${draftMode === 'squad-first' ? styles.active : ''}`}
-            onClick={() => setDraftMode('squad-first')}
-          >
-            <strong>Trupp först</strong>
-            <span>Snurra klubb, välj spelare, auto-assign position</span>
-          </button>
-          <button
-            className={`${styles.optionBtn} ${draftMode === 'position-first' ? styles.active : ''}`}
-            onClick={() => setDraftMode('position-first')}
-          >
-            <strong>Position först</strong>
-            <span>Välj position, snurra sen klubb för att fylla den</span>
-          </button>
+        <h2 className={styles.sectionTitle}>Formation</h2>
+        <div className={styles.formGrid}>
+          {formationKeys.map((f) => (
+              <button
+                  key={f}
+                  className={`${styles.formBtn} ${formation === f ? styles.active : ''}`}
+                  onClick={() => setFormation(f)}
+              >
+                {f}
+              </button>
+          ))}
         </div>
-      </div>
-
-      <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Spelarbetyg</h2>
-        <div className={styles.btnRow}>
-          <button
-            className={`${styles.optionBtn} ${ratingMode === 'season' ? styles.active : ''}`}
-            onClick={() => setRatingMode('season')}
-          >
-            <strong>Karriärsäsonger</strong>
-            <span>Spelarna betygsatta enligt säsong</span>
-          </button>
-          <button
-            className={`${styles.optionBtn} ${ratingMode === 'peak' ? styles.active : ''}`}
-            onClick={() => setRatingMode('peak')}
-          >
-            <strong>Toppade lag</strong>
-            <span>Alla spelare får sin karriärs bästa betyg</span>
-          </button>
-        </div>
+        <p className={styles.formQuote}>{formationQuotes[formation]}</p>
       </div>
 
       <div className={styles.section}>
@@ -95,25 +97,106 @@ export default function GameSetup({ onStart }: Props) {
             onClick={() => setDifficulty('hard')}
           >
             <strong>Svårt</strong>
-            <span>Inga rerolls</span>
+            <span>Inga rerolls, dolda attribut</span>
           </button>
         </div>
       </div>
 
       <div className={styles.section}>
-        <h2 className={styles.sectionTitle}>Formation</h2>
-        <div className={styles.formGrid}>
-          {formationKeys.map((f) => (
-            <button
-              key={f}
-              className={`${styles.formBtn} ${formation === f ? styles.active : ''}`}
-              onClick={() => setFormation(f)}
-            >
-              {f}
-            </button>
+        <h2 className={styles.sectionTitle}>Visa attribut</h2>
+        <div className={styles.btnRow}>
+          <button
+              className={`${styles.optionBtn} ${!ratingsHidden ? styles.active : ''} ${difficulty === 'hard' ? styles.disabled : ''}`}
+              onClick={() => difficulty !== 'hard' && setShowRatings(true)}
+          >
+            <strong>Visa</strong>
+            <span>Se spelarnas attribut</span>
+          </button>
+          <button
+              className={`${styles.optionBtn} ${ratingsHidden ? styles.active : ''} ${difficulty === 'hard' ? styles.forced : ''}`}
+              onClick={() => difficulty !== 'hard' && setShowRatings(false)}
+          >
+            <strong>Dölj</strong>
+            <span>{difficulty === 'hard' ? 'Påtvingat (svår nivå)' : 'Göm spelarnas attribut'}</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Spelarbetyg</h2>
+        <div className={styles.btnRow}>
+          <button
+            className={`${styles.optionBtn} ${ratingMode === 'season' ? styles.active : ''}`}
+            onClick={() => setRatingMode('season')}
+          >
+            <strong>Säsongs-attribut</strong>
+            <span>Spelarna betygsatta enligt säsong</span>
+          </button>
+          <button
+            className={`${styles.optionBtn} ${ratingMode === 'peak' ? styles.active : ''}`}
+            onClick={() => setRatingMode('peak')}
+          >
+            <strong>Toppade lag</strong>
+            <span>Alla spelare får sin karriärs bästa betyg</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Draft Mode</h2>
+        <div className={styles.btnRow}>
+          <button
+            className={`${styles.optionBtn} ${draftMode === 'squad-first' ? styles.active : ''}`}
+            onClick={() => setDraftMode('squad-first')}
+          >
+            <strong>Trupp först</strong>
+            <span>Snurra först klubb och säsong, sen får du välja vilken position att fylla</span>
+          </button>
+          <button
+            className={`${styles.optionBtn} ${draftMode === 'position-first' ? styles.active : ''}`}
+            onClick={() => setDraftMode('position-first')}
+          >
+            <strong>Position först</strong>
+            <span>Välj först en position, sen snurra klubb och säsong</span>
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Säsongsintervall</h2>
+        <div className={styles.rangeLabels}>
+          <span>{seasonMin}</span>
+          <span>{seasonMax}</span>
+        </div>
+        <div className={styles.rangeWrapper}>
+          <div className={styles.rangeTrack}>
+            <div
+              className={styles.rangeFill}
+              style={{ left: `${rangePercentMin}%`, width: `${rangePercentMax - rangePercentMin}%` }}
+            />
+          </div>
+          <input
+            type="range"
+            min={2001}
+            max={2025}
+            value={seasonMin}
+            onChange={(e) => handleSeasonRangeChange('min', Number(e.target.value))}
+            className={`${styles.rangeInput} ${styles.rangeInputMin}`}
+          />
+          <input
+            type="range"
+            min={2001}
+            max={2025}
+            value={seasonMax}
+            onChange={(e) => handleSeasonRangeChange('max', Number(e.target.value))}
+            className={`${styles.rangeInput} ${styles.rangeInputMax}`}
+          />
+        </div>
+        <div className={styles.rangeTicks}>
+          {[2001, 2005, 2010, 2015, 2020, 2025].map((y) => (
+            <span key={y} className={styles.rangeTick}>{y}</span>
           ))}
         </div>
-        <p className={styles.formQuote}>{formationQuotes[formation]}</p>
       </div>
 
       <button className={styles.startBtn} onClick={handleStart}>
@@ -123,3 +206,4 @@ export default function GameSetup({ onStart }: Props) {
     </div>
   );
 }
+

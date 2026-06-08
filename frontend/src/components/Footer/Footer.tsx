@@ -22,7 +22,7 @@ export default function Footer() {
                 <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener" className={styles.btnPrimary}>
                   <Coffee size={18} />
                   <span className={styles.btnLabel}>Bjud på en kaffe</span>
-                  <span className={styles.btnDesc}>Hjälper täcka servrar och tid</span>
+              <span className={styles.btnDesc}>Hjälper att täcka för servrar & tid</span>
                 </a>
                 <button className={styles.btn} onClick={() => setShowPrivacy(true)}>
                   <Info size={18} />

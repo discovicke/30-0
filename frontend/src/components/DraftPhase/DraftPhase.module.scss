@@ -226,6 +226,14 @@
   text-align: center;
 }
 
+.hiddenHint {
+  font-size: 11px;
+  color: $ink-ghost;
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px;
+}
+
 // ── Slot machine ──
 
 .slotMachine {

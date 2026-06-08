@@ -44,7 +44,7 @@ function formatDate(date: Date) {
 }
 
 export default function TextTVBrowser({
-  xi, formation, odds, result, onSimulate, onRestart,
+  xi, formation, config, odds, result, onSimulate, onRestart,
 }: Props) {
   const [currentPage, setCurrentPage] = useState(() => result ? 310 : 300);
   const [pageInput, setPageInput] = useState('');
@@ -146,7 +146,7 @@ export default function TextTVBrowser({
       case 300:
         return <Page300 xi={xi} formation={formation} simulated={simulated} onNavigate={navigateTo} />;
       case 301:
-        return <Page301 xi={xi} formation={formation} />;
+        return <Page301 xi={xi} formation={formation} showRatings={config.showRatings} />;
       case 302:
         return <Page302 xi={xi} odds={odds} />;
       case 310:

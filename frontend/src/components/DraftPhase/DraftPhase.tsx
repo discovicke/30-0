@@ -307,6 +307,9 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               Snurra fram spelare
             </button>
           )}
+          {!config.showRatings && filledCount > 0 && (
+            <span className={styles.hiddenHint}>Betyg är dolda (svår nivå)</span>
+          )}
         </div>
       )}
 
@@ -351,6 +354,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             tall
             interactive={draftState === 'drafting'}
             selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
+            showRatings={config.showRatings}
             onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
           />
           <OverallStrip
@@ -361,6 +365,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             emptyAttack={emptyAttack}
             emptyMidfield={emptyMidfield}
             emptyDefence={emptyDefence}
+            showRatings={config.showRatings}
           />
         </div>
 
@@ -403,6 +408,10 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
 
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
                 <span className={styles.hint}>Klicka på en position på planen</span>
+              )}
+
+              {!config.showRatings && filledCount > 0 && (
+                <span className={styles.hiddenHint}>Betyg är dolda (svår nivå)</span>
               )}
             </div>
           )}
@@ -491,7 +500,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                       </span>
                     ))}
                     <span className={styles.playerName}>{p.name}</span>
-                    <span className={styles.playerOvr}>{Math.round(p.ovr)}</span>
+                    <span className={styles.playerOvr}>{config.showRatings ? Math.round(p.ovr) : '??'}</span>
                   </button>
                 ))}
               </div>

@@ -25,6 +25,7 @@ export default function Game() {
   const [phase, setPhase] = useState<GamePhase>('landing');
   const [config, setConfig] = useState<GameConfig | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
+  const [filteredSquads, setFilteredSquads] = useState<Squad[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedDraft, setSavedDraft] = useState<SavedDraftState | null>(loadSavedDraft());
@@ -52,6 +53,20 @@ export default function Game() {
     const mode = savedDraft?.config.ratingMode ?? config?.ratingMode ?? 'season';
     loadData(mode);
   }, [phase]);
+
+  // Filter squads by season range when config or raw squads change
+  useEffect(() => {
+    if (squads.length === 0) return;
+    const c = config ?? savedDraft?.config ?? null;
+    if (!c) {
+      setFilteredSquads(squads);
+      return;
+    }
+    let result = squads;
+    if (c.seasonMin > 2001) result = result.filter((s) => s.season >= c.seasonMin);
+    if (c.seasonMax < 2025) result = result.filter((s) => s.season <= c.seasonMax);
+    setFilteredSquads(result);
+  }, [squads, config, savedDraft]);
 
   const handleStart = useCallback(async (c: GameConfig) => {
     setConfig(c);
@@ -139,7 +154,7 @@ export default function Game() {
       <Header onHome={handleHome} />
       <DraftPhase
         config={config}
-        squads={squads}
+        squads={filteredSquads}
         onRestart={handleRestart}
         savedState={savedDraft ?? undefined}
       />
