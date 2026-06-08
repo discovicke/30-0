@@ -7,6 +7,7 @@ import Page302 from './pages/Page302';
 import Page310 from './pages/Page310';
 import Page320 from './pages/Page320';
 import Page321 from './pages/Page321';
+import {ChevronLeft, ChevronRight, ChevronUp, ChevronDown} from 'lucide-react';
 import styles from './TextTVBrowser.module.scss';
 
 interface Props {
@@ -165,7 +166,7 @@ export default function TextTVBrowser({
         <span className={styles.brand}>SVT TEXT-TV</span>
         <div className={styles.nav}>
           <button className={styles.navBtn} onClick={() => navigateTo(prevPage)}>
-            ◄ {prevPage}
+            <ChevronLeft size={14} /> {prevPage}
           </button>
           <div className={styles.inputArea}>
             <span className={styles.inputLabel}>SID</span>
@@ -174,7 +175,7 @@ export default function TextTVBrowser({
             </span>
           </div>
           <button className={styles.navBtn} onClick={() => navigateTo(nextPage)}>
-            {nextPage} ►
+            {nextPage} <ChevronRight size={14} />
           </button>
         </div>
         <span className={styles.date}>{dateStr}</span>
@@ -185,12 +186,12 @@ export default function TextTVBrowser({
       </div>
       {canScrollUp && (
         <button className={styles.scrollArrowUp} onClick={() => scrollBy(-200)}>
-          ▲
+          <ChevronUp size={16} />
         </button>
       )}
       {canScrollDown && (
         <button className={styles.scrollArrowDown} onClick={() => scrollBy(200)}>
-          ▼
+          <ChevronDown size={16} />
         </button>
       )}
 

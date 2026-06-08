@@ -8,6 +8,7 @@ import {
 } from '../../engine/draftEngine';
 
 const seasons = [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+import {X, ArrowLeft} from 'lucide-react';
 import FormationView from '../FormationView/FormationView';
 import OverallStrip from '../OverallStrip/OverallStrip';
 import StepIndicator from '../StepIndicator/StepIndicator';
@@ -445,7 +446,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                 <span className={styles.squadSeason}>{currentSquad.season}</span>
               </div>
               <button className={styles.closeBtn} onClick={() => { setOverlayVisible(false); setPendingPlayer(null); }}>
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -472,7 +473,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                   ))}
                 </div>
                 <button className={styles.posBackBtn} onClick={() => { setPendingPlayer(null); setPendingGroups([]); }}>
-                  ← Tillbaka till spelarlistan
+                  <ArrowLeft size={12} /> Tillbaka till spelarlistan
                 </button>
               </div>
             ) : (

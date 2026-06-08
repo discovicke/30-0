@@ -38,11 +38,6 @@
   }
 }
 
-.btnIcon {
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
 .btnLabel {
   font-size: 0.6875rem;
   font-weight: 600;
@@ -72,7 +67,6 @@
   transition: opacity 0.15s;
   min-width: 120px;
 
-  .btnIcon { color: $chrome-text; }
   .btnLabel { color: $chrome-text; }
   .btnDesc { color: rgba(255,255,255,0.5); }
 

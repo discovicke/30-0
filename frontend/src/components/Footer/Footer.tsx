@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {Code, Mail, Coffee, Info, X} from 'lucide-react';
 import styles from './Footer.module.scss';
 
 export default function Footer() {
@@ -7,28 +8,28 @@ export default function Footer() {
     return (
         <>
             <footer className={styles.footer}>
-      <div className={styles.actions}>
-        <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={styles.btn}>
-          <span className={styles.btnIcon}>⌨</span>
-          <span className={styles.btnLabel}>Källkod</span>
-          <span className={styles.btnDesc}>Öppen källkod på GitHub</span>
-        </a>
-        <a href="mailto:johanssonviktor@pm.me" className={styles.btn}>
-          <span className={styles.btnIcon}>✉</span>
-          <span className={styles.btnLabel}>Feedback</span>
-          <span className={styles.btnDesc}>Buggar eller förslag</span>
-        </a>
-        <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener" className={styles.btnPrimary}>
-          <span className={styles.btnIcon}>☕</span>
-          <span className={styles.btnLabel}>Bjud på en kaffe</span>
-          <span className={styles.btnDesc}>Hjälper täcka servrar och tid</span>
-        </a>
-        <button className={styles.btn} onClick={() => setShowPrivacy(true)}>
-          <span className={styles.btnIcon}>ℹ</span>
-          <span className={styles.btnLabel}>Integritet</span>
-          <span className={styles.btnDesc}>Vad vi samlar in (spoiler: inget)</span>
-        </button>
-      </div>
+              <div className={styles.actions}>
+                <a href="https://github.com/discovicke/30-0" target="_blank" rel="noopener" className={styles.btn}>
+                  <Code size={18} />
+                  <span className={styles.btnLabel}>Källkod</span>
+                  <span className={styles.btnDesc}>Öppen källkod på GitHub</span>
+                </a>
+                <a href="mailto:johanssonviktor@pm.me" className={styles.btn}>
+                  <Mail size={18} />
+                  <span className={styles.btnLabel}>Feedback</span>
+                  <span className={styles.btnDesc}>Buggar eller förslag</span>
+                </a>
+                <a href="https://buymeacoffee.com/discovicke" target="_blank" rel="noopener" className={styles.btnPrimary}>
+                  <Coffee size={18} />
+                  <span className={styles.btnLabel}>Bjud på en kaffe</span>
+                  <span className={styles.btnDesc}>Hjälper täcka servrar och tid</span>
+                </a>
+                <button className={styles.btn} onClick={() => setShowPrivacy(true)}>
+                  <Info size={18} />
+                  <span className={styles.btnLabel}>Integritet</span>
+                  <span className={styles.btnDesc}>Vad vi samlar in (spoiler: inget)</span>
+                </button>
+              </div>
 
                 <p className={styles.credit}>
                     Inspirerat av <a href="https://82-0.com" target="_blank" rel="noopener">82-0.com</a> och{' '}
@@ -48,7 +49,7 @@ export default function Footer() {
                 <div className={styles.overlay} onClick={() => setShowPrivacy(false)}>
                     <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
                         <button className={styles.closeBtn} onClick={() => setShowPrivacy(false)}>
-                            &times; Stäng
+                            <X size={14} /> Stäng
                         </button>
                         <PrivacyContent/>
                     </div>
