@@ -167,6 +167,24 @@ public static class OvrCalculator
             var finalMax = allWithOvr.Max(p => p.Ovr!.Value);
             var finalAvg = allWithOvr.Average(p => p.Ovr!.Value);
             Console.WriteLine($"OVR range: {finalMin:F1} - {finalMax:F1} (avg {finalAvg:F1}), raw was {rawMin:F1} - {rawMax:F1}");
+
+            var seasonsPerPlayer = allWithOvr
+                .GroupBy(p => p.Name)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var player in allWithOvr)
+            {
+                if (seasonsPerPlayer.TryGetValue(player.Name, out var seasons))
+                {
+                    var boost = Math.Min(seasons * 0.3, 3.0);
+                    player.Ovr = Math.Round(Math.Clamp(player.Ovr.Value + boost, 40, 99), 1);
+                }
+            }
+
+            var finalMin2 = allWithOvr.Min(p => p.Ovr!.Value);
+            var finalMax2 = allWithOvr.Max(p => p.Ovr!.Value);
+            var finalAvg2 = allWithOvr.Average(p => p.Ovr!.Value);
+            Console.WriteLine($"After longevity boost: {finalMin2:F1} - {finalMax2:F1} (avg {finalAvg2:F1})");
         }
 
         var byYear = allPlayers.GroupBy(p => p.Season);
