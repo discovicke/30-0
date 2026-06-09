@@ -233,7 +233,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     setDraftState('simulating');
     setTimeout(() => {
       const teamXI = { ...xi, slots: { ...filledSlots } };
-      const simResult = simulateSeason(teamXI, config.formation);
+      const simResult = simulateSeason(teamXI, config.formation, config.ratingMode);
       setResult(simResult);
       setDraftState('ready');
     }, 1200);
@@ -255,7 +255,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
 
   const showOverlay = currentSquad && !spinning && overlayVisible;
 
-  const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall) : null;
+  const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall, config.ratingMode) : null;
 
   const currentStep = draftState === 'drafting' ? 1
     : draftState === 'simulating' ? 2
@@ -433,6 +433,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               result={result}
               onSimulate={handleSimulate}
               onRestart={onRestart}
+              ratingMode={config.ratingMode}
             />
           )}
         </div>
@@ -448,6 +449,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             result={result}
             onSimulate={handleSimulate}
             onRestart={onRestart}
+            ratingMode={config.ratingMode}
           />
         </div>
       )}

@@ -1,6 +1,6 @@
 import type {
   FormationSlot, TeamXI, AITeam, MatchResult, GoalEvent,
-  SeasonResult, FormationKey, PlayerCard,
+  SeasonResult, FormationKey, PlayerCard, RatingMode,
 } from '../types';
 
 export const formations: Record<FormationKey, FormationSlot[]> = {
@@ -86,24 +86,25 @@ export const formations: Record<FormationKey, FormationSlot[]> = {
 
 export const formationKeys: FormationKey[] = ['5-4-1', '4-5-1', '3-4-3', '3-5-2', '4-4-2', '4-3-3'];
 
-export function getAllAITeams(): AITeam[] {
-  return [
-    { name: 'Malmö', strength: 91, tier: 'Elit' },
-    { name: 'AIK Stockholm', strength: 90, tier: 'Elit' },
-    { name: 'Djurgården', strength: 89, tier: 'Elit' },
-    { name: 'Göteborg', strength: 89, tier: 'Elit' },
-    { name: 'Elfsborg', strength: 87, tier: 'Stark' },
-    { name: 'BK Häcken', strength: 86, tier: 'Stark' },
-    { name: 'Hammarby', strength: 85, tier: 'Stark' },
-    { name: 'Norrköping', strength: 83, tier: 'Mellan' },
-    { name: 'Helsingborg', strength: 82, tier: 'Mellan' },
-    { name: 'Kalmar', strength: 81, tier: 'Mellan' },
-    { name: 'Halmstad', strength: 79, tier: 'Lägre' },
-    { name: 'Örebro', strength: 78, tier: 'Lägre' },
-    { name: 'Sundsvall', strength: 77, tier: 'Lägre' },
-    { name: 'Gefle', strength: 76, tier: 'Lägre' },
-    { name: 'Mjällby', strength: 76, tier: 'Lägre' },
+export function getAllAITeams(mode: RatingMode = 'season'): AITeam[] {
+  const teams: { name: string; season: number; peak: number; tier: string }[] = [
+    { name: 'Malmö', season: 84, peak: 86, tier: 'Elit' },
+    { name: 'AIK Stockholm', season: 83, peak: 85, tier: 'Elit' },
+    { name: 'Djurgården', season: 82, peak: 84, tier: 'Elit' },
+    { name: 'Göteborg', season: 82, peak: 84, tier: 'Elit' },
+    { name: 'Elfsborg', season: 81, peak: 83, tier: 'Stark' },
+    { name: 'BK Häcken', season: 80, peak: 82, tier: 'Stark' },
+    { name: 'Hammarby', season: 79, peak: 81, tier: 'Stark' },
+    { name: 'Norrköping', season: 78, peak: 80, tier: 'Mellan' },
+    { name: 'Helsingborg', season: 77, peak: 79, tier: 'Mellan' },
+    { name: 'Kalmar', season: 76, peak: 78, tier: 'Mellan' },
+    { name: 'Halmstad', season: 74, peak: 77, tier: 'Lägre' },
+    { name: 'Örebro', season: 73, peak: 76, tier: 'Lägre' },
+    { name: 'Sundsvall', season: 72, peak: 75, tier: 'Lägre' },
+    { name: 'Gefle', season: 71, peak: 74, tier: 'Lägre' },
+    { name: 'Mjällby', season: 70, peak: 73, tier: 'Lägre' },
   ];
+  return teams.map((t) => ({ name: t.name, strength: mode === 'peak' ? t.peak : t.season, tier: t.tier }));
 }
 
 export function computeTeamRatings(xi: TeamXI): void {
@@ -188,7 +189,7 @@ export function simulateMatch(user: TeamXI, ai: AITeam, isUserHome: boolean, for
   const userStrength = (userOffence + userDefence) / 2;
   const strengthRatio = Math.max(userStrength / Math.max(ai.strength, 1), 0.1);
   const baseRate = 1.25;
-  const exponent = 4.2;
+  const exponent = 3.5;
   const homeBonus = 0.10;
   let userExpected = baseRate * Math.pow(strengthRatio, exponent) + (isUserHome ? homeBonus : 0);
   let aiExpected = baseRate * Math.pow(1 / strengthRatio, exponent) + (isUserHome ? 0 : homeBonus);
@@ -225,7 +226,7 @@ export function simulateMatch(user: TeamXI, ai: AITeam, isUserHome: boolean, for
 export function simulateAIMatch(home: AITeam, away: AITeam): MatchResult {
   const strengthRatio = Math.max(home.strength / Math.max(away.strength, 1), 0.1);
   const baseRate = 1.25;
-  const exponent = 4.2;
+  const exponent = 3.5;
   const homeBonus = 0.10;
   let homeExpected = baseRate * Math.pow(strengthRatio, exponent) + homeBonus;
   let awayExpected = baseRate * Math.pow(1 / strengthRatio, exponent);
@@ -285,7 +286,7 @@ export function computeStandingsAfterMatch(allTeams: AITeam[], matches: MatchRes
   return teams;
 }
 
-export function simulateSeason(user: TeamXI, formation: FormationKey): SeasonResult {
+export function simulateSeason(user: TeamXI, formation: FormationKey, mode: RatingMode = 'season'): SeasonResult {
   user.goalsFor = 0;
   user.goalsAgainst = 0;
   user.wins = 0;
@@ -294,7 +295,7 @@ export function simulateSeason(user: TeamXI, formation: FormationKey): SeasonRes
   user.points = 0;
   user.formation = formation;
   computeTeamRatings(user);
-  const aiTeams = getAllAITeams();
+  const aiTeams = getAllAITeams(mode);
   const matches: MatchResult[] = [];
   const goalScorers: Record<string, number> = {};
   const assists: Record<string, number> = {};
