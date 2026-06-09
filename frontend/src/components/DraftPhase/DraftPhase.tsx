@@ -8,6 +8,7 @@ import {
 } from '../../engine/draftEngine';
 
 import {X, ArrowLeft} from 'lucide-react';
+import { displayName } from "../../utils/teamNames";
 import FormationView from '../FormationView/FormationView';
 import OverallStrip from '../OverallStrip/OverallStrip';
 import StepIndicator from '../StepIndicator/StepIndicator';
@@ -301,7 +302,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             <div className={styles.slotReel}>
               <div className={styles.reelClip}>
                 <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
-                  {rolling ? rollTeam : (currentSquad?.team ?? '---')}
+                  {rolling ? displayName(rollTeam) : (currentSquad ? displayName(currentSquad.team) : '---')}
                 </span>
               </div>
             </div>
@@ -393,7 +394,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                 <div className={styles.slotReel}>
                   <div className={styles.reelClip}>
                     <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
-                      {rolling ? rollTeam : (currentSquad?.team ?? '---')}
+                      {rolling ? displayName(rollTeam) : (currentSquad ? displayName(currentSquad.team) : '---')}
                     </span>
                   </div>
                 </div>
@@ -457,7 +458,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
           <div className={styles.squadCard}>
             <div className={styles.squadHeader}>
               <div className={styles.squadHeaderInfo}>
-                <span className={styles.squadName}>{currentSquad.team}</span>
+                <span className={styles.squadName}>{displayName(currentSquad.team)}</span>
                 <span className={styles.squadSeason}>{currentSquad.season}</span>
               </div>
               <button className={styles.closeBtn} onClick={() => { setOverlayVisible(false); setPendingPlayer(null); }}>
