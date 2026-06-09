@@ -40,25 +40,25 @@ function ordinal(n: number): string {
   return `${n}:e`;
 }
 
-type Expectation = 'favorit' | 'jämnt' | 'underläge';
-type ResultCat = 'storseger' | 'seger' | 'oavgjort' | 'förlust' | 'storförlust';
+type Expectation = 'favorite' | 'even' | 'underdog';
+type ResultCat = 'bigWin' | 'win' | 'draw' | 'loss' | 'bigLoss';
 type ScoreState = 'user_leads' | 'tied' | 'opp_leads';
 
 function getExpectation(ctx: ReferatContext): Expectation {
   const adj = ctx.userOverall + (ctx.isUserHome ? 3 : -3);
   const diff = adj - ctx.oppStrength;
-  if (diff > 5) return 'favorit';
-  if (diff < -5) return 'underläge';
-  return 'jämnt';
+  if (diff > 5) return 'favorite';
+  if (diff < -5) return 'underdog';
+  return 'even';
 }
 
 function getResultCat(userGoals: number, oppGoals: number): ResultCat {
   const diff = userGoals - oppGoals;
-  if (diff >= 3) return 'storseger';
-  if (diff > 0) return 'seger';
-  if (diff === 0) return 'oavgjort';
-  if (diff > -3) return 'förlust';
-  return 'storförlust';
+  if (diff >= 3) return 'bigWin';
+  if (diff > 0) return 'win';
+  if (diff === 0) return 'draw';
+  if (diff > -3) return 'loss';
+  return 'bigLoss';
 }
 
 function getScoreState(u: number, o: number): ScoreState {
@@ -70,37 +70,37 @@ function getScoreState(u: number, o: number): ScoreState {
 // ---------- PHRASE BANKS ----------
 
 const INTROS: Record<string, readonly string[]> = {
-  favorit_home: [
+  favorite_home: [
     'Ditt lag gick in som klar favorit inför en hemmapublik med höga förväntningar.',
     'Inför hemmafansen var förväntningarna höga – nu gällde det att leverera.',
     'Hemmaplan och ett övertag i styrka lade grunden för en väntad seger.',
     'Motståndarna anlände som klara underdogs, men fotboll spelas inte på pappret.',
   ],
-  favorit_away: [
+  favorite_away: [
     'Ditt lag reste som favorit och ville bevisa det även på bortaplan.',
     'Sett till styrkeförhållandena var ditt lag klart bättre, men bortamatcher är sällan enkla.',
     'Bortalaget var klart starkare på pappret – frågan var om man kunde omsätta det till mål.',
     'Ditt lag förväntades hämta hem tre poäng, även borta.',
   ],
-  jämnt_home: [
+  even_home: [
     'En jämn tillställning väntade på hemmaplan – ingen av lagen var given favorit.',
     'Inför den här kvällen var det svårt att peka ut en vinnare.',
     'Hemmaplansfördelen kunde bli avgörande i det i övrigt jämna mötet.',
     'Lika styrkor möttes under kvällen, och hemmaplansfördelen var den enda vägvisaren.',
   ],
-  jämnt_away: [
+  even_away: [
     'Bortatrycket var påtagligt i en jämn match utan uppenbara favoriter.',
     'Det var svårt att sia om utgången – lagen var i stort sett jämbördiga.',
     'En öppen bortamatch mot ett jämnstarkt motstånd.',
     'Matchbilden var svår att förutsäga – bägge lagen hade förutsättningarna att ta poäng.',
   ],
-  underläge_home: [
+  underdog_home: [
     'Motståndet kom som klara favoriter, men ditt lag vägrade ge upp hemmaplansfördelen.',
     'Det var ett tufft uppdrag hemma mot ett starkare motstånd.',
     'Ditt lag hade allt att bevisa mot ett av seriens bättre lag.',
     'Favoritskapet låg hos gästerna, men hemmaplan ger alltid extra energi.',
   ],
-  underläge_away: [
+  underdog_away: [
     'Alla räknade med ett bortatapp, men ditt lag hade andra planer.',
     'Det var ett genuint svårt uppdrag borta mot ett starkare motstånd.',
     'Statistiken och formen talade mot ditt lag – men bollen är rund.',
@@ -118,13 +118,10 @@ function buildUserGoalSentence(
   rng: () => number,
 ): string {
   const ord = ordinal(minute);
-  // Assist clause as parenthetical — works in both subject-first and inverted forms
   const assist = assistant ? ` (framspelad av ${assistant})` : '';
 
-  // Pick a verb phrase. Must work in: "[scorer][assist] [verb] i den Xte minuten."
-  // Single-word verbs additionally work in inverted form: "I den Xte minuten [verb] [scorer][assist]."
   let verb: string;
-  let canInvert = false; // true = verb is a single word, safe for inversion
+  let canInvert = false;
 
   if (stateBefore === 'opp_leads' && stateAfter === 'tied') {
     verb = pick(['kvitterade', 'utjämnade', 'svarade med ett mål'] as const, rng);
@@ -146,10 +143,8 @@ function buildUserGoalSentence(
     verb = pick(['utökade ledningen', 'ökade på', 'drev in ytterligare ett', 'befäste ledarskapet'] as const, rng);
   }
 
-  // Subject-first form always works grammatically
   const subjectFirst = `${scorer}${assist} ${verb} i den ${ord} minuten.`;
   if (canInvert) {
-    // Inverted form: "I den Xte minuten [verb] [scorer][assist]."
     return pick([subjectFirst, `I den ${ord} minuten ${verb} ${scorer}${assist}.`] as const, rng);
   }
   return subjectFirst;
@@ -209,14 +204,14 @@ function buildVerdict(
   expectation: Expectation,
   cleanSheet: boolean,
   comeback: boolean,
-  senAvgörare: boolean,
-  skräll: boolean,
-  mållöst: boolean,
+  lateWinner: boolean,
+  upset: boolean,
+  scoreless: boolean,
   oppName: string,
   oppTier: string,
   rng: () => number,
 ): string {
-  if (mållöst) {
+  if (scoreless) {
     return pick([
       'En torr tillställning där ingendera lag lyckades bryta nollan. Poängen delades.',
       'Trots spel i båda riktningarna slutade matchen mållös – ett rättvist slut.',
@@ -224,14 +219,14 @@ function buildVerdict(
     ] as const, rng);
   }
 
-  if (skräll && resultCat === 'storseger') {
+  if (upset && resultCat === 'bigWin') {
     return pick([
       `En dundrande skrällseger mot ${oppName}! Ingen såg det här komma.`,
       `Säsongens kanske mest överraskande resultat – ditt lag demonterade ${oppName}.`,
     ] as const, rng);
   }
 
-  if (skräll && resultCat === 'seger') {
+  if (upset && resultCat === 'win') {
     return pick([
       `En välförtjänt skrällseger mot ${oppName}. Få hade trott på det på förhand.`,
       `Ditt lag levererade en av säsongens överraskningar mot ${oppName}.`,
@@ -239,7 +234,7 @@ function buildVerdict(
     ] as const, rng);
   }
 
-  if (comeback && (resultCat === 'seger' || resultCat === 'storseger')) {
+  if (comeback && (resultCat === 'win' || resultCat === 'bigWin')) {
     return pick([
       'Ditt lag vände ett underläge och tog en inspirerande seger.',
       'Från att ha legat under vände ditt lag och tog alla tre poäng.',
@@ -247,14 +242,14 @@ function buildVerdict(
     ] as const, rng);
   }
 
-  if (comeback && resultCat === 'oavgjort') {
+  if (comeback && resultCat === 'draw') {
     return pick([
       'Ditt lag kämpade tillbaka och räddade ett poäng i ett dramatiskt slutskede.',
       'Poängen var välförtjänt – ditt lag vägrade förlora.',
     ] as const, rng);
   }
 
-  if (senAvgörare) {
+  if (lateWinner) {
     return pick([
       'Tre poäng i matchens slutskede – dramatik när den är som bäst.',
       'Ett sent avgörande mål räddade hela poängen. Hjärtat sitter i halsen.',
@@ -263,7 +258,7 @@ function buildVerdict(
   }
 
   switch (resultCat) {
-    case 'storseger':
+    case 'bigWin':
       if (cleanSheet) {
         return pick([
           `En suverän insats – ditt lag vann stort och höll nollan mot ${oppName}.`,
@@ -276,14 +271,14 @@ function buildVerdict(
         'Storseger och full pott. Ditt lag klättrar i tabellen.',
       ] as const, rng);
 
-    case 'seger':
+    case 'win':
       if (cleanSheet) {
         return pick([
           `Tre poäng och nollan hållen – en effektiv insats mot ${oppName}.`,
           'Seger och clean sheet. Ett välspelat möte från ditt lags sida.',
         ] as const, rng);
       }
-      if (expectation === 'underläge') {
+      if (expectation === 'underdog') {
         return pick([
           `Tre välförtjänta poäng mot ett starkt ${oppName}.`,
           'Ditt lag tog poäng mot favoriterna – ett viktigt kvitto på formen.',
@@ -295,15 +290,15 @@ function buildVerdict(
         'Tre poäng hämtade hem. Arbetet är gjort.',
       ] as const, rng);
 
-    case 'oavgjort':
-      if (expectation === 'favorit') {
+    case 'draw':
+      if (expectation === 'favorite') {
         return pick([
           'Oavgjort smakade som en förlust – ditt lag borde tagit hem tre poäng.',
           'En poäng när man förväntade sig tre. Missat tillfälle.',
           'Ditt lag hämtade hem en poäng, men förväntningarna var högre.',
         ] as const, rng);
       }
-      if (expectation === 'underläge') {
+      if (expectation === 'underdog') {
         return pick([
           'En välkommen poäng mot ett starkare motstånd.',
           `Att hålla undan mot ${oppName} och ta en poäng är ett godkänt resultat.`,
@@ -315,8 +310,8 @@ function buildVerdict(
         'Poängen delades rättvist.',
       ] as const, rng);
 
-    case 'förlust':
-      if (expectation === 'underläge') {
+    case 'loss':
+      if (expectation === 'underdog') {
         return pick([
           `Förlust, men ingen katastrof. ${oppName} var starkare den här dagen.`,
           'Ditt lag kämpade men föll till ett bättre lag.',
@@ -328,8 +323,8 @@ function buildVerdict(
         'Tre poäng till motståndarna. Svag dag.',
       ] as const, rng);
 
-    case 'storförlust':
-      if (oppTier === 'Elit') {
+    case 'bigLoss':
+      if (oppTier === 'Elite') {
         return pick([
           `En mörk dag mot ett av seriens bästa lag. Dags att se framåt.`,
           `${oppName} var överlägset och vann stort. Tung läxa.`,
@@ -465,12 +460,11 @@ export function generateReferat(match: MatchResult, ctx: ReferatContext): string
   const resultCat = getResultCat(userGoals, oppGoals);
 
   const introKey = `${expectation}_${ctx.isUserHome ? 'home' : 'away'}`;
-  const intro = pick(INTROS[introKey] ?? INTROS['jämnt_home'], rng);
+  const intro = pick(INTROS[introKey] ?? INTROS['even_home'], rng);
 
-  // Detect match flags
-  const mållöst = userGoals === 0 && oppGoals === 0;
+  const scoreless = userGoals === 0 && oppGoals === 0;
   const cleanSheet = userGoals > 0 && oppGoals === 0;
-  const skräll = expectation === 'underläge' && (resultCat === 'seger' || resultCat === 'storseger');
+  const upset = expectation === 'underdog' && (resultCat === 'win' || resultCat === 'bigWin');
 
   let everTrailed = false;
   let lastUserGoalMinute = -1;
@@ -480,9 +474,9 @@ export function generateReferat(match: MatchResult, ctx: ReferatContext): string
     if (g.scorer === ctx.oppName) { o++; } else { u++; lastUserGoalMinute = g.minute; }
     if (o > u) everTrailed = true;
   }
-  const comeback = everTrailed && (resultCat === 'seger' || resultCat === 'storseger' || resultCat === 'oavgjort');
+  const comeback = everTrailed && (resultCat === 'win' || resultCat === 'bigWin' || resultCat === 'draw');
   const margin = Math.abs(userGoals - oppGoals);
-  const senAvgörare = resultCat === 'seger' && margin === 1 && lastUserGoalMinute >= 80;
+  const lateWinner = resultCat === 'win' && margin === 1 && lastUserGoalMinute >= 80;
 
   // Build goal events
   u = 0; o = 0;
@@ -499,7 +493,6 @@ export function generateReferat(match: MatchResult, ctx: ReferatContext): string
     allEvents.push({ minute: g.minute, text });
   }
 
-  // Add flavor events (yellow cards, chances, subs, penalties)
   for (const ev of generateFlavorEvents(match, ctx, rng)) {
     allEvents.push(ev);
   }
@@ -507,8 +500,8 @@ export function generateReferat(match: MatchResult, ctx: ReferatContext): string
   allEvents.sort((a, b) => a.minute - b.minute);
 
   const verdict = buildVerdict(
-    resultCat, expectation, cleanSheet, comeback, senAvgörare, skräll,
-    mållöst, ctx.oppName, ctx.oppTier, rng,
+    resultCat, expectation, cleanSheet, comeback, lateWinner, upset,
+    scoreless, ctx.oppName, ctx.oppTier, rng,
   );
 
   return [intro, ...allEvents.map(e => e.text), verdict].join(' ');
