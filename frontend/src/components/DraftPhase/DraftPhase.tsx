@@ -4,7 +4,7 @@ import { formations, simulateSeason, computeTeamRatings } from '../../engine/sim
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
-  computePreSeasonOdds,
+  computePreSeasonOdds, playerKey,
 } from '../../engine/draftEngine';
 
 import {X, ArrowLeft} from 'lucide-react';
@@ -28,7 +28,6 @@ type DraftState = 'drafting' | 'ready' | 'simulating';
 
 export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
   const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
-  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? []));
   const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
   const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
@@ -55,6 +54,13 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const filledCount = Object.keys(filledSlots).length;
   const filledLabels = Object.keys(filledSlots);
   const allFilled = filledCount >= totalSlots;
+
+  // Players already in the XI, keyed by season-independent identity, so the same
+  // player can't be drafted again from a different season.
+  const filledKeys = useMemo(
+    () => new Set(Object.values(filledSlots).map(playerKey)),
+    [filledSlots]
+  );
 
   const reelSeasons = useMemo(() =>
     Array.from({ length: config.seasonMax - config.seasonMin + 1 }, (_, i) => config.seasonMin + i),
@@ -182,7 +188,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         ovr: player.ovr, positions: [...player.positions], id: player.id,
       };
       setFilledSlots({ ...filledSlots, [exactSlot]: card });
-      setFilledIds(new Set([...filledIds, player.id]));
       setCurrentSquad(null);
       setSelectedSlot(null);
       setPendingPlayer(null);
@@ -199,7 +204,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     };
 
     setFilledSlots({ ...filledSlots, [targetSlot]: card });
-    setFilledIds(new Set([...filledIds, player.id]));
     setCurrentSquad(null);
     setSelectedSlot(null);
     setPendingPlayer(null);
@@ -216,7 +220,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     const state: SavedDraftState = {
       config,
       filledSlots,
-      filledIds: [...filledIds],
       usedSquadKeys: [...usedSquadKeys],
       rerollsLeft,
       currentSquad,
@@ -225,7 +228,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
       result,
     };
     localStorage.setItem('30-0-draft', JSON.stringify(state));
-  }, [filledSlots, filledIds, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
+  }, [filledSlots, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
 
   // --- Simulate (triggered from TextTVBrowser) ---
 
@@ -247,7 +250,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   // --- Derived ---
 
   const eligiblePlayers = currentSquad
-    ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
+    ? getEligiblePlayers(currentSquad, filledKeys, config.formation, filledLabels, selectedSlot)
     : [];
 
   const canSpin = !spinning && !pendingPlayer && !allFilled
