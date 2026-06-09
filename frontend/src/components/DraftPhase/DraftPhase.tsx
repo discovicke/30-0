@@ -45,6 +45,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
   const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
   const [overlayVisible, setOverlayVisible] = useState(true);
+  const [sortByRating, setSortByRating] = useState(false);
 
   // Auto-switch to TextTV on mobile when draft completes
   useEffect(() => {
@@ -249,6 +250,10 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const eligiblePlayers = currentSquad
     ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
     : [];
+
+  const displayedPlayers = sortByRating
+    ? [...eligiblePlayers].sort((a, b) => b.ovr - a.ovr)
+    : eligiblePlayers;
 
   const canSpin = !spinning && !pendingPlayer && !allFilled
     && (config.draftMode !== 'position-first' || selectedSlot !== null);
@@ -496,7 +501,15 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               </div>
             ) : (
               <div className={styles.playerList}>
-                {eligiblePlayers.map((p) => (
+                {config.showRatings && (
+                  <button
+                    className={styles.sortBtn}
+                    onClick={() => setSortByRating((s) => !s)}
+                  >
+                    {sortByRating ? 'Sortering: Betyg ↓' : 'Sortera efter betyg'}
+                  </button>
+                )}
+                {displayedPlayers.map((p) => (
                   <button
                     key={p.id}
                     className={`${styles.playerRow} ${!p.available ? styles.playerMuted : ''}`}
