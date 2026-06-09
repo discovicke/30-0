@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { TeamXI, FormationKey, SeasonResult, RatingMode } from '../../types';
 import type { PreSeasonOdds } from '../../engine/draftEngine';
+import { extractUserMatches } from '../../engine/simulationEngine';
 import Page300 from './pages/Page300';
 import Page301 from './pages/Page301';
 import Page302 from './pages/Page302';
 import Page310 from './pages/Page310';
 import Page320 from './pages/Page320';
 import Page321 from './pages/Page321';
+import PageReferat from './pages/PageReferat';
 import {ChevronLeft, ChevronRight, ChevronUp, ChevronDown} from 'lucide-react';
 import styles from './TextTVBrowser.module.scss';
 
@@ -18,19 +20,30 @@ interface Props {
   onSimulate: () => void;
   onRestart: () => void;
   ratingMode?: RatingMode;
+  matchByMatch?: boolean;
 }
 
-const PAGE_ORDER = [300, 301, 302, 310, 320, 321];
-const VALID_PAGES = new Set(PAGE_ORDER);
+function buildPageOrder(matchByMatch: boolean, matchCount: number): number[] {
+  if (!matchByMatch) return [300, 301, 302, 310, 320, 321];
+  // 310 (results overview) sits AFTER all referats so arrow-nav spoils nothing
+  const referatPages = Array.from({ length: matchCount }, (_, i) => 311 + i);
+  return [300, 301, 302, ...referatPages, 310, 350, 351];
+}
 
-const PAGE_TITLES: Record<number, string> = {
-  300: 'ALLSVENSKT 30-0',
-  301: 'DIN TRUPP',
-  302: 'FÖRHANDSTIPS',
-  310: 'RESULTAT',
-  320: 'SLUTTABELL',
-  321: 'SÄSONGSARTIKEL',
-};
+function getPageTitle(page: number): string {
+  if (page >= 311 && page <= 340) return `OMGÅNG ${page - 310}`;
+  const titles: Record<number, string> = {
+    300: 'ALLSVENSKT 30-0',
+    301: 'DIN TRUPP',
+    302: 'FÖRHANDSTIPS',
+    310: 'RESULTAT',
+    320: 'SLUTTABELL',
+    321: 'SÄSONGSARTIKEL',
+    350: 'SLUTTABELL',
+    351: 'SÄSONGSARTIKEL',
+  };
+  return titles[page] ?? '';
+}
 
 const DAYS = ['söndag', 'måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag'];
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -44,9 +57,37 @@ function formatDate(date: Date) {
 }
 
 export default function TextTVBrowser({
-  xi, formation, odds, result, onSimulate, onRestart, ratingMode,
+  xi, formation, odds, result, onSimulate, onRestart, ratingMode, matchByMatch,
 }: Props) {
-  const [currentPage, setCurrentPage] = useState(() => result ? 310 : 300);
+  const userMatches = useMemo(
+    () => result ? extractUserMatches(result.matches) : [],
+    [result]
+  );
+  const PAGE_ORDER = useMemo(
+    () => buildPageOrder(matchByMatch ?? false, userMatches.length || 30),
+    [matchByMatch, userMatches.length]
+  );
+  const matchCount = userMatches.length || 30;
+
+  // Highest referat round visited — gates access to result/table pages when matchByMatch
+  const [maxReferatRead, setMaxReferatRead] = useState(0);
+  // Rounds whose animation has completed — skip animation on revisit
+  const [revealedRounds, setRevealedRounds] = useState<Set<number>>(new Set());
+
+  const allRead = !matchByMatch || maxReferatRead >= matchCount;
+
+  const VALID_PAGES = useMemo(() => {
+    const pages = new Set(PAGE_ORDER);
+    if (matchByMatch && !allRead) {
+      [310, 350, 351].forEach(p => pages.delete(p));
+    }
+    return pages;
+  }, [PAGE_ORDER, matchByMatch, allRead]);
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    if (!result) return 300;
+    return matchByMatch ? 311 : 310;
+  });
   const [pageInput, setPageInput] = useState('');
   const bodyRef = useRef<HTMLDivElement>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
@@ -75,15 +116,35 @@ export default function TextTVBrowser({
     setTimeout(checkScroll, 200);
   }, [checkScroll]);
 
+  // Pages that can be shown before simulation — everything before the first result/referat page
+  const simThreshold = matchByMatch ? 311 : 310;
+
   const navigateTo = useCallback((page: number) => {
     if (!VALID_PAGES.has(page)) return;
-    if (page >= 310 && !simulated) {
+    if (page >= simThreshold && !simulated) {
       onSimulate();
       return;
     }
+    if (matchByMatch && page >= 311 && page <= 340) {
+      const round = page - 310;
+      setMaxReferatRead(prev => Math.max(prev, round));
+    }
     setCurrentPage(page);
     setPageInput('');
-  }, [simulated, onSimulate]);
+    requestAnimationFrame(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; });
+  }, [VALID_PAGES, simulated, onSimulate, matchByMatch, simThreshold]);
+
+  // Auto-advance to first result page when simulation completes
+  const wasSimulated = useRef(simulated);
+  useEffect(() => {
+    if (!wasSimulated.current && simulated) {
+      const firstPage = matchByMatch ? 311 : 310;
+      setCurrentPage(firstPage);
+      setPageInput('');
+      requestAnimationFrame(() => { if (bodyRef.current) bodyRef.current.scrollTop = 0; });
+    }
+    wasSimulated.current = simulated;
+  }, [simulated, matchByMatch]);
 
   const getPrev = useCallback(() => {
     const idx = PAGE_ORDER.indexOf(currentPage);
@@ -93,18 +154,20 @@ export default function TextTVBrowser({
       return preSimPages[(i - 1 + preSimPages.length) % preSimPages.length];
     }
     return PAGE_ORDER[(idx - 1 + PAGE_ORDER.length) % PAGE_ORDER.length];
-  }, [currentPage, simulated]);
+  }, [currentPage, simulated, PAGE_ORDER, simThreshold]);
 
   const getNext = useCallback(() => {
     const idx = PAGE_ORDER.indexOf(currentPage);
     if (!simulated) {
       const preSimPages = PAGE_ORDER.filter((p) => p < 310);
       const i = preSimPages.indexOf(currentPage);
-      if (i === preSimPages.length - 1) return 310;
+      if (i === preSimPages.length - 1) {
+        return PAGE_ORDER.find(p => p >= simThreshold) ?? simThreshold;
+      }
       return preSimPages[(i + 1) % preSimPages.length];
     }
     return PAGE_ORDER[(idx + 1) % PAGE_ORDER.length];
-  }, [currentPage, simulated]);
+  }, [currentPage, simulated, PAGE_ORDER, simThreshold]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -142,9 +205,25 @@ export default function TextTVBrowser({
   const nextPage = getNext();
 
   function renderPage() {
+    if (currentPage >= 311 && currentPage <= 340) {
+      const round = currentPage - 310;
+      const match = userMatches[round - 1];
+      if (!match) return null;
+      return (
+        <PageReferat
+          match={match}
+          round={round}
+          xi={xi}
+          ratingMode={ratingMode}
+          roundTable={result?.roundTables?.[round - 1]}
+          skipAnimation={revealedRounds.has(round)}
+          onRevealed={() => setRevealedRounds(prev => new Set([...prev, round]))}
+        />
+      );
+    }
     switch (currentPage) {
       case 300:
-        return <Page300 xi={xi} formation={formation} simulated={simulated} onNavigate={navigateTo} />;
+        return <Page300 xi={xi} formation={formation} simulated={simulated} allRead={allRead} onNavigate={navigateTo} matchByMatch={matchByMatch ?? false} />;
       case 301:
         return <Page301 xi={xi} formation={formation} />;
       case 302:
@@ -154,6 +233,10 @@ export default function TextTVBrowser({
       case 320:
         return <Page320 result={result} />;
       case 321:
+        return <Page321 result={result} xi={xi} odds={odds} onRestart={onRestart} />;
+      case 350:
+        return <Page320 result={result} />;
+      case 351:
         return <Page321 result={result} xi={xi} odds={odds} onRestart={onRestart} />;
       default:
         return null;
@@ -196,7 +279,7 @@ export default function TextTVBrowser({
       )}
 
       <div className={styles.footer}>
-        <span className={styles.pageTitle}>{PAGE_TITLES[currentPage] ?? ''}</span>
+        <span className={styles.pageTitle}>{getPageTitle(currentPage)}</span>
       </div>
     </div>
   );
