@@ -88,21 +88,21 @@ export const formationKeys: FormationKey[] = ['5-4-1', '4-5-1', '3-4-3', '3-5-2'
 
 export function getAllAITeams(mode: RatingMode = 'season'): AITeam[] {
   const teams: { name: string; season: number; peak: number; tier: string }[] = [
-    { name: 'Malmö', season: 84, peak: 86, tier: 'Elit' },
-    { name: 'AIK Stockholm', season: 83, peak: 85, tier: 'Elit' },
-    { name: 'Djurgården', season: 82, peak: 84, tier: 'Elit' },
-    { name: 'Göteborg', season: 82, peak: 84, tier: 'Elit' },
-    { name: 'Elfsborg', season: 81, peak: 83, tier: 'Stark' },
-    { name: 'BK Häcken', season: 80, peak: 82, tier: 'Stark' },
-    { name: 'Hammarby', season: 79, peak: 81, tier: 'Stark' },
-    { name: 'Norrköping', season: 78, peak: 80, tier: 'Mellan' },
-    { name: 'Helsingborg', season: 77, peak: 79, tier: 'Mellan' },
-    { name: 'Kalmar', season: 76, peak: 78, tier: 'Mellan' },
-    { name: 'Halmstad', season: 74, peak: 77, tier: 'Lägre' },
-    { name: 'Örebro', season: 73, peak: 76, tier: 'Lägre' },
-    { name: 'Sundsvall', season: 72, peak: 75, tier: 'Lägre' },
-    { name: 'Gefle', season: 71, peak: 74, tier: 'Lägre' },
-    { name: 'Mjällby', season: 70, peak: 73, tier: 'Lägre' },
+    { name: 'Malmö', season: 84, peak: 86, tier: 'Elite' },
+    { name: 'AIK Stockholm', season: 83, peak: 85, tier: 'Elite' },
+    { name: 'Djurgården', season: 82, peak: 84, tier: 'Elite' },
+    { name: 'Göteborg', season: 82, peak: 84, tier: 'Elite' },
+    { name: 'Elfsborg', season: 81, peak: 83, tier: 'Strong' },
+    { name: 'BK Häcken', season: 80, peak: 82, tier: 'Strong' },
+    { name: 'Hammarby', season: 79, peak: 81, tier: 'Strong' },
+    { name: 'Norrköping', season: 78, peak: 80, tier: 'Mid' },
+    { name: 'Helsingborg', season: 77, peak: 79, tier: 'Mid' },
+    { name: 'Kalmar', season: 76, peak: 78, tier: 'Mid' },
+    { name: 'Halmstad', season: 74, peak: 77, tier: 'Lower' },
+    { name: 'Örebro', season: 73, peak: 76, tier: 'Lower' },
+    { name: 'Sundsvall', season: 72, peak: 75, tier: 'Lower' },
+    { name: 'Gefle', season: 71, peak: 74, tier: 'Lower' },
+    { name: 'Mjällby', season: 70, peak: 73, tier: 'Lower' },
   ];
   return teams.map((t) => ({ name: t.name, strength: mode === 'peak' ? t.peak : t.season, tier: t.tier }));
 }
