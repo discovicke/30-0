@@ -1,4 +1,4 @@
-import type { TeamXI } from "../../../types";
+import type { TeamXI, RatingMode } from "../../../types";
 import type { PreSeasonOdds } from "../../../engine/draftEngine";
 import { getAllAITeams } from "../../../engine/simulationEngine";
 import styles from "./pages.module.scss";
@@ -6,6 +6,7 @@ import styles from "./pages.module.scss";
 interface Props {
   xi: TeamXI;
   odds: PreSeasonOdds;
+  ratingMode?: RatingMode;
 }
 
 function makeBar(val: number, max: number = 99): string {
@@ -14,9 +15,9 @@ function makeBar(val: number, max: number = 99): string {
   return "█".repeat(filled) + "░".repeat(10 - filled);
 }
 
-export default function Page302({ xi, odds }: Props) {
+export default function Page302({ xi, odds, ratingMode }: Props) {
   const actualRank = odds.projectedPosition;
-  const aiTeams = getAllAITeams();
+  const aiTeams = getAllAITeams(ratingMode);
   const allTeams = [...aiTeams, { name: "DITT LAG", strength: xi.overall, tier: undefined }]
     .sort((a, b) => b.strength - a.strength);
 
