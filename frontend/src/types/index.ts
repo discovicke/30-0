@@ -1,5 +1,3 @@
-// ── Data Types (from C# models) ──
-
 export interface PlayerCard {
   name: string;
   season: number;
@@ -24,17 +22,13 @@ export interface Squad {
   players: SquadPlayer[];
 }
 
-// ── Formation ──
-
 export interface FormationSlot {
   label: string;
   position: string;
   specificPositions: string[];
 }
 
-export type FormationKey = '4-3-3' | '4-4-2' | '3-5-2';
-
-// ── Team ──
+export type FormationKey = '5-4-1' | '4-5-1' | '3-4-3' | '3-5-2' | '4-4-2' | '4-3-3';
 
 export interface TeamXI {
   name: string;
@@ -65,8 +59,6 @@ export interface AITeam {
   points?: number;
 }
 
-// ── Match ──
-
 export interface GoalEvent {
   minute: number;
   scorer: string;
@@ -83,8 +75,6 @@ export interface MatchResult {
   awayGoals: number;
   goals: GoalEvent[];
 }
-
-// ── Season ──
 
 export interface SeasonAward {
   playerName: string;
@@ -110,16 +100,29 @@ export interface SeasonResult {
   playerOfSeason: SeasonAward | null;
 }
 
-// ── Game State ──
-
 export type DraftMode = 'squad-first' | 'position-first';
 export type RatingMode = 'season' | 'peak';
 export type Difficulty = 'easy' | 'normal' | 'hard';
-export type GamePhase = 'setup' | 'draft' | 'simulating' | 'results';
+export type GamePhase = 'landing' | 'setup' | 'draft' | 'simulating' | 'match-replay' | 'results';
 
 export interface GameConfig {
   draftMode: DraftMode;
   ratingMode: RatingMode;
   difficulty: Difficulty;
   formation: FormationKey;
+  showRatings: boolean;
+  seasonMin: number;
+  seasonMax: number;
+}
+
+export interface SavedDraftState {
+  config: GameConfig;
+  filledSlots: Record<string, PlayerCard>;
+  filledIds: string[];
+  usedSquadKeys: string[];
+  rerollsLeft: number;
+  currentSquad: Squad | null;
+  selectedSlot: string | null;
+  draftState: 'drafting' | 'ready' | 'simulating';
+  result: SeasonResult | null;
 }

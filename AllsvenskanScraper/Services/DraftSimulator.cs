@@ -132,7 +132,7 @@ public static class DraftSimulator
         var slots = SimulationEngine.Formations[formation];
         var rng = Random.Shared;
         var ovrs = new List<double>(nSims);
-        var rerollThreshold = isPeak ? 72.0 : 65.0;
+        var rerollThreshold = isPeak ? 75.0 : 68.0;
 
         var modeLabel = $"{mode}, {nRerolls} rerolls (troskel {rerollThreshold:F0})";
 

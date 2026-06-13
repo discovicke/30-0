@@ -14,10 +14,10 @@ html {
 
 body {
   font-family: $font-sans;
-  background: $color-bg;
-  color: $color-text;
+  background: $sand-bg;
+  color: $ink;
   min-height: 100vh;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 #root {
@@ -27,13 +27,8 @@ body {
 }
 
 a {
-  color: $color-primary;
+  color: $ink;
   text-decoration: none;
-  transition: color 0.15s;
-
-  &:hover {
-    color: $color-primary-hover;
-  }
 }
 
 button {
@@ -41,6 +36,7 @@ button {
   cursor: pointer;
   border: none;
   outline: none;
+  transition: all 0.15s;
 }
 
 input, select {
@@ -49,8 +45,8 @@ input, select {
 }
 
 ::selection {
-  background: rgba($color-primary, 0.25);
-  color: $color-text;
+  background: rgba($badge-yellow, 0.3);
+  color: $ink;
 }
 
 ::-webkit-scrollbar {
@@ -62,10 +58,36 @@ input, select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba($color-text-muted, 0.15);
+  background: rgba($ink-ghost, 0.2);
   border-radius: 3px;
 
   &:hover {
-    background: rgba($color-text-muted, 0.25);
+    background: rgba($ink-ghost, 0.35);
+  }
+}
+
+// ── Dark mode ──
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1a1a1a;
+    color: #e0e0e0;
+  }
+
+  a {
+    color: #e0e0e0;
+  }
+
+  ::selection {
+    background: rgba($badge-yellow, 0.25);
+    color: #e0e0e0;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
   }
 }

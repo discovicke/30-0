@@ -1,255 +1,528 @@
-import { useState, useCallback } from 'react';
-import type { Squad, SquadPlayer, FormationSlot, GameConfig, PlayerCard } from '../../types';
-import { formations } from '../../engine/simulationEngine';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import type { Squad, SquadPlayer, GameConfig, PlayerCard, SeasonResult, SavedDraftState } from '../../types';
+import { formations, simulateSeason, computeTeamRatings } from '../../engine/simulationEngine';
 import {
-  pickRandomSquad, getEligiblePlayers, getPositionsForPlayer,
-  getRerollCount,
+  pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
+  getPositionLabel, autoAssignSlot, getRerollCount,
+  computePreSeasonOdds,
 } from '../../engine/draftEngine';
+
+import {X, ArrowLeft} from 'lucide-react';
+import { displayName } from "../../utils/teamNames";
 import FormationView from '../FormationView/FormationView';
+import OverallStrip from '../OverallStrip/OverallStrip';
+import StepIndicator from '../StepIndicator/StepIndicator';
+import TextTVBrowser from '../TextTVBrowser/TextTVBrowser';
 import styles from './DraftPhase.module.scss';
 
 interface Props {
   config: GameConfig;
   squads: Squad[];
-  onComplete: (xi: Record<string, PlayerCard>) => void;
-  onBack: () => void;
+  onRestart: () => void;
+  savedState?: SavedDraftState;
 }
 
-export default function DraftPhase({ config, squads, onComplete, onBack }: Props) {
-  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>({});
-  const [filledIds, setFilledIds] = useState<Set<string>>(new Set());
-  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set());
-  const [rerollsLeft, setRerollsLeft] = useState(getRerollCount(config.difficulty));
-  const [currentSquad, setCurrentSquad] = useState<Squad | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null);
+const stepLabels = ['Start', 'Draft', 'Text-TV', 'Klar'];
+
+type DraftState = 'drafting' | 'ready' | 'simulating';
+
+export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
+  const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
+  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? []));
+  const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
+  const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
+  const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(savedState?.selectedSlot ?? null);
   const [spinning, setSpinning] = useState(false);
+  const [rolling, setRolling] = useState(false);
+  const [rollTeam, setRollTeam] = useState('');
+  const [rollSeason, setRollSeason] = useState('');
+  const [rollTick, setRollTick] = useState(0);
+  const [teamLocked, setTeamLocked] = useState(false);
+  const [pendingPlayer, setPendingPlayer] = useState<SquadPlayer | null>(null);
+  const [pendingGroups, setPendingGroups] = useState<string[]>([]);
+  const [draftState, setDraftState] = useState<DraftState>(savedState?.draftState ?? 'drafting');
+  const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
+  const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
+  const [overlayVisible, setOverlayVisible] = useState(true);
+
+  // Auto-switch to TextTV on mobile when draft completes
+  useEffect(() => {
+    if (draftState === 'ready') setMobileView('texttv');
+  }, [draftState]);
 
   const totalSlots = formations[config.formation].length;
   const filledCount = Object.keys(filledSlots).length;
+  const filledLabels = Object.keys(filledSlots);
+  const allFilled = filledCount >= totalSlots;
+
+  const reelSeasons = useMemo(() =>
+    Array.from({ length: config.seasonMax - config.seasonMin + 1 }, (_, i) => config.seasonMin + i),
+    [config.seasonMin, config.seasonMax]
+  );
+
+  const xi = {
+    name: 'Your XI',
+    slots: filledSlots,
+    formation: config.formation,
+    attack: 0, midfield: 0, defence: 0, gkRating: 0, overall: 0,
+    goalsFor: 0, goalsAgainst: 0, wins: 0, draws: 0, losses: 0, points: 0,
+  };
+  if (filledCount > 0) computeTeamRatings(xi);
+
+  const slotDefs = formations[config.formation];
+
+  const groupCounts = { FW: 0, MF: 0, DF: 0 };
+  for (const label of filledLabels) {
+    const def = slotDefs.find((s) => s.label === label);
+    if (!def) continue;
+    if (def.position === 'GK' || def.position === 'DF') groupCounts.DF++;
+    else if (def.position === 'MF') groupCounts.MF++;
+    else if (def.position === 'FW') groupCounts.FW++;
+  }
+  const emptyAttack = groupCounts.FW === 0;
+  const emptyMidfield = groupCounts.MF === 0;
+  const emptyDefence = groupCounts.DF === 0;
+
+  // --- Draft logic (slot machine) ---
+
+  const rollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSpin = useCallback(() => {
     if (spinning) return;
     setSpinning(true);
+    setRolling(true);
+    setTeamLocked(false);
     setCurrentSquad(null);
-    setSelectedPlayer(null);
+    setPendingPlayer(null);
+    setPendingGroups([]);
+    setOverlayVisible(true);
 
-    // Brief animation delay
-    setTimeout(() => {
-      const squad = pickRandomSquad(squads, usedSquadKeys);
-      if (squad) {
-        setCurrentSquad(squad);
-        setUsedSquadKeys(new Set([...usedSquadKeys, `${squad.team}|${squad.season}`]));
+    const squad = pickRandomSquad(squads, usedSquadKeys);
+    const teamSteps = 14;
+    const seasonSteps = 22;
+
+    function rollTeamStep(step: number) {
+      if (!squad || step >= teamSteps) {
+        if (squad) {
+          setRollTeam(squad.team);
+          setTeamLocked(true);
+        }
+        return;
       }
-      setSpinning(false);
-    }, 600);
+      const rs = squads[Math.floor(Math.random() * squads.length)];
+      setRollTeam(rs?.team ?? '');
+      setRollTick((t) => t + 1);
+      const p = step / teamSteps;
+      rollTimerRef.current = setTimeout(() => rollTeamStep(step + 1), 60 + p * p * 200);
+    }
+
+    function rollSeasonStep(step: number) {
+      if (!squad || step >= seasonSteps) {
+        if (squad) {
+          setRollSeason(String(squad.season));
+          setRollTick((t) => t + 1);
+          setRolling(false);
+          setCurrentSquad(squad);
+          setUsedSquadKeys(new Set([...usedSquadKeys, `${squad.team}|${squad.season}`]));
+        }
+        setSpinning(false);
+        return;
+      }
+      setRollSeason(String(reelSeasons[Math.floor(Math.random() * reelSeasons.length)]));
+      setRollTick((t) => t + 1);
+      const p = step / seasonSteps;
+      rollTimerRef.current = setTimeout(() => rollSeasonStep(step + 1), 60 + p * p * 260);
+    }
+
+    rollTeamStep(0);
+    setTimeout(() => rollSeasonStep(0), 90);
   }, [spinning, squads, usedSquadKeys]);
 
   const handleReroll = useCallback(() => {
     if (rerollsLeft <= 0 || spinning) return;
     setRerollsLeft(rerollsLeft - 1);
-    setCurrentSquad(null);
-    setSelectedPlayer(null);
     handleSpin();
   }, [rerollsLeft, spinning, handleSpin]);
 
-  function handleSlotClick(slot: FormationSlot) {
+  function handleSlotClick(slotLabel: string) {
     if (config.draftMode !== 'position-first') return;
-    if (filledSlots[slot.label]) return;
-    setSelectedSlot(slot.label);
+    if (filledSlots[slotLabel]) return;
+    setSelectedSlot(slotLabel);
     setCurrentSquad(null);
-    setSelectedPlayer(null);
+    setPendingPlayer(null);
   }
 
   function handlePickPlayer(player: SquadPlayer) {
-    if (config.draftMode === 'squad-first') {
-      setSelectedPlayer(player);
-    } else {
-      // Position-first: assign directly to selected slot
+    if (!currentSquad) return;
+
+    if (config.draftMode === 'position-first') {
       if (!selectedSlot) return;
-      addPlayerToSlot(player, selectedSlot);
+      addPlayer(player, undefined, selectedSlot);
+      return;
     }
+
+    const groups = getPlayerPosGroups(player);
+    const openGroups = groups.filter((g) => {
+      const total = slotDefs.filter((s) => s.position === g).length;
+      const filled = filledLabels.filter((l) => slotDefs.find((s) => s.label === l)?.position === g).length;
+      return filled < total;
+    });
+
+    if (openGroups.length === 0) return;
+    if (openGroups.length === 1) { addPlayer(player, openGroups[0]); return; }
+    setPendingPlayer(player);
+    setPendingGroups(openGroups);
   }
 
-  function handleAssignPosition(slotLabel: string) {
-    if (!selectedPlayer) return;
-    addPlayerToSlot(selectedPlayer, slotLabel);
-  }
+  function addPlayer(player: SquadPlayer, targetGroup?: string, exactSlot?: string) {
+    if (exactSlot && !filledSlots[exactSlot]) {
+      const card: PlayerCard = {
+        name: player.name, season: player.season, team: player.team,
+        ovr: player.ovr, positions: [...player.positions], id: player.id,
+      };
+      setFilledSlots({ ...filledSlots, [exactSlot]: card });
+      setFilledIds(new Set([...filledIds, player.id]));
+      setCurrentSquad(null);
+      setSelectedSlot(null);
+      setPendingPlayer(null);
+      setPendingGroups([]);
+      return;
+    }
 
-  function addPlayerToSlot(player: SquadPlayer, slotLabel: string) {
-    if (filledSlots[slotLabel]) return;
+    const targetSlot = autoAssignSlot(player, config.formation, filledLabels, targetGroup);
+    if (!targetSlot || filledSlots[targetSlot]) return;
 
     const card: PlayerCard = {
-      name: player.name,
-      season: player.season,
-      team: player.team,
-      ovr: player.ovr,
-      positions: [...player.positions],
-      id: player.id,
+      name: player.name, season: player.season, team: player.team,
+      ovr: player.ovr, positions: [...player.positions], id: player.id,
     };
 
-    setFilledSlots({ ...filledSlots, [slotLabel]: card });
+    setFilledSlots({ ...filledSlots, [targetSlot]: card });
     setFilledIds(new Set([...filledIds, player.id]));
     setCurrentSquad(null);
-    setSelectedPlayer(null);
     setSelectedSlot(null);
-
-    // Check if draft is complete
-    const newFilled = { ...filledSlots, [slotLabel]: card };
-    if (Object.keys(newFilled).length >= totalSlots) {
-      onComplete(newFilled);
-    }
+    setPendingPlayer(null);
+    setPendingGroups([]);
   }
 
-  // Determine which players are eligible for the current context
+  // Auto-transition drafting → ready
+  useEffect(() => {
+    if (allFilled && draftState === 'drafting') setDraftState('ready');
+  }, [allFilled, draftState]);
+
+  // Save state to localStorage for Continue Draft
+  useEffect(() => {
+    const state: SavedDraftState = {
+      config,
+      filledSlots,
+      filledIds: [...filledIds],
+      usedSquadKeys: [...usedSquadKeys],
+      rerollsLeft,
+      currentSquad,
+      selectedSlot,
+      draftState,
+      result,
+    };
+    localStorage.setItem('30-0-draft', JSON.stringify(state));
+  }, [filledSlots, filledIds, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
+
+  // --- Simulate (triggered from TextTVBrowser) ---
+
+  function handleSimulate() {
+    setDraftState('simulating');
+    setTimeout(() => {
+      const teamXI = { ...xi, slots: { ...filledSlots } };
+      const simResult = simulateSeason(teamXI, config.formation, config.ratingMode);
+      setResult(simResult);
+      setDraftState('ready');
+    }, 1200);
+  }
+
+  // Cleanup
+  useEffect(() => {
+    return () => { if (rollTimerRef.current) clearTimeout(rollTimerRef.current); };
+  }, []);
+
+  // --- Derived ---
+
   const eligiblePlayers = currentSquad
-    ? getEligiblePlayers(
-        currentSquad,
-        filledIds,
-        config.draftMode === 'position-first' ? selectedSlot : null
-      )
+    ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
     : [];
 
-  // For squad-first: positions available for selected player
-  const assignablePositions = selectedPlayer
-    ? getPositionsForPlayer(selectedPlayer, config.formation)
-        .filter((p) => !filledSlots[p])
-    : [];
+  const canSpin = !spinning && !pendingPlayer && !allFilled
+    && (config.draftMode !== 'position-first' || selectedSlot !== null);
+
+  const showOverlay = currentSquad && !spinning && overlayVisible;
+
+  const odds = filledCount > 0 ? computePreSeasonOdds(xi.overall, config.ratingMode) : null;
+
+  const currentStep = draftState === 'drafting' ? 1
+    : draftState === 'simulating' ? 2
+    : result ? 3 : 2;
+
+  // --- Render ---
+
+  if (draftState === 'simulating') {
+    return (
+      <div className={styles.container}>
+        <StepIndicator current={2} total={4} labels={stepLabels} />
+        <div className={styles.center}>
+          <div className={styles.spinner} />
+          <p>Simulerar säsongen...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <button className={styles.backBtn} onClick={onBack}>← Back</button>
-        <div className={styles.progress}>
-          <div className={styles.progressBar}>
-            <div
-              className={styles.progressFill}
-              style={{ width: `${(filledCount / totalSlots) * 100}%` }}
-            />
-          </div>
-          <span className={styles.progressText}>{filledCount} / {totalSlots}</span>
-        </div>
-        <div className={styles.rerolls}>
-          Rerolls: <span className={rerollsLeft === 0 ? styles.noRerolls : ''}>{rerollsLeft}</span>
-        </div>
-      </div>
+      <StepIndicator current={currentStep} total={4} labels={stepLabels} />
 
-      <div className={styles.main}>
-        <div className={styles.formationCol}>
+      {/* Mobile-only controls above pitch */}
+      {draftState === 'drafting' && (
+        <div className={styles.mobileControls}>
+          <div className={styles.rerollRow}>
+            <span className={styles.rerollLabel}>Omkast</span>
+            <div className={styles.rerollDots}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <span
+                  key={i}
+                  className={`${styles.rerollDot} ${i < rerollsLeft ? styles.rerollActive : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className={styles.progress}>
+            <span className={styles.progressLabel}>Du har tagit ut</span>
+            <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+            <span className={styles.progressLabel}>spelare</span>
+          </div>
+          <div className={styles.slotMachine}>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
+                  {rolling ? displayName(rollTeam) : (currentSquad ? displayName(currentSquad.team) : '---')}
+                </span>
+              </div>
+            </div>
+            <span className={styles.slotX}>X</span>
+            <div className={styles.slotReel}>
+              <div className={styles.reelClip}>
+                <span key={rollTick + 1000} className={styles.slotText}>
+                  {rolling ? rollSeason : (currentSquad ? String(currentSquad.season) : '--')}
+                </span>
+              </div>
+            </div>
+          </div>
+          {currentSquad && !overlayVisible ? (
+            <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+              Visa trupp
+            </button>
+          ) : (
+            <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+              Snurra fram spelare
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Mobile tab switch between squad and TextTV */}
+      {draftState === 'ready' && (
+        <div className={styles.mobileTabs}>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'trupp' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('trupp')}
+          >
+            SE TRUPP
+          </button>
+          <button
+            className={`${styles.mobileTab} ${mobileView === 'texttv' ? styles.mobileTabActive : ''}`}
+            onClick={() => setMobileView('texttv')}
+          >
+            TEXT-TV {!result ? '(SIMULERA)' : ''}
+          </button>
+        </div>
+      )}
+
+      <div className={`${styles.main} ${draftState === 'ready' && mobileView === 'texttv' ? styles.mainTextTV : ''}`}>
+        <div className={styles.left}>
+          {draftState === 'drafting' && (
+            <div className={styles.rerollHeader}>
+              <div className={styles.rerollRow}>
+                <span className={styles.rerollLabel}>Omkast</span>
+                <div className={styles.rerollDots}>
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={`${styles.rerollDot} ${i < rerollsLeft ? styles.rerollActive : ''}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <FormationView
             formation={config.formation}
             slots={filledSlots}
-            highlightSlot={selectedSlot}
-            onSlotClick={config.draftMode === 'position-first' ? handleSlotClick : undefined}
+            tall
+            interactive={draftState === 'drafting'}
+            selectedSlot={draftState === 'drafting' ? selectedSlot : undefined}
+            onSlotClick={draftState === 'drafting' ? handleSlotClick : undefined}
           />
-
-          {config.draftMode === 'position-first' && (
-            <p className={styles.hint}>
-              {selectedSlot
-                ? `Vald position: ${selectedSlot}`
-                : 'Klicka på en tom position först'}
-            </p>
-          )}
+          <OverallStrip
+            overall={xi.overall}
+            attack={xi.attack}
+            midfield={xi.midfield}
+            defence={xi.defence}
+            emptyAttack={emptyAttack}
+            emptyMidfield={emptyMidfield}
+            emptyDefence={emptyDefence}
+          />
         </div>
 
-        <div className={styles.squadCol}>
-          {/* Spin controls */}
-          {!currentSquad && !spinning && (
-            <div className={styles.spinArea}>
-              <p className={styles.spinHint}>
-                {config.draftMode === 'squad-first'
-                  ? 'Snurra hjulet för att få en slumpmässig trupp'
-                  : selectedSlot
-                    ? 'Snurra hjulet för att få spelare som passar positionen'
-                    : 'Välj en position först'}
-              </p>
-              <button
-                className={styles.spinBtn}
-                onClick={handleSpin}
-                disabled={config.draftMode === 'position-first' && !selectedSlot}
-              >
-                {config.draftMode === 'squad-first' ? '🎲 Snurra!' : selectedSlot ? '🎲 Snurra!' : 'Välj position'}
-              </button>
-            </div>
-          )}
-
-          {/* Spinning animation */}
-          {spinning && (
-            <div className={styles.spinning}>
-              <div className={styles.wheel} />
-              <p>Snurrar...</p>
-            </div>
-          )}
-
-          {/* Current squad display */}
-          {currentSquad && !spinning && !selectedPlayer && (
-            <div className={styles.squadCard}>
-              <div className={styles.squadHeader}>
-                <h3>{currentSquad.team}</h3>
-                <span className={styles.squadSeason}>{currentSquad.season}</span>
+        <div className={styles.right}>
+          {draftState === 'drafting' && (
+            <div className={styles.desktopControls}>
+              <div className={styles.progress}>
+                <span className={styles.progressLabel}>Du har tagit ut</span>
+                <span className={styles.progressCount}>{filledCount}/{totalSlots}</span>
+                <span className={styles.progressLabel}>spelare</span>
               </div>
 
-              <div className={styles.rerollRow}>
-                {rerollsLeft > 0 && (
-                  <button className={styles.rerollBtn} onClick={handleReroll}>
-                    🔄 Reroll ({rerollsLeft} kvar)
-                  </button>
-                )}
+              <div className={styles.slotMachine}>
+                <div className={styles.slotReel}>
+                  <div className={styles.reelClip}>
+                    <span key={teamLocked ? 'team-locked' : rollTick} className={`${styles.slotText} ${teamLocked ? styles.slotStatic : ''}`}>
+                      {rolling ? displayName(rollTeam) : (currentSquad ? displayName(currentSquad.team) : '---')}
+                    </span>
+                  </div>
+                </div>
+                <span className={styles.slotX}>X</span>
+                <div className={styles.slotReel}>
+                  <div className={styles.reelClip}>
+                    <span key={rollTick + 1000} className={styles.slotText}>
+                      {rolling ? rollSeason : (currentSquad ? String(currentSquad.season) : '--')}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.playerList}>
-                <h4>Tillgängliga spelare</h4>
-                {eligiblePlayers.length === 0 ? (
-                  <p className={styles.noPlayers}>Inga passande spelare i denna trupp</p>
-                ) : (
-                  eligiblePlayers.map((p) => (
-                    <button
-                      key={p.id}
-                      className={styles.playerRow}
-                      onClick={() => handlePickPlayer(p)}
-                    >
-                      <span className={styles.playerName}>{p.name}</span>
-                      <span className={styles.playerPos}>{p.positions.join(', ')}</span>
-                      <span className={styles.playerOvr}>{p.ovr.toFixed(1)}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-
-              {/* Bypass: if no eligible players, skip this squad */}
-              {eligiblePlayers.length === 0 && (
-                <button className={styles.skipBtn} onClick={handleSpin}>
-                  Hoppa över denna trupp
+              {currentSquad && !overlayVisible ? (
+                <button className={styles.spinBtn} onClick={() => setOverlayVisible(true)}>
+                  Visa trupp
+                </button>
+              ) : (
+                <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
+                  Snurra fram spelare
                 </button>
               )}
+
+              {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
+                <span className={styles.hint}>Klicka på en position på planen</span>
+              )}
+
             </div>
           )}
 
-          {/* Position assignment (squad-first mode) */}
-          {selectedPlayer && config.draftMode === 'squad-first' && (
-            <div className={styles.assignCard}>
-              <h3>Välj position för {selectedPlayer.name}</h3>
-              <div className={styles.positionGrid}>
-                {assignablePositions.map((pos) => (
-                  <button
-                    key={pos}
-                    className={styles.positionBtn}
-                    onClick={() => handleAssignPosition(pos)}
-                  >
-                    {pos}
-                    {filledSlots[pos] && (
-                      <span className={styles.occupied}>(upptagen)</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {assignablePositions.length === 0 && (
-                <p className={styles.noPos}>Inga lediga positioner för denna spelare!</p>
-              )}
-            </div>
+          {draftState === 'ready' && odds && (
+            <TextTVBrowser
+              xi={xi}
+              formation={config.formation}
+              odds={odds}
+              result={result}
+              onSimulate={handleSimulate}
+              onRestart={onRestart}
+              ratingMode={config.ratingMode}
+            />
           )}
         </div>
       </div>
+
+      {/* Mobile TextTV (replaces left column on mobile when texttv tab active) */}
+      {draftState === 'ready' && odds && mobileView === 'texttv' && (
+        <div className={styles.mobileTextTV}>
+          <TextTVBrowser
+            xi={xi}
+            formation={config.formation}
+            odds={odds}
+            result={result}
+            onSimulate={handleSimulate}
+            onRestart={onRestart}
+            ratingMode={config.ratingMode}
+          />
+        </div>
+      )}
+
+      {/* Squad overlay */}
+      {showOverlay && (
+        <div className={styles.squadOverlay}>
+          <div className={styles.squadCard}>
+            <div className={styles.squadHeader}>
+              <div className={styles.squadHeaderInfo}>
+                <span className={styles.squadName}>{displayName(currentSquad.team)}</span>
+                <span className={styles.squadSeason}>{currentSquad.season}</span>
+              </div>
+              <button className={styles.closeBtn} onClick={() => { setOverlayVisible(false); setPendingPlayer(null); }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className={styles.overlayReroll}>
+              <button className={styles.rerollBtn} onClick={handleReroll} disabled={rerollsLeft <= 0}>
+                Reroll ({rerollsLeft} kvar)
+              </button>
+            </div>
+
+            {pendingPlayer ? (
+              <div className={styles.posChooser}>
+                  <p className={styles.posChooserText}>
+                    Välj position för {pendingPlayer.name}
+                  </p>
+                <div className={styles.posChooserBtns}>
+                  {pendingGroups.map((g) => (
+                    <button
+                      key={g}
+                      className={`${styles.posChooserBtn} ${styles[`pos${g}`] || ''}`}
+                      onClick={() => addPlayer(pendingPlayer, g)}
+                    >
+                      {getPositionLabel(g)}
+                    </button>
+                  ))}
+                </div>
+                <button className={styles.posBackBtn} onClick={() => { setPendingPlayer(null); setPendingGroups([]); }}>
+                  <ArrowLeft size={12} /> Tillbaka till spelarlistan
+                </button>
+              </div>
+            ) : (
+              <div className={styles.playerList}>
+                {eligiblePlayers.map((p) => (
+                  <button
+                    key={p.id}
+                    className={`${styles.playerRow} ${!p.available ? styles.playerMuted : ''}`}
+                    onClick={() => p.available && handlePickPlayer(p)}
+                    disabled={!p.available}
+                  >
+                    {p.openGroups.map((g) => (
+                      <span key={g} className={`${styles.playerPos} ${styles[`pos${g}`] || ''}`}>
+                        {getPositionLabel(g)}
+                      </span>
+                    ))}
+                    <span className={styles.playerName}>{p.name}</span>
+                    <span className={styles.playerOvr}>{config.showRatings ? Math.round(p.ovr) : '??'}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!pendingPlayer && eligiblePlayers.filter((p) => p.available).length === 0 && (
+              <button className={styles.skipBtn} onClick={handleSpin}>
+                Inga valbara, snurra igen
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

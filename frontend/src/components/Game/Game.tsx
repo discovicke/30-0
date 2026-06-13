@@ -1,30 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GameConfig, GamePhase, PlayerCard, SeasonResult, Squad } from '../../types';
-import { simulateSeason } from '../../engine/simulationEngine';
+import type { GameConfig, GamePhase, Squad, RatingMode, SavedDraftState } from '../../types';
+import Header from '../Header/Header';
+import LandingPage from '../LandingPage/LandingPage';
 import GameSetup from '../GameSetup/GameSetup';
 import DraftPhase from '../DraftPhase/DraftPhase';
-import SeasonResults from '../SeasonResults/SeasonResults';
+import Footer from '../Footer/Footer';
 import styles from './Game.module.scss';
 
+function loadSavedDraft(): SavedDraftState | null {
+  try {
+    const raw = localStorage.getItem('30-0-draft');
+    if (!raw) return null;
+    return JSON.parse(raw) as SavedDraftState;
+  } catch {
+    return null;
+  }
+}
+
+function clearSavedDraft() {
+  localStorage.removeItem('30-0-draft');
+}
+
 export default function Game() {
-  const [phase, setPhase] = useState<GamePhase>('setup');
+  const [phase, setPhase] = useState<GamePhase>('landing');
   const [config, setConfig] = useState<GameConfig | null>(null);
-  const [slots, setSlots] = useState<Record<string, PlayerCard>>({});
-  const [result, setResult] = useState<SeasonResult | null>(null);
   const [squads, setSquads] = useState<Squad[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [savedDraft, setSavedDraft] = useState<SavedDraftState | null>(loadSavedDraft());
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  function filterSquads(data: Squad[], c: GameConfig | null): Squad[] {
+    if (!c) return data;
+    let result = data;
+    if (c.seasonMin > 2001) result = result.filter((s) => s.season >= c.seasonMin);
+    if (c.seasonMax < 2025) result = result.filter((s) => s.season <= c.seasonMax);
+    return result;
+  }
 
-  async function loadData() {
+  async function loadData(mode: RatingMode, c?: GameConfig | null) {
+    if (loading) return;
+    setLoading(true);
     try {
-      const resp = await fetch('/data/squads.json');
-      if (!resp.ok) throw new Error('Failed to load squads data');
+      const url = mode === 'peak' ? '/data/squads_peak.json' : '/data/squads.json';
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`Failed to load ${mode} squads data`);
       const data: Squad[] = await resp.json();
-      setSquads(data);
+      setSquads(filterSquads(data, c ?? null));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load game data');
     } finally {
@@ -32,105 +53,106 @@ export default function Game() {
     }
   }
 
-  const handleStart = useCallback((c: GameConfig) => {
+  // Load data when entering setup or draft
+  useEffect(() => {
+    if (phase !== 'setup' && phase !== 'draft') return;
+    if (squads.length > 0) return;
+    const mode = savedDraft?.config.ratingMode ?? config?.ratingMode ?? 'season';
+    const c = config ?? savedDraft?.config ?? null;
+    loadData(mode, c);
+  }, [phase]);
+
+  const handleStart = useCallback(async (c: GameConfig) => {
     setConfig(c);
-    setSlots({});
-    setResult(null);
+    clearSavedDraft();
+    setSavedDraft(null);
+    await loadData(c.ratingMode, c);
     setPhase('draft');
   }, []);
 
-  const handleDraftComplete = useCallback((filled: Record<string, PlayerCard>) => {
-    setSlots(filled);
-    setPhase('simulating');
-
-    // Run season simulation
-    if (!config) return;
-    const xi = buildTeamXI(filled, config.formation);
-    const simResult = simulateSeason(xi, config.formation);
-    setResult(simResult);
-    setPhase('results');
-  }, [config]);
-
-  const handleRestart = useCallback(() => {
-    setConfig(null);
-    setSlots({});
-    setResult(null);
-    setPhase('setup');
+  const handleContinue = useCallback(async () => {
+    const saved = loadSavedDraft();
+    if (!saved) return;
+    setConfig(saved.config);
+    setSavedDraft(saved);
+    await loadData(saved.config.ratingMode, saved.config);
+    setPhase('draft');
   }, []);
 
-  if (loading) {
+  const handleRestart = useCallback(() => {
+    clearSavedDraft();
+    setSavedDraft(null);
+    setConfig(null);
+    setPhase('landing');
+  }, []);
+
+  const handleHome = useCallback(() => {
+    if (phase === 'landing') return;
+    setPhase('landing');
+  }, [phase]);
+
+  const canContinue = loadSavedDraft() !== null;
+
+  // Landing page
+  if (phase === 'landing') {
     return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <p>Laddar speldata...</p>
+      <div className={styles.wrapper}>
+        <Header onHome={handleHome} />
+        <LandingPage onStart={() => setPhase('setup')} onContinue={handleContinue} canContinue={canContinue} />
+        <Footer />
       </div>
     );
   }
 
-  if (error) {
+  // Loading state
+  if (loading && squads.length === 0) {
     return (
-      <div className={styles.loading}>
-        <p className={styles.error}>{error}</p>
+      <div className={styles.wrapper}>
+        <Header onHome={handleHome} />
+        <div className={styles.center}>
+          <div className={styles.spinner} />
+          <p>Laddar speldata...</p>
+        </div>
+        <Footer />
       </div>
     );
   }
 
+  // Error state
+  if (error && squads.length === 0) {
+    return (
+      <div className={styles.wrapper}>
+        <Header onHome={handleHome} />
+        <div className={styles.center}>
+          <p className={styles.error}>{error}</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Setup phase
   if (phase === 'setup' || !config) {
-    return <GameSetup onStart={handleStart} />;
+    return (
+      <div className={styles.wrapper}>
+        <Header onHome={handleHome} />
+        <GameSetup onStart={handleStart} />
+        <Footer />
+      </div>
+    );
   }
 
-  if (phase === 'draft') {
-    return (
+  // Draft phase
+  return (
+    <div className={`${styles.wrapper} ${styles.wrapperNoScroll}`}>
+      <Header onHome={handleHome} />
       <DraftPhase
         config={config}
         squads={squads}
-        onComplete={handleDraftComplete}
-        onBack={handleRestart}
-      />
-    );
-  }
-
-  if (phase === 'simulating') {
-    return (
-      <div className={styles.loading}>
-        <div className={styles.spinner} />
-        <p>Simulerar säsongen...</p>
-      </div>
-    );
-  }
-
-  if (phase === 'results' && result) {
-    return (
-      <SeasonResults
-        result={result}
-        slots={slots}
-        formation={config.formation}
         onRestart={handleRestart}
+        savedState={savedDraft ?? undefined}
       />
-    );
-  }
-
-  return null;
-}
-
-function buildTeamXI(
-  slots: Record<string, PlayerCard>,
-  formation: '4-3-3' | '4-4-2' | '3-5-2'
-) {
-  return {
-    name: 'Your XI',
-    slots,
-    formation,
-    attack: 0,
-    midfield: 0,
-    defence: 0,
-    gkRating: 0,
-    overall: 0,
-    goalsFor: 0,
-    goalsAgainst: 0,
-    wins: 0,
-    draws: 0,
-    losses: 0,
-    points: 0,
-  };
+      <Footer />
+    </div>
+  );
 }

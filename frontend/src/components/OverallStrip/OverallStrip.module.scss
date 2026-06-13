@@ -1,0 +1,78 @@
+@use '../../styles/variables' as *;
+
+.strip {
+  display: flex;
+  align-items: stretch;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  overflow: hidden;
+}
+
+.mainRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: $ink;
+  padding: 3px 10px;
+  flex-shrink: 0;
+}
+
+.mainLabel {
+  font-size: 12px;
+  color: $badge-yellow;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.mainValue {
+  font-size: 16px;
+  font-weight: 700;
+  color: $badge-yellow;
+  font-family: $font-mono;
+  line-height: 1;
+}
+
+.subGroup {
+  display: flex;
+  gap: 0;
+  flex: 1;
+}
+
+.subRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: $sand-white;
+  padding: 3px 8px;
+  flex: 1;
+  justify-content: center;
+  border-left: 0.5px solid $sand-border;
+
+  &:first-child {
+    border-left: none;
+  }
+}
+
+.subLabel {
+  font-size: 12px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+.subValue {
+  font-family: $font-mono;
+  font-size: 16px;
+  font-weight: 600;
+  color: $ink;
+  line-height: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .strip { border-color: #333; }
+  .subRow { background: #242424; border-color: #333; }
+  .subLabel { color: #999; }
+  .subValue { color: #e0e0e0; }
+}

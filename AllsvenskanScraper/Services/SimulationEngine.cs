@@ -54,21 +54,21 @@ public static class SimulationEngine
     {
         return
         [
-            new() { Name = "Malmö", Strength = 85, Tier = "Elit" },
-            new() { Name = "AIK Stockholm", Strength = 84, Tier = "Elit" },
-            new() { Name = "Djurgården", Strength = 84, Tier = "Elit" },
-            new() { Name = "Göteborg", Strength = 84, Tier = "Elit" },
-            new() { Name = "Elfsborg", Strength = 82, Tier = "Stark" },
-            new() { Name = "BK Häcken", Strength = 81, Tier = "Stark" },
-            new() { Name = "Hammarby", Strength = 80, Tier = "Stark" },
-            new() { Name = "Norrköping", Strength = 79, Tier = "Mellan" },
-            new() { Name = "Helsingborg", Strength = 78, Tier = "Mellan" },
-            new() { Name = "Kalmar", Strength = 77, Tier = "Mellan" },
-            new() { Name = "Halmstad", Strength = 75, Tier = "Lägre" },
-            new() { Name = "Örebro", Strength = 74, Tier = "Lägre" },
-            new() { Name = "Sundsvall", Strength = 73, Tier = "Lägre" },
-            new() { Name = "Gefle", Strength = 72, Tier = "Lägre" },
-            new() { Name = "Mjällby", Strength = 72, Tier = "Lägre" },
+            new() { Name = "Malmö", Strength = 91, Tier = "Elit" },
+            new() { Name = "AIK Stockholm", Strength = 90, Tier = "Elit" },
+            new() { Name = "Djurgården", Strength = 89, Tier = "Elit" },
+            new() { Name = "Göteborg", Strength = 89, Tier = "Elit" },
+            new() { Name = "Elfsborg", Strength = 87, Tier = "Stark" },
+            new() { Name = "BK Häcken", Strength = 86, Tier = "Stark" },
+            new() { Name = "Hammarby", Strength = 85, Tier = "Stark" },
+            new() { Name = "Norrköping", Strength = 83, Tier = "Mellan" },
+            new() { Name = "Helsingborg", Strength = 82, Tier = "Mellan" },
+            new() { Name = "Kalmar", Strength = 81, Tier = "Mellan" },
+            new() { Name = "Halmstad", Strength = 79, Tier = "Lägre" },
+            new() { Name = "Örebro", Strength = 78, Tier = "Lägre" },
+            new() { Name = "Sundsvall", Strength = 77, Tier = "Lägre" },
+            new() { Name = "Gefle", Strength = 76, Tier = "Lägre" },
+            new() { Name = "Mjällby", Strength = 76, Tier = "Lägre" },
         ];
     }
 
@@ -77,8 +77,9 @@ public static class SimulationEngine
         var slots = xi.Slots;
         var formation = Formations.GetValueOrDefault(xi.Formation, Formations["4-3-3"]);
 
-        double attack = 0, midfield = 0, defence = 0, gk = 0;
-        int attackN = 0, midfieldN = 0, defenceN = 0, gkN = 0;
+        double attack = 0, midfield = 0, defence = 0;
+        int attackN = 0, midfieldN = 0, defenceN = 0;
+        double gkRating = 0;
 
         foreach (var slot in formation)
         {
@@ -96,7 +97,8 @@ public static class SimulationEngine
                     defence += player.Ovr; defenceN++;
                     break;
                 case "GK":
-                    gk += player.Ovr; gkN++;
+                    defence += player.Ovr; defenceN++; // GK counts towards Defence OVR
+                    gkRating = player.Ovr;
                     break;
             }
         }
@@ -104,8 +106,8 @@ public static class SimulationEngine
         xi.Attack = attackN > 0 ? Math.Round(attack / attackN, 1) : 50;
         xi.Midfield = midfieldN > 0 ? Math.Round(midfield / midfieldN, 1) : 50;
         xi.Defence = defenceN > 0 ? Math.Round(defence / defenceN, 1) : 50;
-        xi.GkRating = gkN > 0 ? Math.Round(gk / gkN, 1) : 50;
-        xi.Overall = Math.Round((xi.Attack + xi.Midfield + xi.Defence + xi.GkRating) / 4.0, 1);
+        xi.GkRating = Math.Round(gkRating, 1);
+        xi.Overall = Math.Round((xi.Attack + xi.Midfield + xi.Defence) / 3.0, 1);
     }
 
     public static MatchResult SimulateMatch(TeamXI user, AITeam ai, bool isUserHome, string formation)
@@ -113,13 +115,13 @@ public static class SimulationEngine
         ComputeTeamRatings(user);
 
         var userOffence = user.Attack * 0.4 + user.Midfield * 0.6;
-        var userDefence = user.Midfield * 0.2 + user.Defence * 0.5 + user.GkRating * 0.3;
+        var userDefence = user.Midfield * 0.2 + user.Defence * 0.8;
         var userStrength = (userOffence + userDefence) / 2.0;
 
         var strengthRatio = Math.Max(userStrength / Math.Max(ai.Strength, 1), 0.1);
-        var baseRate = 1.2;
-        var exponent = 3.5;
-        var homeBonus = 0.08;
+        var baseRate = 1.25; // Slightly higher base goals
+        var exponent = 4.2;  // Slightly reduced from 4.5 to make it harder to go undefeated with high ratings
+        var homeBonus = 0.10; // Slightly higher home advantage
 
         var userExpected = baseRate * Math.Pow(strengthRatio, exponent) + (isUserHome ? homeBonus : 0);
         var aiExpected = baseRate * Math.Pow(1.0 / strengthRatio, exponent) + (isUserHome ? 0 : homeBonus);
@@ -171,9 +173,9 @@ public static class SimulationEngine
     public static MatchResult SimulateAIMatch(AITeam home, AITeam away)
     {
         var strengthRatio = Math.Max(home.Strength / Math.Max(away.Strength, 1), 0.1);
-        var baseRate = 1.2;
-        var exponent = 3.5;
-        var homeBonus = 0.08;
+        var baseRate = 1.25;
+        var exponent = 4.2;
+        var homeBonus = 0.10;
 
         var homeExpected = baseRate * Math.Pow(strengthRatio, exponent) + homeBonus;
         var awayExpected = baseRate * Math.Pow(1.0 / strengthRatio, exponent);

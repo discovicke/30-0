@@ -1,0 +1,47 @@
+{
+  "Tier1": {
+    "Boost": 5.0,
+    "Players": [
+      "Zlatan Ibrahimović",
+      "Henrik Larsson",
+      "Kennedy Bakircioglu",
+      "Kim Källström",
+      "Anders Svensson",
+      "Markus Rosenberg",
+      "Sebastian Larsson"
+    ]
+  },
+  "Tier2": {
+    "Boost": 3.0,
+    "Players": [
+      "Johan Elmander",
+      "Andreas Isaksson",
+      "Robert Lundström",
+      "Henok Goitom",
+      "Tobias Hysén",
+      "Emil Forsberg",
+      "Niklas Skoog",
+      "Alexander Jeremejeff",
+      "Nahir Besara",
+      "Per Karlsson",
+      "Emir Kujović",
+      "Ola Toivonen"
+    ]
+  },
+  "Tier3": {
+    "Boost": 1.0,
+    "Players": [
+      "Daniel Tjernström",
+      "Martin Lorentzson",
+      "Lasse Vibe",
+      "César Santin",
+      "Afonso Alves",
+      "Gunnar Heiðar Þorvaldsson",
+      "Daniel Sjölund",
+      "Marcus Berg",
+      "Alexander Gerndt",
+      "Stefan Selaković",
+      "Isaac Kiese Thelin"
+    ]
+  }
+}

@@ -1,81 +1,64 @@
 import type { FormationKey, PlayerCard, FormationSlot } from '../../types';
 import { formations } from '../../engine/simulationEngine';
+import { getSwedishLabel } from '../../engine/draftEngine';
 import styles from './FormationView.module.scss';
 
 interface Props {
   formation: FormationKey;
   slots: Record<string, PlayerCard>;
-  filledSlots?: string[];
-  highlightSlot?: string | null;
-  onSlotClick?: (slot: FormationSlot) => void;
   compact?: boolean;
+  tall?: boolean;
+  interactive?: boolean;
+  selectedSlot?: string | null;
+  onSlotClick?: (label: string) => void;
 }
 
-export default function FormationView({
-  formation,
-  slots,
-  filledSlots,
-  highlightSlot,
-  onSlotClick,
-  compact,
-}: Props) {
+export default function FormationView({ formation, slots, compact, tall, interactive, selectedSlot, onSlotClick }: Props) {
   const slotDefs = formations[formation];
 
   return (
-    <div className={`${styles.pitch} ${compact ? styles.compact : ''}`}>
-      {/* Top: center circle decoration */}
-      <div className={styles.topCircle} />
-
-      {/* Slot rows — top to bottom: FW → MF → DF → GK */}
+    <div className={`${styles.pitch} ${compact ? styles.compact : ''} ${tall ? styles.tall : ''} ${interactive ? styles.interactive : ''}`}>
       <div className={styles.field}>
         {renderRow(slotDefs.filter((s) => s.position === 'FW'), 0)}
         {renderRow(slotDefs.filter((s) => s.position === 'MF'), 1)}
         {renderRow(slotDefs.filter((s) => s.position === 'DF'), 2)}
         {renderRow(slotDefs.filter((s) => s.position === 'GK'), 3)}
       </div>
-
-      {/* Bottom: goal silhouette */}
-      <div className={styles.goalLine} />
     </div>
   );
 
   function renderRow(rowSlots: FormationSlot[], _rowIndex: number) {
     if (rowSlots.length === 0) return null;
-    const pos = rowSlots[0].position;
     return (
       <div className={styles.row}>
-        {pos !== 'GK' && <div className={styles.rowConnector} />}
-        <div className={styles.slotsRow}>
-          {rowSlots.map((slot) => {
-            const player = slots[slot.label];
-            const isFilled = !!player;
-            const isFilledList = filledSlots?.includes(slot.label) ?? isFilled;
-            const isHighlighted = highlightSlot === slot.label;
-
-            return (
-              <button
-                key={slot.label}
-                className={[
-                  styles.slot,
-                  isFilledList ? styles.filled : styles.empty,
-                  isHighlighted ? styles.highlighted : '',
-                ].join(' ')}
-                onClick={() => onSlotClick?.(slot)}
-                disabled={!onSlotClick}
-              >
-                <span className={styles.slotLabel}>{slot.label}</span>
-                {player ? (
-                  <span className={styles.playerInfo}>
-                    <span className={styles.playerName}>{player.name}</span>
-                    <span className={styles.playerOvr}>{player.ovr.toFixed(1)}</span>
-                  </span>
-                ) : (
-                  <span className={styles.emptySlot}>—</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {rowSlots.map((slot) => {
+          const player = slots[slot.label];
+          const filled = !!player;
+          const isSel = selectedSlot === slot.label;
+          const dotColor = filled ? (styles[`dot${slot.position}` as keyof typeof styles] || '') : '';
+          return (
+            <div
+              key={slot.label}
+              className={`${styles.pslot} ${interactive && !filled ? styles.clickable : ''}`}
+              onClick={interactive && !filled && onSlotClick ? () => onSlotClick(slot.label) : undefined}
+            >
+              <div className={`${styles.dot} ${filled ? styles.dotFilled : ''} ${dotColor} ${isSel ? styles.dotSelected : ''}`}>
+                <span>{filled ? getSwedishLabel(slot.label) : '+'}</span>
+              </div>
+              {player ? (
+                <>
+                  <span className={styles.pname}>{player.name.split(' ').pop()}</span>
+                  <span className={styles.povr}>{Math.round(player.ovr)}</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.pname} style={{ opacity: 0.3 }}>&mdash;</span>
+                  <span className={styles.povr} style={{ opacity: 0.2 }}>--</span>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

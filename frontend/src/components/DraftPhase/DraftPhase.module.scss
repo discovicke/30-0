@@ -3,131 +3,215 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 8px;
+  padding: 0 14px 24px;
   flex: 1;
+  min-height: 0;
+  position: relative;
+
+  @media (max-width: 800px) {
+    padding: 0 8px 16px;
+    min-height: 600px;
+  }
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 0;
+.mobileTabs {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
 }
 
-.backBtn {
-  padding: 0.375rem 0.75rem;
-  background: transparent;
-  border: 1px solid rgba($color-text-muted, 0.2);
-  border-radius: 8px;
-  color: $color-text-muted;
-  font-size: 0.8125rem;
-  font-weight: 500;
+.mobileTab {
+  font-family: $font-mono;
+  font-size: 13px;
+  padding: 8px 20px;
+  border: 1px solid $sand-border;
+  border-radius: $radius-sm;
+  background: $sand-surface;
+  color: $ink-muted;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   transition: all 0.15s;
+  flex: 1;
 
   &:hover {
-    border-color: $color-text-muted;
-    color: $color-text;
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
+.mobileTabActive {
+  background: $ink;
+  color: #FFFFFF;
+  border-color: $ink;
+
+  &:hover {
+    opacity: 0.9;
+    color: #FFFFFF;
+  }
+}
+
+.mainTextTV {
+  @media (max-width: 800px) {
+    display: none !important;
+  }
+}
+
+.mobileTextTV {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 }
 
 .progress {
-  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 6px;
 }
 
-.progressBar {
-  flex: 1;
-  height: 4px;
-  background: rgba($color-text-muted, 0.12);
-  border-radius: 2px;
-  overflow: hidden;
+.progressLabel {
+  font-size: 12px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.progressFill {
-  height: 100%;
-  background: $color-primary;
-  border-radius: 2px;
-  transition: width 0.4s ease;
-}
-
-.progressText {
+.progressCount {
   font-family: $font-mono;
-  font-size: 0.75rem;
-  color: $color-text-muted;
-  min-width: 4rem;
-}
-
-.rerolls {
-  font-size: 0.75rem;
-  color: $color-text-muted;
-
-  .noRerolls {
-    color: $color-danger;
-  }
+  font-size: 14px;
+  font-weight: 600;
+  color: $ink;
 }
 
 .main {
   display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 400px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 12px;
   flex: 1;
-  align-items: start;
+  min-height: 0;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
 }
 
-.formationCol {
+.left {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 6px;
+  min-height: 0;
+
+  > div:last-child {
+    margin-top: auto;
+  }
 }
 
-.hint {
-  text-align: center;
-  font-size: 0.75rem;
-  color: $color-text-muted;
-  margin-top: 0.25rem;
-}
-
-.squadCol {
+.right {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.spinArea {
-  display: flex;
-  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0 0;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 2rem;
-  background: $color-surface;
-  border: 1px dashed $color-border;
-  border-radius: $radius-lg;
-  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
 }
 
-.spinHint {
-  text-align: center;
-  font-size: 0.875rem;
-  color: $color-text-muted;
-  max-width: 280px;
+.rerollHeader {
+  display: flex;
+  justify-content: flex-end;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
 }
+
+.mobileControls {
+  display: none;
+
+  @media (max-width: 800px) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+  }
+}
+
+.desktopControls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    display: none;
+  }
+}
+
+// ── Reroll dots ──
+
+.rerollRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rerollLabel {
+  font-size: 12px;
+  color: $ink-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rerollDots {
+  display: flex;
+  gap: 6px;
+}
+
+.rerollDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: $ink-disabled;
+  transition: background 0.2s;
+
+  &.rerollActive {
+    background: $ink;
+  }
+}
+
+// ── Spin button ──
 
 .spinBtn {
-  padding: 0.75rem 2rem;
-  background: $color-primary;
-  color: white;
-  font-size: 0.875rem;
+  padding: 10px 18px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 12px;
   font-weight: 600;
-  border-radius: 10px;
-  transition: all 0.15s;
-  letter-spacing: 0.02em;
+  border-radius: $radius-sm;
+  text-align: center;
+  transition: opacity 0.15s;
 
   &:hover:not(:disabled) {
-    background: $color-primary-hover;
-    transform: translateY(-1px);
+    opacity: 0.85;
   }
 
   &:disabled {
@@ -136,21 +220,106 @@
   }
 }
 
-.spinning {
+.hint {
+  font-size: 12px;
+  color: $ink-ghost;
+  text-align: center;
+}
+
+.hiddenHint {
+  font-size: 11px;
+  color: $ink-ghost;
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+// ── Slot machine ──
+
+.slotMachine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 0 12px;
+}
+
+.slotReel {
+  background: $sand-surface;
+  border: 1px solid $ink;
+  border-radius: $radius-sm;
+  width: 160px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  @media (max-width: 800px) {
+    width: 130px;
+  }
+}
+
+.reelClip {
+  overflow: hidden;
+  height: 22px;
+  line-height: 22px;
+}
+
+.slotText {
+  display: block;
+  font-family: $font-mono;
+  font-size: 16px;
+  font-weight: 700;
+  color: $ink;
+  white-space: nowrap;
+  text-align: center;
+  animation: slideUp 0.1s ease-out;
+}
+
+@keyframes slideUp {
+  0% {
+    transform: translateY(100%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slotStatic {
+  animation: none;
+}
+
+.slotX {
+  font-size: 20px;
+  font-weight: 700;
+  color: $ink-muted;
+  flex-shrink: 0;
+}
+
+// ── Spinner / center ──
+
+.center {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  padding: 3rem;
-  color: $color-text-muted;
+  gap: 12px;
+
+  p {
+    font-size: 13px;
+    color: $ink-muted;
+  }
 }
 
-.wheel {
-  width: 40px;
-  height: 40px;
-  border: 2.5px solid rgba($color-text-muted, 0.15);
-  border-top-color: $color-primary;
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid $sand-border;
+  border-top-color: $ink;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -159,192 +328,273 @@
   to { transform: rotate(360deg); }
 }
 
+// ── Squad overlay ──
+
+.squadOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
 .squadCard {
-  background: $color-surface;
-  border: 1px solid rgba($color-text-muted, 0.08);
-  border-radius: 14px;
+  background: $sand-white;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-lg;
+  max-width: 420px;
+  width: 90%;
+  max-height: 80vh;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .squadHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba($color-text-muted, 0.06);
+  gap: 8px;
+  padding: 10px 8px 10px 14px;
+  border-bottom: 0.5px solid $sand-border;
+}
 
-  h3 {
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: $color-text;
-  }
+.squadHeaderInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.squadName {
+  font-size: 15px;
+  font-weight: 700;
+  color: $ink;
 }
 
 .squadSeason {
   font-family: $font-mono;
-  font-size: 0.8125rem;
-  color: $color-text-muted;
-}
-
-.rerollRow {
-  padding: 0.5rem 1rem;
-}
-
-.rerollBtn {
-  width: 100%;
-  padding: 0.5rem;
-  background: rgba($color-warning, 0.06);
-  border: 1px solid rgba($color-warning, 0.2);
-  border-radius: 8px;
-  color: $color-warning;
-  font-size: 0.8125rem;
+  font-size: 13px;
   font-weight: 600;
-  transition: all 0.15s;
+  color: $ink-muted;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 50%;
+  color: $ink-muted;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
 
   &:hover {
-    background: rgba($color-warning, 0.12);
+    border-color: $sand-border;
+    color: $ink;
   }
 }
 
 .playerList {
-  padding: 0.75rem 1rem;
+  padding: 8px 14px;
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-
-  h4 {
-    font-size: 0.625rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: $color-text-muted;
-    margin-bottom: 0.25rem;
-  }
+  gap: 3px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .playerRow {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba($color-text-muted, 0.06);
-  border-radius: 8px;
-  transition: all 0.15s;
+  gap: 8px;
+  padding: 6px 10px;
+  background: $sand-bg;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
   text-align: left;
+  transition: border-color 0.15s;
 
-  &:hover {
-    border-color: rgba($color-primary, 0.3);
-    background: rgba($color-primary, 0.04);
+  &:hover:not(:disabled) {
+    border-color: $ink;
   }
+
+  &.playerMuted {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+}
+
+.playerPos {
+  font-size: 8px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 24px;
+  text-align: center;
+  text-transform: uppercase;
+  color: #fff;
+  background: $ink-muted;
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
 }
 
 .playerName {
   flex: 1;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: $color-text;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.playerPos {
-  font-size: 0.6875rem;
-  color: $color-text-muted;
-  min-width: 60px;
-  text-align: right;
+  font-size: 13px;
+  font-weight: 500;
+  color: $ink;
 }
 
 .playerOvr {
   font-family: $font-mono;
-  font-size: 0.8125rem;
+  font-size: 14px;
   font-weight: 700;
-  color: $color-primary;
-  min-width: 2.5rem;
-  text-align: right;
-}
-
-.noPlayers {
-  padding: 1rem;
-  text-align: center;
-  color: $color-text-muted;
-  font-size: 0.8125rem;
-}
-
-.noPlayers {
-  padding: 1rem;
-  text-align: center;
-  color: $color-text-muted;
-  font-size: 0.8125rem;
+  color: $ink;
 }
 
 .skipBtn {
-  margin: 0 1rem 1rem;
-  width: calc(100% - 2rem);
-  padding: 0.5rem;
-  background: $color-surface-alt;
-  border: 1px solid $color-border;
+  margin: 8px 14px;
+  padding: 8px;
+  background: $sand-surface;
+  border: 0.5px solid $sand-border;
   border-radius: $radius-sm;
-  color: $color-text-muted;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  color: $ink-muted;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
 
   &:hover {
-    color: $color-text;
+    border-color: $ink;
+    color: $ink;
   }
 }
 
-.assignCard {
-  background: $color-surface;
-  border: 1px solid $color-border;
-  border-radius: $radius-lg;
-  padding: 1rem;
-
-  h3 {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: $color-text;
-    margin-bottom: 0.75rem;
-  }
+.overlayReroll {
+  display: flex;
+  gap: 6px;
+  padding: 8px 14px;
+  border-bottom: 0.5px solid $sand-border;
 }
 
-.positionGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-  gap: 0.5rem;
-}
-
-.positionBtn {
-  padding: 0.5rem;
-  background: $color-bg;
-  border: 1px solid $color-border;
+.rerollBtn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
   border-radius: $radius-sm;
-  color: $color-text;
-  font-family: $font-mono;
-  font-size: 0.8125rem;
+  color: $ink-muted;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    border-color: $ink;
+    color: $ink;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+
+
+.posChooser {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.posChooserText {
+  font-size: 12px;
+  font-weight: 500;
+  color: $ink;
+}
+
+.posChooserBtns {
+  display: flex;
+  gap: 8px;
+}
+
+.posChooserBtn {
+  padding: 8px 20px;
+  background: $ink;
+  color: $chrome-text;
+  font-size: 13px;
   font-weight: 600;
-  text-align: center;
-  transition: border-color 0.15s;
+  border-radius: $radius-sm;
 
   &:hover {
-    border-color: $color-primary;
-    background: rgba($color-primary, 0.08);
+    opacity: 0.85;
+  }
+
+  &.posGK { background: #4FC3F7; }
+  &.posDF { background: #66BB6A; }
+  &.posMF { background: #FFA726; }
+  &.posFW { background: #EF5350; }
+}
+
+.posBackBtn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
   }
 }
 
-.occupied {
-  display: block;
-  font-size: 0.625rem;
-  color: $color-danger;
-  font-family: $font-sans;
-  font-weight: 400;
-}
-
-.noPos {
-  text-align: center;
-  color: $color-danger;
-  font-size: 0.8125rem;
-  padding: 0.5rem;
+@media (prefers-color-scheme: dark) {
+  .progressLabel { color: #999; }
+  .progressCount { color: #e0e0e0; }
+  .rerollLabel { color: #999; }
+  .rerollDot { background: #444; }
+  .rerollDot.rerollActive { background: #e0e0e0; }
+  .spinBtn { background: #e0e0e0; color: #1a1a1a; }
+  .hint { color: #666; }
+  .slotReel { background: #242424; border-color: #555; }
+  .slotText { color: #e0e0e0; }
+  .slotX { color: #666; }
+  .mobileTab { background: #242424; border-color: #333; color: #999; }
+  .mobileTab:hover { border-color: #888; color: #e0e0e0; }
+  .mobileTabActive { background: #e0e0e0; color: #1a1a1a; border-color: #e0e0e0; }
+  .mobileTabActive:hover { color: #1a1a1a; }
+  .center p { color: #999; }
+  .spinner { border-color: #333; border-top-color: #e0e0e0; }
+  .squadCard { background: #242424; border-color: #333; }
+  .squadHeader { border-color: #333; }
+  .squadName { color: #e0e0e0; }
+  .squadSeason { color: #999; }
+  .closeBtn { color: #999; }
+  .closeBtn:hover { border-color: #555; color: #e0e0e0; }
+  .playerRow { background: #1a1a1a; border-color: #333; }
+  .playerRow:hover:not(:disabled) { border-color: #888; }
+  .playerName { color: #e0e0e0; }
+  .playerOvr { color: #e0e0e0; }
+  .skipBtn { background: #1a1a1a; border-color: #333; color: #999; }
+  .skipBtn:hover { border-color: #888; color: #e0e0e0; }
+  .overlayReroll { border-color: #333; }
+  .rerollBtn { border-color: #333; color: #999; }
+  .rerollBtn:hover:not(:disabled) { border-color: #888; color: #e0e0e0; }
+  .posChooserText { color: #e0e0e0; }
+  .posBackBtn { border-color: #333; color: #999; }
+  .posBackBtn:hover { border-color: #888; color: #e0e0e0; }
 }
