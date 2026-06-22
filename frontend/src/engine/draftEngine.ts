@@ -1,4 +1,4 @@
-import type { Squad, SquadPlayer, FormationKey, FormationSlot, RatingMode } from '../types';
+import type { Squad, SquadPlayer, FormationKey, FormationSlot, RatingMode, PlayerCard } from '../types';
 import { formations, getAllAITeams } from './simulationEngine';
 
 export function getRerollCount(difficulty: 'easy' | 'normal' | 'hard'): number {
@@ -26,6 +26,12 @@ const posGroupMap: Record<string, string> = {
   CDM: 'MF', CM: 'MF', CAM: 'MF', LM: 'MF', RM: 'MF',
   LW: 'FW', RW: 'FW', ST: 'FW',
 };
+
+// Season-independent identity for a player: same name at the same club is the
+// same person across every season (e.g. Anders Svensson, Elfsborg 2006/07/08).
+export function playerKey(p: { name: string; team: string }): string {
+  return `${p.name.trim().toLowerCase()}|${p.team.trim().toLowerCase()}`;
+}
 
 export function getPlayerPosGroups(player: SquadPlayer): string[] {
   const groups = new Set<string>();
@@ -73,7 +79,7 @@ export interface EligiblePlayer extends SquadPlayer {
 
 export function getEligiblePlayers(
   squad: Squad,
-  filledIds: Set<string>,
+  filledKeys: Set<string>,
   formation: FormationKey,
   filledSlots: string[],
   filterPosition: string | null,
@@ -108,7 +114,7 @@ export function getEligiblePlayers(
   }
 
   return squad.players.map((p) => {
-    const alreadyUsed = filledIds.has(p.id);
+    const alreadyUsed = filledKeys.has(playerKey(p));
     const playerGroups = getPlayerPosGroups(p);
     const openGroups = playerGroups.filter((g) =>
       filterGroup ? g === filterGroup : groupIsOpen(g)
@@ -159,6 +165,68 @@ export function computePreSeasonOdds(overall: number, mode: RatingMode = 'season
     top6: Math.round(Math.min(99.9, Math.pow(strength, 0.5) * 99.9) * 10) / 10,
     top10: Math.round(Math.min(99.9, (30 + strength * 70)) * 10) / 10,
     relegation: Math.round(Math.pow(1 - strength, 2.5) * 80 * 10) / 10,
+  };
+}
+
+function toCard(player: SquadPlayer): PlayerCard {
+  return {
+    name: player.name, season: player.season, team: player.team,
+    ovr: player.ovr, positions: [...player.positions], id: player.id,
+  };
+}
+
+export interface AutoFillResult {
+  filledSlots: Record<string, PlayerCard>;
+  filledIds: Set<string>;
+  usedSquadKeys: Set<string>;
+  complete: boolean;
+}
+
+/**
+ * "I feel lucky" — randomly fill all remaining slots without manual picking.
+ * Mirrors the manual flow: each pick draws a fresh unused squad and takes one
+ * random eligible player from it that fits an open position.
+ */
+export function autoFillSquad(
+  squads: Squad[],
+  formation: FormationKey,
+  initialSlots: Record<string, PlayerCard>,
+  initialIds: Set<string>,
+  initialUsedKeys: Set<string>,
+  seasonMin?: number,
+  seasonMax?: number,
+): AutoFillResult {
+  const slotDefs = formations[formation];
+  const slots: Record<string, PlayerCard> = { ...initialSlots };
+  const ids = new Set(initialIds);
+  const used = new Set(initialUsedKeys);
+
+  while (Object.keys(slots).length < slotDefs.length) {
+    const squad = pickRandomSquad(squads, used, seasonMin, seasonMax);
+    if (!squad) break; // ran out of squads
+    used.add(`${squad.team}|${squad.season}`);
+
+    const filledLabels = Object.keys(slots);
+    const candidates = squad.players.filter(
+      (p) => !ids.has(p.id) && getOpenGroupsForPlayer(p, formation, filledLabels).length > 0,
+    );
+    if (candidates.length === 0) continue; // squad consumed, no fitting player
+
+    const player = candidates[Math.floor(Math.random() * candidates.length)];
+    const openGroups = getOpenGroupsForPlayer(player, formation, filledLabels);
+    const group = openGroups[Math.floor(Math.random() * openGroups.length)];
+    const slot = autoAssignSlot(player, formation, filledLabels, group);
+    if (!slot) continue;
+
+    slots[slot] = toCard(player);
+    ids.add(player.id);
+  }
+
+  return {
+    filledSlots: slots,
+    filledIds: ids,
+    usedSquadKeys: used,
+    complete: Object.keys(slots).length >= slotDefs.length,
   };
 }
 

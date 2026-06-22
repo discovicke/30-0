@@ -4,7 +4,8 @@ import { formations, simulateSeason, computeTeamRatings } from '../../engine/sim
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
-  computePreSeasonOdds,
+  computePreSeasonOdds, autoFillSquad,
+  playerKey,
 } from '../../engine/draftEngine';
 
 import {X, ArrowLeft} from 'lucide-react';
@@ -28,7 +29,6 @@ type DraftState = 'drafting' | 'ready' | 'simulating';
 
 export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
   const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
-  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? []));
   const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
   const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
@@ -45,6 +45,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const [result, setResult] = useState<SeasonResult | null>(savedState?.result ?? null);
   const [mobileView, setMobileView] = useState<'trupp' | 'texttv'>('trupp');
   const [overlayVisible, setOverlayVisible] = useState(true);
+  const [sortByRating, setSortByRating] = useState(false);
 
   // Auto-switch to TextTV on mobile when draft completes
   useEffect(() => {
@@ -55,6 +56,13 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   const filledCount = Object.keys(filledSlots).length;
   const filledLabels = Object.keys(filledSlots);
   const allFilled = filledCount >= totalSlots;
+
+  // Players already in the XI, keyed by season-independent identity, so the same
+  // player can't be drafted again from a different season.
+  const filledKeys = useMemo(
+    () => new Set(Object.values(filledSlots).map(playerKey)),
+    [filledSlots]
+  );
 
   const reelSeasons = useMemo(() =>
     Array.from({ length: config.seasonMax - config.seasonMin + 1 }, (_, i) => config.seasonMin + i),
@@ -145,6 +153,25 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     handleSpin();
   }, [rerollsLeft, spinning, handleSpin]);
 
+  // "I feel lucky" — auto-fill the rest of the squad randomly
+  function handleFeelingLucky() {
+    if (spinning) return;
+    if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
+    setRolling(false);
+    setCurrentSquad(null);
+    setPendingPlayer(null);
+    setPendingGroups([]);
+
+    const result = autoFillSquad(
+      squads, config.formation, filledSlots, filledIds, usedSquadKeys,
+      config.seasonMin, config.seasonMax,
+    );
+    setFilledSlots(result.filledSlots);
+    setFilledIds(result.filledIds);
+    setUsedSquadKeys(result.usedSquadKeys);
+    setSelectedSlot(null);
+  }
+
   function handleSlotClick(slotLabel: string) {
     if (config.draftMode !== 'position-first') return;
     if (filledSlots[slotLabel]) return;
@@ -182,7 +209,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         ovr: player.ovr, positions: [...player.positions], id: player.id,
       };
       setFilledSlots({ ...filledSlots, [exactSlot]: card });
-      setFilledIds(new Set([...filledIds, player.id]));
       setCurrentSquad(null);
       setSelectedSlot(null);
       setPendingPlayer(null);
@@ -199,7 +225,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     };
 
     setFilledSlots({ ...filledSlots, [targetSlot]: card });
-    setFilledIds(new Set([...filledIds, player.id]));
     setCurrentSquad(null);
     setSelectedSlot(null);
     setPendingPlayer(null);
@@ -216,7 +241,6 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     const state: SavedDraftState = {
       config,
       filledSlots,
-      filledIds: [...filledIds],
       usedSquadKeys: [...usedSquadKeys],
       rerollsLeft,
       currentSquad,
@@ -225,7 +249,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
       result,
     };
     localStorage.setItem('30-0-draft', JSON.stringify(state));
-  }, [filledSlots, filledIds, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
+  }, [filledSlots, usedSquadKeys, rerollsLeft, currentSquad, selectedSlot, draftState, result, config]);
 
   // --- Simulate (triggered from TextTVBrowser) ---
 
@@ -247,8 +271,12 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
   // --- Derived ---
 
   const eligiblePlayers = currentSquad
-    ? getEligiblePlayers(currentSquad, filledIds, config.formation, filledLabels, selectedSlot)
+    ? getEligiblePlayers(currentSquad, filledKeys, config.formation, filledLabels, selectedSlot)
     : [];
+
+  const displayedPlayers = sortByRating
+    ? [...eligiblePlayers].sort((a, b) => b.ovr - a.ovr)
+    : eligiblePlayers;
 
   const canSpin = !spinning && !pendingPlayer && !allFilled
     && (config.draftMode !== 'position-first' || selectedSlot !== null);
@@ -322,6 +350,11 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
           ) : (
             <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
               Snurra fram spelare
+            </button>
+          )}
+          {!allFilled && (
+            <button className={styles.luckyBtn} onClick={handleFeelingLucky} disabled={spinning}>
+              Jag har tur – slumpa laget
             </button>
           )}
         </div>
@@ -418,6 +451,12 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
                 </button>
               )}
 
+              {!allFilled && (
+                <button className={styles.luckyBtn} onClick={handleFeelingLucky} disabled={spinning}>
+                  Jag har tur – slumpa laget
+                </button>
+              )}
+
               {config.draftMode === 'position-first' && !selectedSlot && !allFilled && (
                 <span className={styles.hint}>Klicka på en position på planen</span>
               )}
@@ -434,6 +473,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               onSimulate={handleSimulate}
               onRestart={onRestart}
               ratingMode={config.ratingMode}
+              matchByMatch={config.matchByMatch}
             />
           )}
         </div>
@@ -450,6 +490,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             onSimulate={handleSimulate}
             onRestart={onRestart}
             ratingMode={config.ratingMode}
+            matchByMatch={config.matchByMatch}
           />
         </div>
       )}
@@ -496,7 +537,15 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               </div>
             ) : (
               <div className={styles.playerList}>
-                {eligiblePlayers.map((p) => (
+                {config.showRatings && (
+                  <button
+                    className={styles.sortBtn}
+                    onClick={() => setSortByRating((s) => !s)}
+                  >
+                    {sortByRating ? 'Sortering: Betyg ↓' : 'Sortera efter betyg'}
+                  </button>
+                )}
+                {displayedPlayers.map((p) => (
                   <button
                     key={p.id}
                     className={`${styles.playerRow} ${!p.available ? styles.playerMuted : ''}`}

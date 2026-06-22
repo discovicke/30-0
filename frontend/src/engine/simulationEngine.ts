@@ -88,21 +88,21 @@ export const formationKeys: FormationKey[] = ['5-4-1', '4-5-1', '3-4-3', '3-5-2'
 
 export function getAllAITeams(mode: RatingMode = 'season'): AITeam[] {
   const teams: { name: string; season: number; peak: number; tier: string }[] = [
-    { name: 'Malmö', season: 84, peak: 86, tier: 'Elit' },
-    { name: 'AIK Stockholm', season: 83, peak: 85, tier: 'Elit' },
-    { name: 'Djurgården', season: 82, peak: 84, tier: 'Elit' },
-    { name: 'Göteborg', season: 82, peak: 84, tier: 'Elit' },
-    { name: 'Elfsborg', season: 81, peak: 83, tier: 'Stark' },
-    { name: 'BK Häcken', season: 80, peak: 82, tier: 'Stark' },
-    { name: 'Hammarby', season: 79, peak: 81, tier: 'Stark' },
-    { name: 'Norrköping', season: 78, peak: 80, tier: 'Mellan' },
-    { name: 'Helsingborg', season: 77, peak: 79, tier: 'Mellan' },
-    { name: 'Kalmar', season: 76, peak: 78, tier: 'Mellan' },
-    { name: 'Halmstad', season: 74, peak: 77, tier: 'Lägre' },
-    { name: 'Örebro', season: 73, peak: 76, tier: 'Lägre' },
-    { name: 'Sundsvall', season: 72, peak: 75, tier: 'Lägre' },
-    { name: 'Gefle', season: 71, peak: 74, tier: 'Lägre' },
-    { name: 'Mjällby', season: 70, peak: 73, tier: 'Lägre' },
+    { name: 'Malmö', season: 84, peak: 86, tier: 'Elite' },
+    { name: 'AIK Stockholm', season: 83, peak: 85, tier: 'Elite' },
+    { name: 'Djurgården', season: 82, peak: 84, tier: 'Elite' },
+    { name: 'Göteborg', season: 82, peak: 84, tier: 'Elite' },
+    { name: 'Elfsborg', season: 81, peak: 83, tier: 'Strong' },
+    { name: 'BK Häcken', season: 80, peak: 82, tier: 'Strong' },
+    { name: 'Hammarby', season: 79, peak: 81, tier: 'Strong' },
+    { name: 'Norrköping', season: 78, peak: 80, tier: 'Mid' },
+    { name: 'Helsingborg', season: 77, peak: 79, tier: 'Mid' },
+    { name: 'Kalmar', season: 76, peak: 78, tier: 'Mid' },
+    { name: 'Halmstad', season: 74, peak: 77, tier: 'Lower' },
+    { name: 'Örebro', season: 73, peak: 76, tier: 'Lower' },
+    { name: 'Sundsvall', season: 72, peak: 75, tier: 'Lower' },
+    { name: 'Gefle', season: 71, peak: 74, tier: 'Lower' },
+    { name: 'Mjällby', season: 70, peak: 73, tier: 'Lower' },
   ];
   return teams.map((t) => ({ name: t.name, strength: mode === 'peak' ? t.peak : t.season, tier: t.tier }));
 }
@@ -286,84 +286,128 @@ export function computeStandingsAfterMatch(allTeams: AITeam[], matches: MatchRes
   return teams;
 }
 
+// Circle-method round-robin for 16 teams (user + 15 AI).
+// Returns 30 rounds; each round has the user's opponent + 7 AI vs AI pairs.
+function buildSchedule(aiNames: string[]): { userOpp: string; userIsHome: boolean; aiPairs: [string, string][] }[] {
+  const rotating = [...aiNames]; // 15 elements
+  const rounds: { userOpp: string; userIsHome: boolean; aiPairs: [string, string][] }[] = [];
+
+  for (let r = 0; r < 15; r++) {
+    const userIsHome = r % 2 === 0;
+    const userOpp = rotating[0];
+    const aiPairs: [string, string][] = [];
+    for (let i = 1; i <= 7; i++) {
+      const a = rotating[i];
+      const b = rotating[15 - i]; // rotating has indices 0..14
+      aiPairs.push(r % 2 === 0 ? [a, b] : [b, a]);
+    }
+    // Rotate: last element to front
+    const last = rotating.pop()!;
+    rotating.unshift(last);
+    rounds.push({ userOpp, userIsHome, aiPairs });
+  }
+
+  // Second half: swap home/away for every fixture
+  const firstHalf = rounds.slice();
+  for (const { userOpp, userIsHome, aiPairs } of firstHalf) {
+    rounds.push({ userOpp, userIsHome: !userIsHome, aiPairs: aiPairs.map(([h, a]) => [a, h]) });
+  }
+
+  return rounds;
+}
+
 export function simulateSeason(user: TeamXI, formation: FormationKey, mode: RatingMode = 'season'): SeasonResult {
-  user.goalsFor = 0;
-  user.goalsAgainst = 0;
-  user.wins = 0;
-  user.draws = 0;
-  user.losses = 0;
-  user.points = 0;
+  user.goalsFor = 0; user.goalsAgainst = 0;
+  user.wins = 0; user.draws = 0; user.losses = 0; user.points = 0;
   user.formation = formation;
   computeTeamRatings(user);
+
   const aiTeams = getAllAITeams(mode);
+  const schedule = buildSchedule(aiTeams.map(t => t.name));
+
   const matches: MatchResult[] = [];
   const goalScorers: Record<string, number> = {};
   const assists: Record<string, number> = {};
   const cleanSheets: Record<string, number> = {};
-  for (let r = 0; r < aiTeams.length * 2; r++) {
-    const ai = aiTeams[r % aiTeams.length];
-    const i = r % aiTeams.length;
-    const isHome = (i % 2 === 0) !== (r >= aiTeams.length);
-    const match = simulateMatch(user, ai, isHome, formation);
-    matches.push(match);
-    if (match.isUserHome ? match.awayGoals === 0 : match.homeGoals === 0) {
+  const roundTables: import('../types').AITeam[][] = [];
+
+  type Stats = { gf: number; ga: number; w: number; d: number; l: number };
+  const statsMap = new Map<string, Stats>();
+  for (const ai of aiTeams) statsMap.set(ai.name, { gf: 0, ga: 0, w: 0, d: 0, l: 0 });
+  statsMap.set('Your XI', { gf: 0, ga: 0, w: 0, d: 0, l: 0 });
+
+  function addStats(homeName: string, awayName: string, hg: number, ag: number) {
+    const h = statsMap.get(homeName)!;
+    const a = statsMap.get(awayName)!;
+    h.gf += hg; h.ga += ag; a.gf += ag; a.ga += hg;
+    if (hg > ag) { h.w++; a.l++; }
+    else if (hg === ag) { h.d++; a.d++; }
+    else { h.l++; a.w++; }
+  }
+
+  function snapshotTable(): import('../types').AITeam[] {
+    const all: import('../types').AITeam[] = [
+      ...aiTeams.map(t => {
+        const s = statsMap.get(t.name)!;
+        return { name: t.name, strength: t.strength, tier: t.tier,
+          goalsFor: s.gf, goalsAgainst: s.ga, wins: s.w, draws: s.d, losses: s.l, points: s.w * 3 + s.d };
+      }),
+      { name: 'Your XI', strength: user.overall,
+        ...(() => { const s = statsMap.get('Your XI')!;
+          return { goalsFor: s.gf, goalsAgainst: s.ga, wins: s.w, draws: s.d, losses: s.l, points: s.w * 3 + s.d }; })() },
+    ];
+    all.sort((a, b) => {
+      const cmp = (b.points ?? 0) - (a.points ?? 0);
+      if (cmp !== 0) return cmp;
+      return ((b.goalsFor ?? 0) - (b.goalsAgainst ?? 0)) - ((a.goalsFor ?? 0) - (a.goalsAgainst ?? 0));
+    });
+    return all;
+  }
+
+  for (const { userOpp, userIsHome, aiPairs } of schedule) {
+    const ai = aiTeams.find(t => t.name === userOpp)!;
+
+    const userMatch = simulateMatch(user, ai, userIsHome, formation);
+    matches.push(userMatch);
+    addStats(userMatch.homeTeam, userMatch.awayTeam, userMatch.homeGoals, userMatch.awayGoals);
+
+    if (userIsHome ? userMatch.awayGoals === 0 : userMatch.homeGoals === 0) {
       const gk = user.slots['GK'];
       if (gk) cleanSheets[gk.name] = (cleanSheets[gk.name] ?? 0) + 1;
     }
-  }
-  for (let i = 0; i < aiTeams.length; i++) {
-    for (let j = i + 1; j < aiTeams.length; j++) {
-      matches.push(simulateAIMatch(aiTeams[i], aiTeams[j]));
-      matches.push(simulateAIMatch(aiTeams[j], aiTeams[i]));
-    }
-  }
-  const userMatches = matches.filter((m) => m.homeTeam === 'Your XI' || m.awayTeam === 'Your XI');
-  for (const match of userMatches) {
-    for (const goal of match.goals) {
-      const isUserGoal = Object.values(user.slots).some((s) => s.name === goal.scorer);
-      if (isUserGoal) {
+    for (const goal of userMatch.goals) {
+      if (Object.values(user.slots).some(s => s.name === goal.scorer)) {
         goalScorers[goal.scorer] = (goalScorers[goal.scorer] ?? 0) + 1;
         if (goal.assistant) assists[goal.assistant] = (assists[goal.assistant] ?? 0) + 1;
       }
     }
-    if (match.isUserHome) {
-      user.goalsFor += match.homeGoals;
-      user.goalsAgainst += match.awayGoals;
-    } else {
-      user.goalsFor += match.awayGoals;
-      user.goalsAgainst += match.homeGoals;
+
+    for (const [homeName, awayName] of aiPairs) {
+      const homeTeam = aiTeams.find(t => t.name === homeName)!;
+      const awayTeam = aiTeams.find(t => t.name === awayName)!;
+      const m = simulateAIMatch(homeTeam, awayTeam);
+      matches.push(m);
+      addStats(homeName, awayName, m.homeGoals, m.awayGoals);
     }
+
+    roundTables.push(snapshotTable());
   }
-  user.wins = userMatches.filter((m) => m.isUserHome ? m.homeGoals > m.awayGoals : m.awayGoals > m.homeGoals).length;
-  user.losses = userMatches.filter((m) => m.isUserHome ? m.homeGoals < m.awayGoals : m.awayGoals < m.homeGoals).length;
-  user.draws = userMatches.length - user.wins - user.losses;
-  user.points = user.wins * 3 + user.draws;
+
+  // Write final stats back to objects for backwards-compat
   for (const ai of aiTeams) {
-    const aiM = matches.filter((m) => m.homeTeam === ai.name || m.awayTeam === ai.name);
-    for (const m of aiM) {
-      if (m.homeTeam === ai.name) {
-        ai.goalsFor = (ai.goalsFor ?? 0) + m.homeGoals;
-        ai.goalsAgainst = (ai.goalsAgainst ?? 0) + m.awayGoals;
-      } else {
-        ai.goalsFor = (ai.goalsFor ?? 0) + m.awayGoals;
-        ai.goalsAgainst = (ai.goalsAgainst ?? 0) + m.homeGoals;
-      }
-    }
-    ai.wins = aiM.filter((m) => m.homeTeam === ai.name ? m.homeGoals > m.awayGoals : m.awayGoals > m.homeGoals).length;
-    ai.losses = aiM.filter((m) => m.homeTeam === ai.name ? m.homeGoals < m.awayGoals : m.awayGoals < m.homeGoals).length;
-    ai.draws = aiM.length - (ai.wins ?? 0) - (ai.losses ?? 0);
-    ai.points = (ai.wins ?? 0) * 3 + (ai.draws ?? 0);
+    const s = statsMap.get(ai.name)!;
+    ai.goalsFor = s.gf; ai.goalsAgainst = s.ga;
+    ai.wins = s.w; ai.draws = s.d; ai.losses = s.l; ai.points = s.w * 3 + s.d;
   }
-  const allTeams: AITeam[] = [...aiTeams, { name: 'Your XI', strength: user.overall, goalsFor: user.goalsFor, goalsAgainst: user.goalsAgainst, wins: user.wins, draws: user.draws, losses: user.losses, points: user.points }];
-  allTeams.sort((a, b) => {
-    const cmp = (b.points ?? 0) - (a.points ?? 0);
-    if (cmp !== 0) return cmp;
-    return ((b.goalsFor ?? 0) - (b.goalsAgainst ?? 0)) - ((a.goalsFor ?? 0) - (a.goalsAgainst ?? 0));
-  });
-  const userPosition = allTeams.findIndex((t) => t.name === 'Your XI') + 1;
-  const allStrengths = [...aiTeams.map((t) => t.strength), user.overall].sort((a, b) => b - a);
-  const userStrengthRank = allStrengths.indexOf(user.overall);
-  const expectedPos = 1 + userStrengthRank;
+  const us = statsMap.get('Your XI')!;
+  user.goalsFor = us.gf; user.goalsAgainst = us.ga;
+  user.wins = us.w; user.draws = us.d; user.losses = us.l; user.points = us.w * 3 + us.d;
+
+  const finalTable = roundTables[roundTables.length - 1] ?? [];
+  const userPosition = finalTable.findIndex(t => t.name === 'Your XI') + 1;
+  const allStrengths = [...aiTeams.map(t => t.strength), user.overall].sort((a, b) => b - a);
+  const expectedPos = 1 + allStrengths.indexOf(user.overall);
+
   const goldenBoot = Object.entries(goalScorers).sort((a, b) => b[1] - a[1])[0];
   const playmaker = Object.entries(assists).sort((a, b) => b[1] - a[1])[0];
   const goldenGlove = Object.entries(cleanSheets).sort((a, b) => b[1] - a[1])[0];
@@ -371,9 +415,10 @@ export function simulateSeason(user: TeamXI, formation: FormationKey, mode: Rati
   for (const [name, g] of Object.entries(goalScorers)) potScores[name] = g * 2;
   for (const [name, a] of Object.entries(assists)) potScores[name] = (potScores[name] ?? 0) + a;
   const potSeason = Object.entries(potScores).sort((a, b) => b[1] - a[1])[0];
+
   return {
     userTeam: { ...user, slots: { ...user.slots } },
-    aiTeams: aiTeams.map((t) => ({ ...t })),
+    aiTeams: aiTeams.map(t => ({ ...t })),
     matches,
     goalScorers,
     assists,
@@ -381,7 +426,8 @@ export function simulateSeason(user: TeamXI, formation: FormationKey, mode: Rati
     finalPosition: userPosition,
     expectedPoints: Math.round(45 + (user.overall - aiTeams.reduce((s, t) => s + t.strength, 0) / aiTeams.length) * 3),
     expectedPosition: expectedPos,
-    finalTable: allTeams,
+    finalTable,
+    roundTables,
     goldenBoot: goldenBoot ? { playerName: goldenBoot[0], goals: goldenBoot[1] } : null,
     playmaker: playmaker ? { playerName: playmaker[0], assists: playmaker[1] } : null,
     goldenGlove: goldenGlove ? { playerName: goldenGlove[0], cleanSheets: goldenGlove[1] } : null,
