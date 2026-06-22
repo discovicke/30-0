@@ -27,6 +27,12 @@ const posGroupMap: Record<string, string> = {
   LW: 'FW', RW: 'FW', ST: 'FW',
 };
 
+// Season-independent identity for a player: same name at the same club is the
+// same person across every season (e.g. Anders Svensson, Elfsborg 2006/07/08).
+export function playerKey(p: { name: string; team: string }): string {
+  return `${p.name.trim().toLowerCase()}|${p.team.trim().toLowerCase()}`;
+}
+
 export function getPlayerPosGroups(player: SquadPlayer): string[] {
   const groups = new Set<string>();
   for (const p of player.positions) {
@@ -73,7 +79,7 @@ export interface EligiblePlayer extends SquadPlayer {
 
 export function getEligiblePlayers(
   squad: Squad,
-  filledIds: Set<string>,
+  filledKeys: Set<string>,
   formation: FormationKey,
   filledSlots: string[],
   filterPosition: string | null,
@@ -108,7 +114,7 @@ export function getEligiblePlayers(
   }
 
   return squad.players.map((p) => {
-    const alreadyUsed = filledIds.has(p.id);
+    const alreadyUsed = filledKeys.has(playerKey(p));
     const playerGroups = getPlayerPosGroups(p);
     const openGroups = playerGroups.filter((g) =>
       filterGroup ? g === filterGroup : groupIsOpen(g)
