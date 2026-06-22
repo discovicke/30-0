@@ -29,6 +29,7 @@ type DraftState = 'drafting' | 'ready' | 'simulating';
 
 export default function DraftPhase({ config, squads, onRestart, savedState }: Props) {
   const [filledSlots, setFilledSlots] = useState<Record<string, PlayerCard>>(savedState?.filledSlots ?? {});
+  const [filledIds, setFilledIds] = useState<Set<string>>(new Set(savedState?.filledIds ?? Object.values(savedState?.filledSlots ?? {}).map(p => p.id)));
   const [usedSquadKeys, setUsedSquadKeys] = useState<Set<string>>(new Set(savedState?.usedSquadKeys ?? []));
   const [rerollsLeft, setRerollsLeft] = useState(savedState?.rerollsLeft ?? getRerollCount(config.difficulty));
   const [currentSquad, setCurrentSquad] = useState<Squad | null>(savedState?.currentSquad ?? null);
@@ -209,6 +210,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
         ovr: player.ovr, positions: [...player.positions], id: player.id,
       };
       setFilledSlots({ ...filledSlots, [exactSlot]: card });
+      setFilledIds(new Set(filledIds).add(player.id));
       setCurrentSquad(null);
       setSelectedSlot(null);
       setPendingPlayer(null);
@@ -225,6 +227,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     };
 
     setFilledSlots({ ...filledSlots, [targetSlot]: card });
+    setFilledIds(new Set(filledIds).add(player.id));
     setCurrentSquad(null);
     setSelectedSlot(null);
     setPendingPlayer(null);
@@ -241,6 +244,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     const state: SavedDraftState = {
       config,
       filledSlots,
+      filledIds: [...filledIds],
       usedSquadKeys: [...usedSquadKeys],
       rerollsLeft,
       currentSquad,

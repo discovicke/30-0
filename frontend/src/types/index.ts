@@ -120,6 +120,7 @@ export interface GameConfig {
 export interface SavedDraftState {
   config: GameConfig;
   filledSlots: Record<string, PlayerCard>;
+  filledIds: string[];
   usedSquadKeys: string[];
   rerollsLeft: number;
   currentSquad: Squad | null;
