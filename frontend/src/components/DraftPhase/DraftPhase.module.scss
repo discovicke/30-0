@@ -485,6 +485,24 @@
   color: $ink;
 }
 
+.sortBtn {
+  align-self: flex-end;
+  padding: 4px 10px;
+  margin-bottom: 2px;
+  background: transparent;
+  border: 0.5px solid $sand-border;
+  border-radius: $radius-sm;
+  color: $ink-muted;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: $ink;
+    color: $ink;
+  }
+}
+
 .skipBtn {
   margin: 8px 14px;
   padding: 8px;
@@ -616,6 +634,8 @@
   .playerOvr { color: #e0e0e0; }
   .skipBtn { background: #1a1a1a; border-color: #333; color: #999; }
   .skipBtn:hover { border-color: #888; color: #e0e0e0; }
+  .sortBtn { border-color: #333; color: #999; }
+  .sortBtn:hover { border-color: #888; color: #e0e0e0; }
   .overlayReroll { border-color: #333; }
   .rerollBtn { border-color: #333; color: #999; }
   .rerollBtn:hover:not(:disabled) { border-color: #888; color: #e0e0e0; }
