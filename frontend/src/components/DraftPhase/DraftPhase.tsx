@@ -4,7 +4,8 @@ import { formations, simulateSeason, computeTeamRatings } from '../../engine/sim
 import {
   pickRandomSquad, getEligiblePlayers, getPlayerPosGroups,
   getPositionLabel, autoAssignSlot, getRerollCount,
-  computePreSeasonOdds, playerKey,
+  computePreSeasonOdds, autoFillSquad,
+  playerKey,
 } from '../../engine/draftEngine';
 
 import {X, ArrowLeft} from 'lucide-react';
@@ -151,6 +152,25 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
     setRerollsLeft(rerollsLeft - 1);
     handleSpin();
   }, [rerollsLeft, spinning, handleSpin]);
+
+  // "I feel lucky" — auto-fill the rest of the squad randomly
+  function handleFeelingLucky() {
+    if (spinning) return;
+    if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
+    setRolling(false);
+    setCurrentSquad(null);
+    setPendingPlayer(null);
+    setPendingGroups([]);
+
+    const result = autoFillSquad(
+      squads, config.formation, filledSlots, filledIds, usedSquadKeys,
+      config.seasonMin, config.seasonMax,
+    );
+    setFilledSlots(result.filledSlots);
+    setFilledIds(result.filledIds);
+    setUsedSquadKeys(result.usedSquadKeys);
+    setSelectedSlot(null);
+  }
 
   function handleSlotClick(slotLabel: string) {
     if (config.draftMode !== 'position-first') return;
@@ -332,6 +352,11 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               Snurra fram spelare
             </button>
           )}
+          {!allFilled && (
+            <button className={styles.luckyBtn} onClick={handleFeelingLucky} disabled={spinning}>
+              Jag har tur – slumpa laget
+            </button>
+          )}
         </div>
       )}
 
@@ -423,6 +448,12 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               ) : (
                 <button className={styles.spinBtn} onClick={handleSpin} disabled={!canSpin}>
                   Snurra fram spelare
+                </button>
+              )}
+
+              {!allFilled && (
+                <button className={styles.luckyBtn} onClick={handleFeelingLucky} disabled={spinning}>
+                  Jag har tur – slumpa laget
                 </button>
               )}
 
