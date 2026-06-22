@@ -30,8 +30,8 @@ function buildPageOrder(matchByMatch: boolean, matchCount: number): number[] {
   return [300, 301, 302, ...referatPages, 310, 350, 351];
 }
 
-function getPageTitle(page: number): string {
-  if (page >= 311 && page <= 340) return `OMGÅNG ${page - 310}`;
+function getPageTitle(page: number, matchByMatch?: boolean): string {
+  if (matchByMatch && page >= 311 && page <= 340) return `OMGÅNG ${page - 310}`;
   const titles: Record<number, string> = {
     300: 'ALLSVENSKT 30-0',
     301: 'DIN TRUPP',
@@ -205,7 +205,7 @@ export default function TextTVBrowser({
   const nextPage = getNext();
 
   function renderPage() {
-    if (currentPage >= 311 && currentPage <= 340) {
+    if (matchByMatch && currentPage >= 311 && currentPage <= 340) {
       const round = currentPage - 310;
       const match = userMatches[round - 1];
       if (!match) return null;
@@ -279,7 +279,7 @@ export default function TextTVBrowser({
       )}
 
       <div className={styles.footer}>
-        <span className={styles.pageTitle}>{getPageTitle(currentPage)}</span>
+        <span className={styles.pageTitle}>{getPageTitle(currentPage, matchByMatch)}</span>
       </div>
     </div>
   );
