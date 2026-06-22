@@ -42,6 +42,45 @@
   margin-bottom: 4px;
 }
 
+.referat {
+  font-family: $font-mono;
+  font-size: 12px;
+  color: $ttv-body;
+  line-height: 1.6;
+  margin: 0;
+  padding: 4px 0;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.cursor {
+  color: $ttv-title;
+  animation: blink 0.7s steps(1, end) infinite;
+}
+
+.skipBtn {
+  display: block;
+  margin-top: 10px;
+  padding: 4px 14px;
+  background: transparent;
+  color: $ttv-title;
+  font-family: $font-mono;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid $ttv-title;
+  border-radius: 2px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.75;
+  }
+}
+
 .row {
   display: flex;
   justify-content: space-between;

@@ -24,6 +24,7 @@ export default function GameSetup({ onStart }: Props) {
   const [seasonMin, setSeasonMin] = useState(2001);
   const [seasonMax, setSeasonMax] = useState(2025);
   const [formation, setFormation] = useState<FormationKey>('4-4-2');
+  const [matchByMatch, setMatchByMatch] = useState(false);
 
   const ratingsHidden = difficulty === 'hard' || !showRatings;
 
@@ -36,6 +37,7 @@ export default function GameSetup({ onStart }: Props) {
       showRatings: difficulty === 'hard' ? false : showRatings,
       seasonMin,
       seasonMax,
+      matchByMatch,
     });
   }
 
@@ -196,6 +198,26 @@ export default function GameSetup({ onStart }: Props) {
           {[2001, 2005, 2010, 2015, 2020, 2025].map((y) => (
             <span key={y} className={styles.rangeTick}>{y}</span>
           ))}
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <h2 className={styles.sectionTitle}>Matchupplevelse</h2>
+        <div className={styles.btnRow}>
+          <button
+            className={`${styles.optionBtn} ${!matchByMatch ? styles.active : ''}`}
+            onClick={() => setMatchByMatch(false)}
+          >
+            <strong>Snabb</strong>
+            <span>Hela säsongen simuleras direkt</span>
+          </button>
+          <button
+            className={`${styles.optionBtn} ${matchByMatch ? styles.active : ''}`}
+            onClick={() => setMatchByMatch(true)}
+          >
+            <strong>Match för match</strong>
+            <span>Läs ett referat för varje omgång</span>
+          </button>
         </div>
       </div>
 

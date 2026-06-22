@@ -437,6 +437,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
               onSimulate={handleSimulate}
               onRestart={onRestart}
               ratingMode={config.ratingMode}
+              matchByMatch={config.matchByMatch}
             />
           )}
         </div>
@@ -453,6 +454,7 @@ export default function DraftPhase({ config, squads, onRestart, savedState }: Pr
             onSimulate={handleSimulate}
             onRestart={onRestart}
             ratingMode={config.ratingMode}
+            matchByMatch={config.matchByMatch}
           />
         </div>
       )}

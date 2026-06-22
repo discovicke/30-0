@@ -94,6 +94,7 @@ export interface SeasonResult {
   expectedPoints: number;
   expectedPosition: number;
   finalTable: AITeam[];
+  roundTables?: AITeam[][];
   goldenBoot: SeasonAward | null;
   playmaker: SeasonAward | null;
   goldenGlove: SeasonAward | null;
@@ -113,6 +114,7 @@ export interface GameConfig {
   showRatings: boolean;
   seasonMin: number;
   seasonMax: number;
+  matchByMatch?: boolean;
 }
 
 export interface SavedDraftState {
